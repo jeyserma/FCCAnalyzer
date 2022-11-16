@@ -14,7 +14,211 @@
 
 namespace FCCAnalyses {
     
+    
+// returns the gen particles with given PDGID (absolute) that have the e+/e- as parent, i.e. from prompt
+// in Whizard, the prompt leptons from the collision have two parents, the electron and positron
+float mll_gen_leps(ROOT::VecOps::RVec<edm4hep::MCParticleData> mc, ROOT::VecOps::RVec<int> parents, ROOT::VecOps::RVec<int> daughters) {
 
+    //cout << "-----------" << endl;
+    
+    // get Higgs
+    int higgs_parent_idx = -1;
+    for(size_t i = 0; i < mc.size(); ++i) {
+        if(higgs_parent_idx != -1) break;
+        auto & p = mc[i];
+        if(std::abs(p.PDG) != 25) continue;
+        for(unsigned j = p.parents_begin; j != p.parents_end; ++j) {
+            
+            higgs_parent_idx = parents.at(j);
+            break;
+        }
+    }
+    
+    TLorentzVector d1;
+    TLorentzVector d2;
+    int i = 0;
+    for(unsigned j = mc.at(higgs_parent_idx).daughters_begin; j != mc.at(higgs_parent_idx).daughters_end; ++j) {
+        
+        auto & p = mc.at(daughters.at(j));
+        if(p.PDG == 25) continue;
+        if(i == 0) d1.SetXYZM(p.momentum.x, p.momentum.y, p.momentum.z, p.mass);
+        if(i == 1) d2.SetXYZM(p.momentum.x, p.momentum.y, p.momentum.z, p.mass);
+        i++;
+    }
+    
+    //cout << d1.Theta() << "  " << d2.Theta() << " " << d1.DeltaR(d2) << endl;
+
+    return (d1+d2).M();
+} 
+    
+// returns the gen particles with given PDGID (absolute) that have the e+/e- as parent, i.e. from prompt
+// in Whizard, the prompt leptons from the collision have two parents, the electron and positron
+float deltaR_gen_leps(ROOT::VecOps::RVec<edm4hep::MCParticleData> mc, ROOT::VecOps::RVec<int> parents, ROOT::VecOps::RVec<int> daughters) {
+
+    //cout << "-----------" << endl;
+    
+    // get Higgs
+    int higgs_parent_idx = -1;
+    for(size_t i = 0; i < mc.size(); ++i) {
+        if(higgs_parent_idx != -1) break;
+        auto & p = mc[i];
+        if(std::abs(p.PDG) != 25) continue;
+        for(unsigned j = p.parents_begin; j != p.parents_end; ++j) {
+            
+            higgs_parent_idx = parents.at(j);
+            break;
+        }
+    }
+    
+    TLorentzVector d1;
+    TLorentzVector d2;
+    int i = 0;
+    for(unsigned j = mc.at(higgs_parent_idx).daughters_begin; j != mc.at(higgs_parent_idx).daughters_end; ++j) {
+        
+        auto & p = mc.at(daughters.at(j));
+        if(p.PDG == 25) continue;
+        if(i == 0) d1.SetXYZM(p.momentum.x, p.momentum.y, p.momentum.z, p.mass);
+        if(i == 1) d2.SetXYZM(p.momentum.x, p.momentum.y, p.momentum.z, p.mass);
+        i++;
+    }
+    
+    //cout << d1.Theta() << "  " << d2.Theta() << " " << d1.DeltaR(d2) << endl;
+
+    return d1.DeltaR(d2);
+} 
+
+    
+// returns the gen particles with given PDGID (absolute) that have the e+/e- as parent, i.e. from prompt
+// in Whizard, the prompt leptons from the collision have two parents, the electron and positron
+bool is_VBF(ROOT::VecOps::RVec<edm4hep::MCParticleData> mc, ROOT::VecOps::RVec<int> parents, ROOT::VecOps::RVec<int> daughters) {
+
+    cout << "-----------" << endl;
+    
+    // get Higgs
+    int higgs_parent_idx = -1;
+    for(size_t i = 0; i < mc.size(); ++i) {
+        if(higgs_parent_idx != -1) break;
+        auto & p = mc[i];
+        if(std::abs(p.PDG) != 25) continue;
+        for(unsigned j = p.parents_begin; j != p.parents_end; ++j) {
+            
+            cout << " PARENT PDGID=" << mc.at(parents.at(j)).PDG  << endl;
+            higgs_parent_idx = parents.at(j);
+            break;
+        }
+    }
+    
+    TLorentzVector d1;
+    TLorentzVector d2;
+    int i = 0;
+    for(unsigned j = mc.at(higgs_parent_idx).daughters_begin; j != mc.at(higgs_parent_idx).daughters_end; ++j) {
+        
+        auto & p = mc.at(daughters.at(j));
+        if(i == 0) d1.SetXYZM(p.momentum.x, p.momentum.y, p.momentum.z, p.mass);
+        if(i == 1) d2.SetXYZM(p.momentum.x, p.momentum.y, p.momentum.z, p.mass);
+        i++;
+    }
+    
+    cout << d1.Theta() << "  " << d2.Theta() << " " << d1.DeltaR(d2) << endl;
+
+    
+    return false;
+    for(size_t i = 0; i < mc.size(); ++i) {
+        auto & p = mc[i];
+        //if(std::abs(p.PDG) != 12) continue;
+        //if(std::abs(mc.at(parents.at(i)).PDG) == 11) return true;
+        cout << "PDGID=" << p.PDG << endl;
+        
+        for(unsigned j = p.daughters_begin; j != p.daughters_end; ++j) {
+            cout << " DAUGHTER PDGID=" << mc.at(daughters.at(j)).PDG  << endl;
+        }
+        
+        /*
+        for(unsigned j = p.parents_begin; j != p.parents_end; ++j) {
+            //cout << "  -> idx=" << " PDGID=" << mc.at(parents.at(j)).PDG  << endl;
+            //if(std::abs(mc.at(parents.at(j)).PDG) == 11) {
+             //   if(abs(p.PDG) == 12 or abs(mc.at(parents.at(j)).PDG) == 12) {
+                cout << " PARENT PDGID=" << mc.at(parents.at(j)).PDG  << endl;
+                //return true;
+               // }
+            //}
+        }
+        */
+        
+        //cout << "idx=" << i << " " << " status=" << mc.at(i).generatorStatus  << " parent=" << parents.at(i) << " PDGID=" << mc.at(parents.at(i)).PDG  << endl;
+        /*
+            for(unsigned j = p.parents_begin; j != p.parents_end; ++j) {
+                if(std::abs(in.at(parents.at(j)).PDG) == 11) {
+                    result.emplace_back(p);
+                    break;
+                }
+            }
+        */
+    }
+    return false;
+} 
+
+    
+    
+// get the gen p from reco
+std::vector<float> gen_p_from_reco(ROOT::VecOps::RVec<edm4hep::ReconstructedParticleData> legs, ROOT::VecOps::RVec<int> recind, ROOT::VecOps::RVec<int> mcind, ROOT::VecOps::RVec<edm4hep::ReconstructedParticleData> reco, ROOT::VecOps::RVec<edm4hep::MCParticleData> mc) {
+
+   std::vector<float> result;
+
+   for (size_t i = 0; i < legs.size(); ++i) {
+       
+        int track_index = legs[i].tracks_begin;
+        int mc_index = ReconstructedParticle2MC::getTrack2MC_index(track_index, recind, mcind, reco);
+        
+        TLorentzVector leg_lv;
+        if(mc_index >= 0 && mc_index < mc.size() ) {
+            leg_lv.SetXYZM(mc.at(mc_index ).momentum.x, mc.at(mc_index ).momentum.y, mc.at(mc_index).momentum.z, mc.at(mc_index ).mass);
+            result.push_back(leg_lv.P());
+        }
+        else {
+            cout << "MC track not found!" << endl;
+        }
+   }
+   return result;
+}
+    
+ROOT::VecOps::RVec<edm4hep::MCParticleData> get_photons(ROOT::VecOps::RVec<edm4hep::MCParticleData> mc) {
+
+   ROOT::VecOps::RVec<edm4hep::MCParticleData> result;
+
+   for(size_t i = 0; i < mc.size(); ++i) {
+       
+        auto & p = mc[i];
+        if(p.PDG == 22) result.emplace_back(p);
+   }
+   return result;
+}
+
+
+    
+// FSR
+std::vector<int> FSR(ROOT::VecOps::RVec<edm4hep::MCParticleData> mc, ROOT::VecOps::RVec<int> parents, ROOT::VecOps::RVec<int> daugther) {
+
+   std::vector<int> result;
+
+    cout << "*****************************" << endl;
+   // i = index of a MC particle in the Particle block
+   // in = the Particle collection
+   // ind = the block with the indices for the daughters, Particle#1.index
+
+   // returns a vector with the indices (in the Particle block) of the daughters of the particle i
+
+   for (size_t i = 0; i < mc.size(); ++i) {
+       
+        if(mc.at(i).PDG != 22) continue;
+       
+        cout << "idx=" << i << " " << " status=" << mc.at(i).generatorStatus  << " parent=" << parents.at(i) << " PDGID=" << mc.at(parents.at(i)).PDG  << " daugher=" << daugther.at(i) << " PDGID=" << mc.at(daugther.at(i)).PDG << endl;
+        
+   }
+   return result;
+}
+    
+// for a given MC index, it returns whether or not one of these muons come (indirectly) from a Higgs decay
 bool from_Higgsdecay(int i, ROOT::VecOps::RVec<edm4hep::MCParticleData> in, ROOT::VecOps::RVec<int> ind) {
 
     bool ret = false;
@@ -52,21 +256,52 @@ bool from_Higgsdecay(int i, ROOT::VecOps::RVec<edm4hep::MCParticleData> in, ROOT
 
 
 
+
+// for a given muon collection (legs), it returns whether or not one of these muons come (indirectly) from a Higgs decay
+bool from_Higgsdecay(ROOT::VecOps::RVec<edm4hep::ReconstructedParticleData> legs, ROOT::VecOps::RVec<int> recind, ROOT::VecOps::RVec<int> mcind, ROOT::VecOps::RVec<edm4hep::ReconstructedParticleData> reco, ROOT::VecOps::RVec<edm4hep::MCParticleData> mc, ROOT::VecOps::RVec<int> parents, ROOT::VecOps::RVec<int> daugther) {
     
+    bool ret = false;
+    for (size_t i = 0; i < legs.size(); ++i) {
+        
+        int track_index = legs[i].tracks_begin;
+        int mc_index = ReconstructedParticle2MC::getTrack2MC_index(track_index, recind, mcind, reco);
+        if(from_Higgsdecay(mc_index, mc, parents)) {
+            ret = true;
+            break;
+        }
+    }
     
+    return ret;
+}
+
+
+// for a given muon collection (legs), returns the muons which do not come (indirectly) from a Higgs decay
+ROOT::VecOps::RVec<edm4hep::ReconstructedParticleData> excluded_Higgs_decays(ROOT::VecOps::RVec<edm4hep::ReconstructedParticleData> legs, ROOT::VecOps::RVec<int> recind, ROOT::VecOps::RVec<int> mcind, ROOT::VecOps::RVec<edm4hep::ReconstructedParticleData> reco, ROOT::VecOps::RVec<edm4hep::MCParticleData> mc, ROOT::VecOps::RVec<int> parents, ROOT::VecOps::RVec<int> daugther) {
     
-    
-    
+    ROOT::VecOps::RVec<edm4hep::ReconstructedParticleData> result;
+    //result.reserve(in.size());
+    for (size_t i = 0; i < legs.size(); ++i) {
+        auto & p = legs[i];
+        int track_index = legs[i].tracks_begin;
+        int mc_index = ReconstructedParticle2MC::getTrack2MC_index(track_index, recind, mcind, reco);
+        if(not from_Higgsdecay(mc_index, mc, parents)) {
+            result.emplace_back(p);
+        }
+    }
+    return result;
+}
+
+
     
     
     
  
 // returns the gen particles with given PDGID (absolute) that have the e+/e- as parent, i.e. from prompt
 // in Whizard, the prompt leptons from the collision have two parents, the electron and positron
-ROOT::VecOps::RVec<edm4hep::MCParticleData> select_prompt_leptons(int m_pdg, ROOT::VecOps::RVec<edm4hep::MCParticleData> in, ROOT::VecOps::RVec<int> parents) {
+ROOT::VecOps::RVec<edm4hep::MCParticleData> select_prompt_leptons_gen(int m_pdg, ROOT::VecOps::RVec<edm4hep::MCParticleData> in, ROOT::VecOps::RVec<int> parents) {
 
     ROOT::VecOps::RVec<edm4hep::MCParticleData> result;
-    for (size_t i = 0; i < in.size(); ++i) {
+    for(size_t i = 0; i < in.size(); ++i) {
         auto & p = in[i];
         if(std::abs(p.PDG) == m_pdg) {
             for(unsigned j = p.parents_begin; j != p.parents_end; ++j) {
@@ -79,6 +314,26 @@ ROOT::VecOps::RVec<edm4hep::MCParticleData> select_prompt_leptons(int m_pdg, ROO
     }
     return result;
 } 
+
+
+// returns the gen particle indidex with given PDGID (absolute) that have the e+/e- as parent, i.e. from prompt
+// in Whizard, the prompt leptons from the collision have two parents, the electron and positron
+ROOT::VecOps::RVec<int> select_prompt_leptons_idx(int m_pdg, ROOT::VecOps::RVec<edm4hep::MCParticleData> in, ROOT::VecOps::RVec<int> parents) {
+
+    ROOT::VecOps::RVec<int> result;
+    for(size_t i = 0; i < in.size(); ++i) {
+        auto & p = in[i];
+        if(std::abs(p.PDG) == m_pdg) {
+            for(unsigned j = p.parents_begin; j != p.parents_end; ++j) {
+                if(std::abs(in.at(parents.at(j)).PDG) == 11) {
+                    result.emplace_back(i);
+                    break;
+                }
+            }
+        }
+    }
+    return result;
+}
       
  
 
@@ -156,8 +411,7 @@ ROOT::VecOps::RVec<int> get_parentids(int mcind, ROOT::VecOps::RVec<edm4hep::MCP
   return result;
 }
 
-/// return list of pdg from decay of a list of mother particle
-
+// return list of pdg from decay of a list of mother particle
 std::vector<int> gen_decay_list(ROOT::VecOps::RVec<int> mcin, ROOT::VecOps::RVec<edm4hep::MCParticleData> in, ROOT::VecOps::RVec<int> ind) {
 
    std::vector<int> result;
@@ -170,9 +424,11 @@ std::vector<int> gen_decay_list(ROOT::VecOps::RVec<int> mcin, ROOT::VecOps::RVec
    // returns a vector with the indices (in the Particle block) of the daughters of the particle i
 
    for (size_t i = 0; i < mcin.size(); ++i) {
-     for (size_t j = 0; j < MCParticle::get_list_of_particles_from_decay(mcin[i],in,ind).size(); ++j) {
-       if (in[MCParticle::get_list_of_particles_from_decay(mcin[i],in,ind)[j]].PDG != 25) result.push_back(in[MCParticle::get_list_of_particles_from_decay(mcin[i],in,ind)[j]].PDG);
-     }
+        for (size_t j = 0; j < MCParticle::get_list_of_particles_from_decay(mcin[i],in,ind).size(); ++j) {
+            if(in[MCParticle::get_list_of_particles_from_decay(mcin[i],in,ind)[j]].PDG != 25) {
+                result.push_back(in[MCParticle::get_list_of_particles_from_decay(mcin[i], in, ind)[j]].PDG);
+            }
+        }
    }
    return result;
 }
@@ -212,6 +468,9 @@ ROOT::VecOps::RVec<edm4hep::ReconstructedParticleData> resonanceZBuilderHiggsPai
     ROOT::VecOps::RVec<edm4hep::ReconstructedParticleData> result;
     int n = legs.size();
     std::vector<bool> hDecay;
+    
+    //cout << "*** BUILD RESO ***" << endl;
+    //cout << "Number of leptons: " << n << endl;
   
     if (n >1) {
         ROOT::VecOps::RVec<bool> v(n);
@@ -247,18 +506,20 @@ ROOT::VecOps::RVec<edm4hep::ReconstructedParticleData> resonanceZBuilderHiggsPai
                     else {   //use the kinematics of the reco'ed particle
                          leg_lv.SetXYZM(legs[i].momentum.x, legs[i].momentum.y, legs[i].momentum.z, legs[i].mass);
                     }
+                    
+
                 
                     
-                    // get the Higgs MC particle
+                    // find the Higgs MC particle
                     ROOT::VecOps::RVec<int> higgsParticle = gen_sel_pdgIDInt(25, false)(mc);
                     if(higgsParticle.size() > 0) {
                    
                     
-                        std::vector<int> tmp = gen_decay_list(higgsParticle, mc, daugthers);
+                        //std::vector<int> tmp = gen_decay_list(higgsParticle, mc, daugthers);
                         //if(std::abs(tmp.at(0)) == 23) {
                         
                         int track_index = legs[i].tracks_begin ;   // index in the Track array    
-                        int mc_index = ReconstructedParticle2MC::getTrack2MC_index( track_index, recind, mcind, reco ); // MC index of the muon
+                        int mc_index = ReconstructedParticle2MC::getTrack2MC_index(track_index, recind, mcind, reco); // MC index of the muon
                         
                         muonFromHiggsDecay = from_Higgsdecay(mc_index, mc, parents);
                         if(muonFromHiggsDecay) oneMuonFromHiggsDecay = true;
@@ -272,7 +533,7 @@ ROOT::VecOps::RVec<edm4hep::ReconstructedParticleData> resonanceZBuilderHiggsPai
       
       
             if(reso.charge != 0) continue; // neglect non-zero charge pairs
-            if(oneMuonFromHiggsDecay == true) continue; // neglect wrong paired muons
+            //if(oneMuonFromHiggsDecay == true) continue; // neglect wrong paired muons
             
             hDecay.push_back(oneMuonFromHiggsDecay);
             reso.momentum.x = reso_lv.Px();
@@ -283,7 +544,6 @@ ROOT::VecOps::RVec<edm4hep::ReconstructedParticleData> resonanceZBuilderHiggsPai
 
         } while (std::next_permutation(v.begin(), v.end()));
     }
-  
   
     if (result.size() > 1) {
   
@@ -299,12 +559,16 @@ ROOT::VecOps::RVec<edm4hep::ReconstructedParticleData> resonanceZBuilderHiggsPai
         //return onlyBestReso;
         
         // sort on recoil
+        
+        //cout << "*** PAIR SELECTOR ***" << endl;
   
         
         int idx_min = -1;
         float d_min = 9e9;
         //cout << "-------------" << endl;
         for (int i = 0; i < result.size(); ++i) {
+            
+            //if(hDecay.at(i)) continue;
      
             // calculate recoil
             auto recoil_p4 = TLorentzVector(0, 0, 0, 240);
@@ -317,11 +581,17 @@ ROOT::VecOps::RVec<edm4hep::ReconstructedParticleData> resonanceZBuilderHiggsPai
             recoil_fcc.momentum.y = recoil_p4.Py();
             recoil_fcc.momentum.z = recoil_p4.Pz();
             recoil_fcc.mass = recoil_p4.M();
-        
             
-            float d = std::pow(result.at(i).mass - 91.2, 2); // mass
-            //float d = std::pow(recoil_fcc.mass - 125.0, 2); // recoil
-            //float d = 0.5*std::pow(result.at(i).mass - 91.2, 2) + 0.5*std::pow(recoil_fcc.mass - 125.0, 2);
+            TLorentzVector tg;
+            tg.SetXYZM(result.at(i).momentum.x, result.at(i).momentum.y, result.at(i).momentum.z, result.at(i).mass);
+        
+            float boost = tg.P();
+            float mass = std::pow(result.at(i).mass - 91.2, 2); // mass
+            float rec = std::pow(recoil_fcc.mass - 125.0, 2); // recoil
+            float d = 0.5*mass + 0.5*rec;
+            d = mass;
+            
+            //cout << " idx=" << i << "  mZ = "<< result.at(i).mass << " mRec = " << recoil_fcc.mass << " oneFromHiggs=" << hDecay.at(i) << endl;
             
             //cout << " one muon from higgs = " << hDecay.at(i) << " mZ = "<< result.at(i).mass << " mRec = " << recoil_fcc.mass << endl;
             
@@ -340,13 +610,21 @@ ROOT::VecOps::RVec<edm4hep::ReconstructedParticleData> resonanceZBuilderHiggsPai
      
         }
      
-        if(hDecay.at(idx_min) == 1) cout << " nReso=" << result.size() << " mZ=" << result.at(idx_min).mass << endl;
+        //cout << " nReso=" << result.size() << " mZ=" << result.at(idx_min).mass << endl;
+        //if(hDecay.at(idx_min) == 1) cout << " nReso=" << result.size() << " mZ=" << result.at(idx_min).mass << endl;
      
-        bestReso.push_back(result.at(idx_min));
+        //cout << " -> selected idx=" << idx_min << " oneFromHiggs=" << hDecay.at(idx_min) << endl;
+        if(idx_min > -1) bestReso.push_back(result.at(idx_min));
         return bestReso;
     }
     else {
-        if(result.size() > 0 and hDecay.at(0) == 1) cout << " nReso=" << result.size() << " mZ=" << result.at(0).mass << endl;
+
+       // if(result.size() > 0 and hDecay.at(0)) { // return empty if one muon comes from the Higgs decay
+        //    ROOT::VecOps::RVec<edm4hep::ReconstructedParticleData> bestReso;
+       //     return bestReso;
+        //}
+        
+        //if(result.size() > 0 and hDecay.at(0) == 1) cout << " nReso=" << result.size() << " mZ=" << result.at(0).mass << endl;
         return result;
     }
 }    
@@ -818,6 +1096,42 @@ ROOT::VecOps::RVec<edm4hep::ReconstructedParticleData> selectPair(ROOT::VecOps::
     return result;
 }
 */
+
+
+double computeBreitWignerWeightHiggs(double offset) {
+    
+    double MH_GEN_ = 125.0*1000.;
+    double GAMMAH_GEN_ = 0;
+
+
+    double targetMass = MH_GEN_ + offset;
+    double s_hat = MH_GEN_*MH_GEN_;
+    double offshell = s_hat - MH_GEN_*MH_GEN_;
+    double offshellOffset = s_hat - targetMass*targetMass;
+    double weight = (offshell*offshell + GAMMAH_GEN_*GAMMAH_GEN_*MH_GEN_*MH_GEN_) / (offshellOffset*offshellOffset + GAMMAH_GEN_*GAMMAH_GEN_*targetMass*targetMass);
+    return weight;
+}
+
+ROOT::VecOps::RVec<double> breitWignerWeightsHiggs() {
+    
+
+    ROOT::VecOps::RVec<double> res(5, 1);
+    
+    res[0] = computeBreitWignerWeightHiggs(-100);
+    res[1] = computeBreitWignerWeightHiggs(-50);
+    res[2] = computeBreitWignerWeightHiggs(0);
+    res[3] = computeBreitWignerWeightHiggs(50);
+    res[4] = computeBreitWignerWeightHiggs(100);
+    return res;
+
+
+}
+
+ROOT::VecOps::RVec<int> indices_(const int& size, const int& start = 0) {
+    ROOT::VecOps::RVec<int> res(size, 0);
+    std::iota(std::begin(res), std::end(res), start);
+    return res;
+}
 
 }
 

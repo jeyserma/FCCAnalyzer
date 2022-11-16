@@ -19,9 +19,12 @@ make install
 cd ..
 ```
 
+Note: by default the newest Key4Hep release is loaded, therefore sometimes one needs to re-compile FCCAnalyses framework scripts according to the steps above.
+
 To use the FCCAnalyzer, just source the setup bash script:
 
 ```shell
 source ./setup.sh
 cd ..
 ```
+
