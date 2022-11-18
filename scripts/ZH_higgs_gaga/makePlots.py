@@ -25,7 +25,7 @@ def makePlot(proc, hName, xMin, xMax, yMin, yMax, xTitle, yTitle, rebin=1, logy=
         'xmin'              : xMin,
         'xmax'              : xMax,
         'ymin'              : yMin,
-        'ymax'              : yMax,
+        'ymax'              : 1.2*h1.GetMaximum(),
             
         'xtitle'            : xTitle,
         'ytitle'            : yTitle,
@@ -72,7 +72,7 @@ if __name__ == "__main__":
     makePlot(proc, "selected_photons_phi", -5, 5, 0, 0.005, "Selected photon #phi", "Events (normalized)", rebin=1)
     makePlot(proc, "selected_photons_theta", 0, 3.14, 0, 0.015, "Selected photon #theta", "Events (normalized)", rebin=1)
  
-    makePlot(proc, "resonance_m", 100, 150, 0, 0.1, "m_{#gamma#gamma} (Gev)", "Events (normalized)", rebin=4)
-    makePlot(proc, "resonance_p", 0, 100, 0, 0.015, "p_{#gamma#gamma} (Gev)", "Events (normalized)", rebin=1)
-    #makePlot(proc, "resonance_recoil", 50, 150, 0, 0.015, "Recoil #gamma#gamma", "Events (normalized)", rebin=1)
+    makePlot(proc, "resonance_m", 100, 150, 0, 0.1, "m_{#gamma#gamma} (Gev)", "Events (normalized)", rebin=2)
+    makePlot(proc, "resonance_p", 0, 100, 0, 0.015, "p_{#gamma#gamma} (Gev)", "Events (normalized)", rebin=4)
+    makePlot(proc, "resonance_recoil", 50, 150, 0, 0.015, "Recoil #gamma#gamma (GeV)", "Events (normalized)", rebin=4)
  

@@ -19,6 +19,31 @@ float sumScalar(ROOT::VecOps::RVec<float> in){
     float tot = std::accumulate(in.begin(), in.end(), 0);
     return tot;
 }
+
+
+// perturb the scale of the particles
+struct polarAngleCategorization {
+    polarAngleCategorization(float arg_thetaMin, float arg_thetaMax);
+    float thetaMin = 0;
+    float thetaMax = 5;
+    int operator() (ROOT::VecOps::RVec<edm4hep::ReconstructedParticleData> in);
+};
+
+polarAngleCategorization::polarAngleCategorization(float arg_thetaMin, float arg_thetaMax) : thetaMin(arg_thetaMin), thetaMax(arg_thetaMax) {};
+int polarAngleCategorization::operator() (ROOT::VecOps::RVec<edm4hep::ReconstructedParticleData> in) {
+    
+    int nFwd = 0; // number of forward leptons
+    for (size_t i = 0; i < in.size(); ++i) {
+        
+        auto & p = in[i];
+        TLorentzVector lv;
+        lv.SetXYZM(p.momentum.x, p.momentum.y, p.momentum.z, p.mass);
+        if(lv.Theta() < thetaMin || lv.Theta() > thetaMax) nFwd += 1;
+    }
+    return nFwd;
+}
+
+
     
 
 ROOT::VecOps::RVec<edm4hep::ReconstructedParticleData>  muon_quality_check(ROOT::VecOps::RVec<edm4hep::ReconstructedParticleData> in){
@@ -61,7 +86,7 @@ ROOT::VecOps::RVec<float> get_cosTheta_miss(ROOT::VecOps::RVec<edm4hep::Reconstr
 
 
 
-ROOT::VecOps::RVec<float> muonResolution(ROOT::VecOps::RVec<edm4hep::ReconstructedParticleData> muons, ROOT::VecOps::RVec<int> recind,
+ROOT::VecOps::RVec<float> leptonResolution_p(ROOT::VecOps::RVec<edm4hep::ReconstructedParticleData> muons, ROOT::VecOps::RVec<int> recind,
                                 ROOT::VecOps::RVec<int> mcind,
                                 ROOT::VecOps::RVec<edm4hep::ReconstructedParticleData> reco,
                                 ROOT::VecOps::RVec<edm4hep::MCParticleData> mc){
