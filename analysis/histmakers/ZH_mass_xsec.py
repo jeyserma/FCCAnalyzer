@@ -450,5 +450,5 @@ if __name__ == "__main__":
     
     
 
-    result = functions.build_and_run(datasets, build_graph, "tmp/output_mass_xsec_%s.root" % args.flavor, maxFiles=args.maxFiles)
+    result = functions.build_and_run(datasets, build_graph, "tmp/output_mass_xsec_%s.root" % args.flavor, maxFiles=args.maxFiles, norm=True, lumi=5000000)
     

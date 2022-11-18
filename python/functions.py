@@ -5,7 +5,7 @@ import ROOT
 from dataset import Dataset
 
 
-def build_and_run(datadict, build_function, outfile, maxFiles=-1):
+def build_and_run(datadict, build_function, outfile, maxFiles=-1, norm=False, lumi=1.):
     time0 = time.time()
 
     results = []
@@ -57,6 +57,8 @@ def build_and_run(datadict, build_function, outfile, maxFiles=-1):
 
         for r in res:
             hist = r.GetValue()
+            if norm:
+                hist.Scale(dataset.xsec*lumi/evtcount.GetValue())
             hist.Write()
             
         h_meta = ROOT.TH1D("meta", "", 10, 0, 1)
