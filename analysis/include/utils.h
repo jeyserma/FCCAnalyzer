@@ -14,6 +14,24 @@
 
 namespace FCCAnalyses {
     
+float missingMass(float ecm, ROOT::VecOps::RVec<edm4hep::ReconstructedParticleData> in) {
+    float px = 0, py = 0, pz = 0, e = 0;
+    for(auto &p : in) {
+        if (std::sqrt(p.momentum.x * p.momentum.x + p.momentum.y*p.momentum.y) < 1.) continue;
+        px += p.momentum.x;
+        py += p.momentum.y;
+        pz += p.momentum.z;
+        e += p.energy;
+    }
+    if(ecm < e) return -99.;
+
+    float ptot2 = std::pow(px, 2) + std::pow(py, 2) + std::pow(pz, 2);
+    float de2 = std::pow(ecm - e, 2);
+    if (de2 < ptot2) return -999.;
+    float Mmiss = std::sqrt(de2 - ptot2);
+    return Mmiss;
+}
+    
 float sumScalar(ROOT::VecOps::RVec<float> in){
     
     float tot = std::accumulate(in.begin(), in.end(), 0);

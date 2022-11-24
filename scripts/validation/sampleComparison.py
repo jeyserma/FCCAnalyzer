@@ -75,7 +75,7 @@ def makePlot(hName, xMin, xMax, yMin, yMax, xTitle, yTitle, rebin=1, logy=False,
         'xmin'              : xMin,
         'xmax'              : xMax,
         'ymin'              : yMin,
-        'ymax'              : yMax,
+        'ymax'              : yMax if yMax > 0 else 1.3*max([h1.GetMaximum(), h2.GetMaximum()]),
             
         'xtitle'            : xTitle,
         'ytitle'            : yTitle,
@@ -140,7 +140,7 @@ def makeResolutionPlot(hName, xMin, xMax, yMin, yMax, xTitle, yTitle, rebin=1, l
         'xmin'              : xMin,
         'xmax'              : xMax,
         'ymin'              : yMin,
-        'ymax'              : yMax,
+        'ymax'              : yMax if yMax > 0 else 1.3*max([h1.GetMaximum(), h2.GetMaximum()]),
             
         'xtitle'            : xTitle,
         'ytitle'            : yTitle,
@@ -184,11 +184,14 @@ if __name__ == "__main__":
     f2, p2, l2 = "tmp/output_mass_xsec_mumu.root", "wz2p6_ee_mumuH_ecm240_winter_v2", "Winter 2023, muons"
     outDir = "/eos/user/j/jaeyserm/www/FCCee/ZH_mass_xsec/sampleComparison/spring2021_winter2023_isolation/"
     
+    f1, p1, l1 = "tmp/validation_mumu.root", "wzp6_ee_mumuH_ecm240", "Spring 2021, muons"
+    f2, p2, l2 = "tmp/validation_mumu.root", "wz2p6_ee_mumuH_ecm240_winter_v2", "Winter 2023, muons"
+    outDir = "/eos/user/j/jaeyserm/www/FCCee/ZH_mass_xsec/sampleComparison/spring2021_winter2023/"
     
     
-    f1, p1, l1 = "tmp/output_mass_xsec_mumu.root", "wz2p6_ee_mumuH_ecm240_winter_v2", "Winter 2023, muons"
-    f2, p2, l2 = "tmp/output_mass_xsec_ee.root", "wzp6_ee_eeH_ecm240_winter", "Winter 2023, electrons"
-    outDir = "/eos/user/j/jaeyserm/www/FCCee/ZH_mass_xsec/sampleComparison/winter2023_electron_muon/"
+    #f1, p1, l1 = "tmp/output_mass_xsec_mumu.root", "wz2p6_ee_mumuH_ecm240_winter_v2", "Winter 2023, muons"
+    #f2, p2, l2 = "tmp/output_mass_xsec_ee.root", "wzp6_ee_eeH_ecm240_winter", "Winter 2023, electrons"
+    #outDir = "/eos/user/j/jaeyserm/www/FCCee/ZH_mass_xsec/sampleComparison/winter2023_electron_muon/"
     
     #f1, p1, l1 = "tmp/output_mass_xsec_ee.root", "wzp6_ee_eeH_ecm240_winter", "Winter 2023, electrons"
     #f2, p2, l2 = "tmp/output_mass_xsec_ee.root", "wzp6_ee_eeH_ecm240_winter_v2", "Winter 2023, electrons, smeared"
@@ -249,6 +252,6 @@ if __name__ == "__main__":
     makePlot("zed_leptonic_m_cut3", 60, 120, 0, 0.3, "m_{#mu^{#plus}, #mu^{#minus}} (Gev)", "Events (normalized)", rebin=1)
     makePlot("zed_leptonic_recoil_m", 120, 140, 0, 0.1, "Recoil (GeV)", "Events (normalized)", rebin=100)
     makePlot("mll_gen_leps", 80, 110, 0, 0.35, "m_{l^{#plus}, l^{#minus}}, gen (Gev)", "Events (normalized)", rebin=1)
-    
+    makePlot("missingMass", 0, 150, 0, -1, "Missing mass (Gev)", "Events (normalized)", rebin=1)
 
     

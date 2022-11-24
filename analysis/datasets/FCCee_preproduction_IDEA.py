@@ -103,6 +103,12 @@ def getDatasets(filt=None):
     
     
     
+    datasets.append({
+        "name"      : "p8_ee_ZH_Zmumu_Hinv_ecm240_winter_v2",
+        "datadir"   : "/eos/experiment/fcc/ee/generation/DelphesStandalone/Edm4Hep/pre_winter2023_tests_v2/p8_ee_ZH_Zmumu_Hinv_ecm240",
+        "xsec"      : 0.201868
+    })
+    
     
     
     

@@ -52,8 +52,10 @@ def build_graph(df, dataset):
     df = df.Alias("MCRecoAssociations1", "MCRecoAssociations#1.index")
     df = df.Alias("Photon0", "Photon#0.index")
     if args.flavor == "mumu":
-        df = df.Alias("Muon0", "Muon#0.index")
-        #df = df.Alias("Muon0", "AllMuon#0.index")
+        if dataset.name == "wzp6_ee_mumuH_ecm240":
+            df = df.Alias("Muon0", "AllMuon#0.index")
+        else:
+            df = df.Alias("Muon0", "Muon#0.index")
     else:
         df = df.Alias("Muon0", "Electron#0.index")
      
@@ -122,6 +124,9 @@ def build_graph(df, dataset):
     df = df.Define("prompt_muons_charge", "FCCAnalyses::ReconstructedParticle::get_charge(prompt_muons)")
     df = df.Define("prompt_muons_no", "FCCAnalyses::ReconstructedParticle::get_n(prompt_muons)")
     df = df.Define("prompt_muons_iso", "FCCAnalyses::coneIsolation(0.01, 0.5)(prompt_muons, ReconstructedParticles)")
+    
+    df = df.Define("missingMass", "FCCAnalyses::missingMass(240, ReconstructedParticles)")
+    
    
     #df = df.Filter("selected_muons_no >= 2")
     
@@ -133,9 +138,9 @@ def build_graph(df, dataset):
         
 
     # muon resolution
-    df = df.Define("muons_reso", "FCCAnalyses::muonResolution(muons, MCRecoAssociations0, MCRecoAssociations1, ReconstructedParticles, Particle)")
-    df = df.Define("selected_muons_reso", "FCCAnalyses::muonResolution(selected_muons, MCRecoAssociations0, MCRecoAssociations1, ReconstructedParticles, Particle)")
-    df = df.Define("prompt_muons_reso", "FCCAnalyses::muonResolution(prompt_muons, MCRecoAssociations0, MCRecoAssociations1, ReconstructedParticles, Particle)")
+    df = df.Define("muons_reso", "FCCAnalyses::leptonResolution_p(muons, MCRecoAssociations0, MCRecoAssociations1, ReconstructedParticles, Particle)")
+    df = df.Define("selected_muons_reso", "FCCAnalyses::leptonResolution_p(selected_muons, MCRecoAssociations0, MCRecoAssociations1, ReconstructedParticles, Particle)")
+    df = df.Define("prompt_muons_reso", "FCCAnalyses::leptonResolution_p(prompt_muons, MCRecoAssociations0, MCRecoAssociations1, ReconstructedParticles, Particle)")
     
     # build the Z resonance and recoil using MC information from the selected muons
     df = df.Define("zed_leptonic_MC", "FCCAnalyses::resonanceZBuilder2(91, true)(selected_muons, MCRecoAssociations0, MCRecoAssociations1, ReconstructedParticles, Particle)")
@@ -197,6 +202,9 @@ def build_graph(df, dataset):
     results.append(df.Histo1D(("deltaR_gen_leps", "", *bins_dR), "deltaR_gen_leps"))
     results.append(df.Histo1D(("mll_gen_leps", "", *bins_m_ll), "mll_gen_leps"))
     
+    results.append(df.Histo1D(("missingMass", "", *bins_m_ll), "missingMass"))
+    
+    
     # forward/central resolution
     df = df.Define("muons_central", "FCCAnalyses::sel_eta(0,0.8,1)(muons)")
     df = df.Define("muons_forward", "FCCAnalyses::sel_eta(0.8,20,1)(muons)")
@@ -206,10 +214,10 @@ def build_graph(df, dataset):
     df = df.Define("muons_forward_theta", "FCCAnalyses::ReconstructedParticle::get_theta(muons_forward)")
     df = df.Define("muons_forward_theta_m", "FCCAnalyses::ReconstructedParticle::get_theta(muons_forward_m)")
     df = df.Define("muons_forward_theta_p", "FCCAnalyses::ReconstructedParticle::get_theta(muons_forward_p)")
-    df = df.Define("muons_central_reso", "FCCAnalyses::muonResolution(muons_central, MCRecoAssociations0, MCRecoAssociations1, ReconstructedParticles, Particle)")
-    df = df.Define("muons_forward_reso", "FCCAnalyses::muonResolution(muons_forward, MCRecoAssociations0, MCRecoAssociations1, ReconstructedParticles, Particle)")
-    df = df.Define("muons_forward_m_reso", "FCCAnalyses::muonResolution(muons_forward_m, MCRecoAssociations0, MCRecoAssociations1, ReconstructedParticles, Particle)")
-    df = df.Define("muons_forward_p_reso", "FCCAnalyses::muonResolution(muons_forward_p, MCRecoAssociations0, MCRecoAssociations1, ReconstructedParticles, Particle)")
+    df = df.Define("muons_central_reso", "FCCAnalyses::leptonResolution_p(muons_central, MCRecoAssociations0, MCRecoAssociations1, ReconstructedParticles, Particle)")
+    df = df.Define("muons_forward_reso", "FCCAnalyses::leptonResolution_p(muons_forward, MCRecoAssociations0, MCRecoAssociations1, ReconstructedParticles, Particle)")
+    df = df.Define("muons_forward_m_reso", "FCCAnalyses::leptonResolution_p(muons_forward_m, MCRecoAssociations0, MCRecoAssociations1, ReconstructedParticles, Particle)")
+    df = df.Define("muons_forward_p_reso", "FCCAnalyses::leptonResolution_p(muons_forward_p, MCRecoAssociations0, MCRecoAssociations1, ReconstructedParticles, Particle)")
     
     results.append(df.Histo1D(("muons_central_reso_cut0", "", *bins_resolution), "muons_central_reso"))
     results.append(df.Histo1D(("muons_forward_reso_cut0", "", *bins_resolution), "muons_forward_reso"))
@@ -225,10 +233,10 @@ def build_graph(df, dataset):
     df = df.Define("muons_30_50", "FCCAnalyses::ReconstructedParticle::sel_p(30,50)(muons)")
     df = df.Define("muons_50_70", "FCCAnalyses::ReconstructedParticle::sel_p(50,70)(muons)")
     df = df.Define("muons_70_100", "FCCAnalyses::ReconstructedParticle::sel_p(70,100)(muons)")
-    df = df.Define("muons_0_30_reso", "FCCAnalyses::muonResolution(muons_0_30, MCRecoAssociations0, MCRecoAssociations1, ReconstructedParticles, Particle)")
-    df = df.Define("muons_30_50_reso", "FCCAnalyses::muonResolution(muons_30_50, MCRecoAssociations0, MCRecoAssociations1, ReconstructedParticles, Particle)")
-    df = df.Define("muons_50_70_reso", "FCCAnalyses::muonResolution(muons_50_70, MCRecoAssociations0, MCRecoAssociations1, ReconstructedParticles, Particle)")
-    df = df.Define("muons_70_100_reso", "FCCAnalyses::muonResolution(muons_70_100, MCRecoAssociations0, MCRecoAssociations1, ReconstructedParticles, Particle)")
+    df = df.Define("muons_0_30_reso", "FCCAnalyses::leptonResolution_p(muons_0_30, MCRecoAssociations0, MCRecoAssociations1, ReconstructedParticles, Particle)")
+    df = df.Define("muons_30_50_reso", "FCCAnalyses::leptonResolution_p(muons_30_50, MCRecoAssociations0, MCRecoAssociations1, ReconstructedParticles, Particle)")
+    df = df.Define("muons_50_70_reso", "FCCAnalyses::leptonResolution_p(muons_50_70, MCRecoAssociations0, MCRecoAssociations1, ReconstructedParticles, Particle)")
+    df = df.Define("muons_70_100_reso", "FCCAnalyses::leptonResolution_p(muons_70_100, MCRecoAssociations0, MCRecoAssociations1, ReconstructedParticles, Particle)")
     results.append(df.Histo1D(("muons_0_30_reso_cut0", "", *bins_resolution), "muons_0_30_reso"))
     results.append(df.Histo1D(("muons_30_50_reso_cut0", "", *bins_resolution), "muons_30_50_reso"))
     results.append(df.Histo1D(("muons_50_70_reso_cut0", "", *bins_resolution), "muons_50_70_reso"))
