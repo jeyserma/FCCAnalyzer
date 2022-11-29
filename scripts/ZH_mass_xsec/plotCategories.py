@@ -5,30 +5,12 @@ ROOT.gROOT.SetBatch(True)
 ROOT.gStyle.SetOptStat(0)
 ROOT.gStyle.SetOptTitle(0)
 
-
 import plotter
 
-
-
-
-def getHist(f, p, h):
-
-    fIn = ROOT.TFile(f)
-    hist = copy.deepcopy(fIn.Get("%s/%s" % (p, h)))
-    fIn.Close()
-    return hist
-
     
-def makePlot(fIn_, flavor, doNorm=False):
-
-
+def makePlot(doNorm=False):
 
     outName = "zll_recoil_m_categories"
-    proc = "wzp6_ee_mumuH_ecm240"
-    hist = "zll_recoil_m"
-    rebin = 50
-
-    fIn = ROOT.TFile(fIn_)
     zll_recoil_m = fIn.Get("%s/%s" % (proc, hist))
     
     h_cat1 = zll_recoil_m.ProjectionX("h_cat1", 1, 1)
@@ -102,17 +84,12 @@ def makePlot(fIn_, flavor, doNorm=False):
     canvas.Close()
 
 
-def doFit(fIn_, flavor, cat=1):
+def doFit(cat=1):
 
     recoilMin = 120
     recoilMax = 140
     
     outName = "zll_recoil_m_categories"
-    proc = "wzp6_ee_mumuH_ecm240"
-    hist = "zll_recoil_m"
-    rebin = 50
-
-    fIn = ROOT.TFile(fIn_)
     zll_recoil_m = fIn.Get("%s/%s" % (proc, hist))
     
     if cat == 0: cat1, cat2 = 0, 5
@@ -254,117 +231,23 @@ def doFit(fIn_, flavor, cat=1):
     canvas.Draw()
     canvas.SaveAs("%s/fit_cat%d.png" % (outDir, cat))
     canvas.SaveAs("%s/fit_cat%d.pdf" % (outDir, cat))
-        
-    '''
-        del dummyB
-        del dummyT
-        del padT
-        del padB
-        del canvas
-        
 
-        cfg['ymax'] = 2500
-        plotter.cfg = cfg
-        canvas = plotter.canvas()
-        dummy = plotter.dummy()
-        dummy.Draw("HIST")
-        plt = w_tmp.var("zed_leptonic_recoil_m").frame()
-        colors = [ROOT.kRed, ROOT.kBlue, ROOT.kBlack, ROOT.kGreen, ROOT.kCyan] 
-        
-        leg = ROOT.TLegend(.50, 0.7, .95, .90)
-        leg.SetBorderSize(0)
-        leg.SetFillStyle(0)
-        leg.SetTextSize(0.04)
-        leg.SetMargin(0.15)
-
-        cbs_1.plotOn(plt, ROOT.RooFit.LineColor(ROOT.kRed), ROOT.RooFit.Normalization(yield_zh*cb1__, ROOT.RooAbsReal.NumEvent))
-        cbs_2.plotOn(plt, ROOT.RooFit.LineColor(ROOT.kBlue), ROOT.RooFit.Normalization(yield_zh*cb2__, ROOT.RooAbsReal.NumEvent))
-        gauss.plotOn(plt, ROOT.RooFit.LineColor(ROOT.kCyan), ROOT.RooFit.Normalization(yield_zh*(1.-cb1__-cb2__), ROOT.RooAbsReal.NumEvent))
-        sig_fit.plotOn(plt, ROOT.RooFit.LineColor(ROOT.kBlack), ROOT.RooFit.Normalization(yield_zh, ROOT.RooAbsReal.NumEvent))     
-        
-            
-        # define TGraphs for legend
-        tmp1 = ROOT.TGraph()
-        tmp1.SetPoint(0, 0, 0)
-        tmp1.SetLineColor(ROOT.kBlack)
-        tmp1.SetLineWidth(3)
-        tmp1.Draw("SAME")
-        leg.AddEntry(tmp1, "Total PDF", "L")
-        
-        tmp2 = ROOT.TGraph()
-        tmp2.SetPoint(0, 0, 0)
-        tmp2.SetLineColor(ROOT.kRed)
-        tmp2.SetLineWidth(3)
-        tmp2.Draw("SAME")
-        leg.AddEntry(tmp2, "CB1", "L")
-        
-        tmp3 = ROOT.TGraph()
-        tmp3.SetPoint(0, 0, 0)
-        tmp3.SetLineColor(ROOT.kBlue)
-        tmp3.SetLineWidth(3)
-        tmp3.Draw("SAME")
-        leg.AddEntry(tmp3, "CB2", "L")
-        
-        tmp4 = ROOT.TGraph()
-        tmp4.SetPoint(0, 0, 0)
-        tmp4.SetLineColor(ROOT.kCyan)
-        tmp4.SetLineWidth(3)
-        tmp4.Draw("SAME")
-        leg.AddEntry(tmp4, "Gauss", "L")
-        
-        plt.Draw("SAME")
-        leg.Draw()
-        plotter.aux()
-        canvas.Modify()
-        canvas.Update()
-        canvas.Draw()
-        canvas.SaveAs("%s/fit_mH%s_decomposition.png" % (outDir, mH_))
-        canvas.SaveAs("%s/fit_mH%s_decomposition.pdf" % (outDir, mH_))
-        cfg['ymax'] = 1500
-        
-        
-        # import
-        getattr(w_tmp, 'import')(rdh_zh)
-        getattr(w_tmp, 'import')(sig_fit)
-        
-        
-        param_mh.append(mH)
-        param_mean.append(mean.getVal())
-        param_sigma.append(sigma.getVal())
-        param_mean_gt.append(mean_gt.getVal())
-        param_sigma_gt.append(sigma_gt.getVal())
-        param_alpha_1.append(alpha_1.getVal())
-        param_alpha_2.append(alpha_2.getVal())
-        param_n_1.append(n_1.getVal())
-        param_n_2.append(n_2.getVal())
-        param_yield.append(sig_norm.getVal())
-        param_cb_1.append(cb_1.getVal())
-        param_cb_2.append(cb_2.getVal())
-        
-        param_mean_err.append(mean.getError())
-        param_sigma_err.append(sigma.getError())
-        param_mean_gt_err.append(mean.getError())
-        param_sigma_gt_err.append(sigma.getError())
-        param_alpha_1_err.append(alpha_1.getError())
-        param_alpha_2_err.append(alpha_2.getError())
-        param_n_1_err.append(n_1.getError())
-        param_n_2_err.append(n_2.getError())
-        param_yield_err.append(sig_norm.getError())
-        param_cb_1_err.append(cb_1.getError())
-        param_cb_2_err.append(cb_2.getError())
-    '''
-
-
-
-    
     
     
 if __name__ == "__main__":
 
-    outDir = "/eos/user/j/jaeyserm/www/FCCee/ZH_mass_xsec/mass_categories"
-    makePlot("tmp/output_mass_xsec_mumu.root", "mumu")
-    makePlot("tmp/output_mass_xsec_mumu.root", "mumu", doNorm=True)
-    doFit("tmp/output_mass_xsec_mumu.root", "mumu", cat=1)
-    doFit("tmp/output_mass_xsec_mumu.root", "mumu", cat=2)
-    doFit("tmp/output_mass_xsec_mumu.root", "mumu", cat=3)
-    doFit("tmp/output_mass_xsec_mumu.root", "mumu", cat=0) # all
+    flavor="ee"
+    fIn = ROOT.TFile("tmp/output_mass_xsec_%s.root" % flavor)
+    outDir = "/eos/user/j/jaeyserm/www/FCCee/ZH_mass_xsec/plots_categories_%s/" % flavor
+    
+    proc = "wzp6_ee_%sH_ecm240" % flavor
+    hist = "zll_recoil_m"
+    rebin = 50
+
+
+    makePlot()
+    makePlot(doNorm=True)
+    doFit(cat=1)
+    doFit(cat=2)
+    doFit(cat=3)
+    doFit(cat=0) # all

@@ -1,5 +1,5 @@
 
-import sys,copy,array,os,subprocess,math
+import sys,copy,array,os,subprocess,math,ctypes
 import ROOT
 
 ROOT.gROOT.SetBatch(True)
@@ -76,7 +76,7 @@ def makePlot(g_pulls, h_pulls, avg=0):
     latex.SetTextAlign(13)
     latex.SetTextFont(42)
     latex.SetTextSize(0.045)
-    latex.DrawLatex(0.15, 0.96, "#bf{FCCee} #scale[0.7]{#it{Simulation}}")
+    latex.DrawLatex(0.15, 0.96, "#bf{FCC-ee} #scale[0.7]{#it{Simulation}}")
     
     latex.SetTextAlign(13)
     latex.SetTextFont(42)
@@ -86,31 +86,32 @@ def makePlot(g_pulls, h_pulls, avg=0):
     
 
         
-    canvas.SaveAs("/eos/user/j/jaeyserm/www/FCCee/ZH_mass_xsec/decay_mode_independence.png")
-    canvas.SaveAs("/eos/user/j/jaeyserm/www/FCCee/ZH_mass_xsec/decay_mode_independence.pdf")    
+    canvas.SaveAs("/eos/user/j/jaeyserm/www/FCCee/ZH_mass_xsec/plots_%s/decay_mode_independence.png" % flavor)
+    canvas.SaveAs("/eos/user/j/jaeyserm/www/FCCee/ZH_mass_xsec/plots_%s/decay_mode_independence.pdf" % flavor)    
     
 
 
 if __name__ == "__main__":
 
-    proc = "wz3p6_ee_mumuH_ecm240_prefall" # wzp6_ee_mumuH_ecm240 wzp6_ee_mumuH_ecm240_prefall wz3p6_ee_mumuH_ecm240_prefall
+    flavor = "mumu"
+    proc = "wzp6_ee_mumuH_ecm240" # wzp6_ee_mumuH_ecm240 wzp6_ee_mumuH_ecm240_prefall wz3p6_ee_mumuH_ecm240_prefall
     
     # p8_ee_ZH_ecm240 wzp6_ee_mumuH_ecm240
     cuts = ["_cut0", "_cut1", "_cut2", "_cut3", "_cut4", ""]
-    cuts = ["_cut0", "_cut1", "_cut2", "_cut3", "_cut4", "_cut5", "_cut6", ""]
+    cuts = ["_cut0", "_cut1", "_cut2", "_cut3", "_cut4", "_cut5", "_cut6"]
     cut_labels = [r"No selection", r"$\geq 1 \mu$", r"$\geq 2 \mu$", r"$\mu^{+}\mu^{-}$ pair", r"$86 < m_{\mu^{+}\mu^{-}} < 96$", r"$20 < p_{\mu^{+}\mu^{-}} < 70$", r"$\cos(\theta_{miss})$", r"$120 < m(rec) < 140$"]
     
-    cuts = ["_cut0", "_cut1", "_cut2", "_cut3", "_cut4", "_cut5", ""]
+    cuts = ["_cut0", "_cut1", "_cut2", "_cut3", "_cut4", "_cut5", "_cut6"]
     cut_labels = [r"No selection", r"$\geq 1 \mu$", r"$\geq 2 \mu$", r"$\mu^{+}\mu^{-}$ pair", r"$86 < m_{\mu^{+}\mu^{-}} < 96$", r"$20 < p_{\mu^{+}\mu^{-}} < 70$", r"$120 < m_{rec} < 140$"]
     
     decay_pdgids = [4, 5, 13, 15, 21, 22, 23, 24]
     decay_names = [r"cc", r"bb", r"$\mu\mu$", r"$\tau\tau$", r"gg", r"$\gamma\gamma$", r"ZZ", r"WW"]
     decay_names_tex = ["cc", "bb", "#mu#mu", "#tau#tau", "gg", "#gamma#gamma", "ZZ", "WW"]
-    fIn = ROOT.TFile("tmp/output_mass_xsec_noIso.root")
+    fIn = ROOT.TFile("tmp/output_mass_xsec_%s.root" % flavor)
     #fIn = ROOT.TFile("tmp/output_mass_xsec.root")
     
-    
-    h_pulls = ROOT.TH2F("pulls", "pulls", 40, 68, 73, len(decay_pdgids)+1, 0, len(decay_pdgids)+1)
+    xMin, xMax = 60, 80
+    h_pulls = ROOT.TH2F("pulls", "pulls", (xMax-xMin)*10, xMin, xMax, len(decay_pdgids)+1, 0, len(decay_pdgids)+1)
     g_pulls = ROOT.TGraphErrors(len(decay_pdgids)+1)
     #
     print("Branching ratios")
@@ -192,12 +193,17 @@ if __name__ == "__main__":
         idx = 0
         h_ref = fIn.Get("%s/higgs_decay%s" % (proc, cuts[idx]))
         h_cut = fIn.Get("%s/higgs_decay%s" % (proc, cut))
+        
+        
+        y_ref_tot_err = ctypes.c_double(1.)
+        y_ref_tot = h_ref.IntegralAndError(0, h_ref.GetNbinsX() + 1, y_ref_tot_err)
+        y_ref_tot_err = y_ref_tot_err.value
+        
+        y_cut_tot_err = ctypes.c_double(1.)
+        y_cut_tot = h_cut.IntegralAndError(0, h_cut.GetNbinsX() + 1, y_cut_tot_err)
+        y_cut_tot_err = y_cut_tot_err.value
 
-        y_ref_tot = h_ref.Integral()
-        y_cut_tot = h_cut.Integral()
 
-        y_ref_tot_err = y_ref_tot**0.5
-        y_cut_tot_err = y_cut_tot**0.5
         
         sel_eff_tot = y_cut_tot / y_ref_tot
         sel_eff_tot_err = sel_eff_tot * ( (y_cut_tot_err/y_cut_tot)**2 + (y_ref_tot_err/y_ref_tot)**2)**0.5
@@ -220,8 +226,10 @@ if __name__ == "__main__":
         
             y_ref = h_ref.GetBinContent(pdg+1)
             y_cut = h_cut.GetBinContent(pdg+1)
-            y_ref_err = y_ref**0.5
-            y_cut_err = y_cut**0.5
+            y_ref_err = h_ref.GetBinError(pdg+1)
+            y_cut_err = h_cut.GetBinError(pdg+1)
+            #y_ref_err = y_ref**0.5
+            #y_cut_err = y_cut**0.5
             sel_eff = y_cut / y_ref
             sel_eff_err = sel_eff * ( (y_cut_err/y_cut)**2 + (y_ref_err/y_ref)**2)**0.5
             if sel_eff_err == 0.1: sel_eff_err = 0.0999

@@ -5,7 +5,7 @@ import fnmatch
 
 # http://fcc-physics-events.web.cern.ch/fcc-physics-events/FCCee/spring2021/Delphesevents_IDEA.php
 
-def getDatasets(filt=None):
+def getDatasets(filt=None, select=[], baseDir = ""):
 
     datasets = []
     baseDir = "/eos/experiment/fcc/ee/generation/DelphesEvents/spring2021/IDEA/"
@@ -215,6 +215,10 @@ def getDatasets(filt=None):
 
 
 
-
-    if filt == None: return datasets
-    else: return [dataset for dataset in datasets if fnmatch.fnmatch(dataset['name'], filt)]
+    if filt != None: return [dataset for dataset in datasets if fnmatch.fnmatch(dataset['name'], filt)]
+    elif len(select) > 0: 
+        ret = []
+        for dataset in datasets:
+            if dataset['name'] in select: ret.append(dataset)
+        return ret
+    else: return datasets

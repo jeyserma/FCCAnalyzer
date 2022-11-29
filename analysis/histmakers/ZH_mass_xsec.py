@@ -17,10 +17,10 @@ print(ROOT.GetThreadPoolSize())
 
 # define histograms
 bins_p_mu = (20000, 0, 200) # 10 MeV bins
-bins_m_ll = (300, 0, 300) # 1 GeV bins
+bins_m_ll = (3000, 0, 300) # 100 MeV bins
 bins_p_ll = (200, 0, 200) # 1 GeV bins
 bins_recoil = (200000, 0, 200) # 1 MeV bins 
-bins_cosThetaMiss = (100000, -1, 1)
+bins_cosThetaMiss = (10000, 0, 1)
 
 bins_theta = (500, -5, 5)
 bins_eta = (600, -3, 3)
@@ -43,6 +43,7 @@ def build_graph(df, dataset):
     print("build graph", dataset.name)
     results = []
     sigProcs = ["wzp6_ee_mumuH_ecm240", "p8_ee_ZH_ecm240", "wzp6_ee_mumuH_ecm240_prefall", "wz3p6_ee_mumuH_ecm240_prefall", "wz3p6_ee_mumuH_ecm240_winter", "wz3p6_ee_mumuH_ecm240_winter_v2", "wzp6_ee_eeH_ecm240_winter", "wzp6_ee_eeH_ecm240_winter_v2", "wz2p6_ee_mumuH_ecm240_winter_v2"]
+    sigProcs = ["wzp6_ee_mumuH_ecm240", "wzp6_ee_eeH_ecm240"]
     
     df = df.Define("weight", "1.0")
     weightsum = df.Sum("weight")
@@ -54,8 +55,8 @@ def build_graph(df, dataset):
     df = df.Alias("MCRecoAssociations1", "MCRecoAssociations#1.index")
     df = df.Alias("Photon0", "Photon#0.index")
     if args.flavor == "mumu":
-        #df = df.Alias("Lepton0", "Muon#0.index")
-        df = df.Alias("Lepton0", "AllMuon#0.index")
+        df = df.Alias("Lepton0", "Muon#0.index")
+        #df = df.Alias("Lepton0", "AllMuon#0.index")
     else:
         df = df.Alias("Lepton0", "Electron#0.index")
      
@@ -124,6 +125,7 @@ def build_graph(df, dataset):
     #df = df.Define("prompt_muons_no", "FCCAnalyses::ReconstructedParticle::get_n(prompt_muons)")
     #df = df.Define("prompt_muons_iso", "FCCAnalyses::coneIsolation(0.01, 0.5)(prompt_muons, ReconstructedParticles)")
    
+    #df = df.Filter("prompt_muons.size() == 2")
     #df = df.Filter("selected_muons_no >= 2")
     
     
@@ -183,10 +185,10 @@ def build_graph(df, dataset):
     #results.append(df.Histo1D(("gen_prompt_muons_charge_cut0", "", *bins_charge), "gen_prompt_muons_charge"))
     #results.append(df.Histo1D(("gen_prompt_muons_no_cut0", "", *bins_count), "gen_prompt_muons_no"))
     
-    results.append(df.Histo1D(("photons_p", "", *bins_p_mu), "photons_p"))
-    results.append(df.Histo1D(("photons_theta", "", *bins_theta), "photons_theta"))
-    results.append(df.Histo1D(("photons_phi", "", *bins_phi), "photons_phi"))
-    results.append(df.Histo1D(("photons_no", "", *bins_count), "photons_no"))
+    results.append(df.Histo1D(("photons_p_cut0", "", *bins_p_mu), "photons_p"))
+    results.append(df.Histo1D(("photons_theta_cut0", "", *bins_theta), "photons_theta"))
+    results.append(df.Histo1D(("photons_phi_cut0", "", *bins_phi), "photons_phi"))
+    results.append(df.Histo1D(("photons_no_cut0", "", *bins_count), "photons_no"))
     
     results.append(df.Histo1D(("gen_photons_p", "", *bins_p_mu), "gen_photons_p"))
     results.append(df.Histo1D(("gen_photons_theta", "", *bins_theta), "gen_photons_theta"))
@@ -197,25 +199,45 @@ def build_graph(df, dataset):
     #results.append(df.Histo1D(("mll_gen_leps", "", *bins_m_ll), "mll_gen_leps"))
     
 
-
+    #df = df.Filter("daughter_higgs_collapsed == 23")
     
-    if dataset.name in sigProcs: results.append(df.Histo1D(("higgs_decay_cut0", "", *bins_count), "daughter_higgs_collapsed"))
-    
-
-    #########
-    ### CUT 1: at least a lepton
-    #########
-    df = df.Filter("leps_no >= 1")
-    if dataset.name in sigProcs: results.append(df.Histo1D(("higgs_decay_cut1", "", *bins_count), "daughter_higgs_collapsed"))
+    if dataset.name in sigProcs: 
+        results.append(df.Histo1D(("higgs_decay_cut0", "", *bins_count), "daughter_higgs_collapsed"))
         
+        df = df.Define("leps_all_from_higgs", "FCCAnalyses::from_Higgsdecay(leps_all, MCRecoAssociations0, MCRecoAssociations1, ReconstructedParticles, Particle, Particle0, Particle1)")
+        results.append(df.Histo1D(("leps_all_from_higgs_cut0", "", *bins_count), "leps_all_from_higgs"))
+        
+        df = df.Define("leps_from_higgs", "FCCAnalyses::from_Higgsdecay(leps, MCRecoAssociations0, MCRecoAssociations1, ReconstructedParticles, Particle, Particle0, Particle1)")
+        results.append(df.Histo1D(("leps_from_higgs_cut0", "", *bins_count), "leps_from_higgs"))
+    
+    
+    
+    df = df.Define("cut0", "0")
+    results.append(df.Histo1D(("cutFlow_cut0", "", *bins_count), "cut0"))
+
+    #########
+    ### CUT 1: at least a lepton with at least 1 isolated one
+    #########
+    df = df.Filter("leps_no >= 1 && leps_sel_iso.size() > 0").Define("cut1", "1")
+    results.append(df.Histo1D(("cutFlow_cut1", "", *bins_count), "cut1"))
+    if dataset.name in sigProcs: 
+        results.append(df.Histo1D(("higgs_decay_cut1", "", *bins_count), "daughter_higgs_collapsed"))
+        
+        results.append(df.Histo1D(("leps_all_from_higgs_cut1", "", *bins_count), "leps_all_from_higgs"))
+        results.append(df.Histo1D(("leps_from_higgs_cut1", "", *bins_count), "leps_from_higgs"))
+    
+    
     #########
     ### CUT 2 :at least 2 leptons, and build the resonance
     #########
-    df = df.Filter("leps_no >= 2")
+    df = df.Filter("leps_no >= 2").Define("cut2", "2")
+    results.append(df.Histo1D(("cutFlow_cut2", "", *bins_count), "cut2"))
+    
+    #df = df.Filter("leps_no == 2")
 
     # build the Z resonance based on the available leptons. Returns the best lepton pair compatible with the Z mass and recoil at 125 GeV
     # technically, it returns a ReconstructedParticleData object with index 0 the di-lepton system, index and 2 the leptons of the pair
-    df = df.Define("zbuilder_result", "FCCAnalyses::resonanceBuilder_mass_recoil(91.2, 125, 0, 240, false)(leps, MCRecoAssociations0, MCRecoAssociations1, ReconstructedParticles, Particle, Particle0, Particle1)")
+    df = df.Define("zbuilder_result", "FCCAnalyses::resonanceBuilder_mass_recoil(91.2, 125, 0.4, 240, true)(leps, MCRecoAssociations0, MCRecoAssociations1, ReconstructedParticles, Particle, Particle0, Particle1)")
     df = df.Define("zll", "ROOT::VecOps::RVec<edm4hep::ReconstructedParticleData>{zbuilder_result[0]}") # the Z
     df = df.Define("zll_leps", "ROOT::VecOps::RVec<edm4hep::ReconstructedParticleData>{zbuilder_result[1],zbuilder_result[2]}") # the leptons
     df = df.Define("zll_m", "FCCAnalyses::ReconstructedParticle::get_mass(zll)[0]")
@@ -224,26 +246,60 @@ def build_graph(df, dataset):
     df = df.Define("zll_recoil_m", "FCCAnalyses::ReconstructedParticle::get_mass(zll_recoil)[0]")
     df = df.Define("zll_category", "FCCAnalyses::polarAngleCategorization(0.8, 2.34)(zll_leps)")
     
+    df = df.Define("zll_leps_p", "FCCAnalyses::ReconstructedParticle::get_p(zll_leps)")
+    df = df.Define("zll_leps_dR", "FCCAnalyses::deltaR(zll_leps)")
+    df = df.Define("zll_leps_theta", "FCCAnalyses::ReconstructedParticle::get_theta(zll_leps)")
+     
+    df = df.Define("prompt_muons", "FCCAnalyses::select_prompt_leptons(zll_leps, MCRecoAssociations0, MCRecoAssociations1, ReconstructedParticles, Particle, Particle0, Particle1)")
+    df = df.Define("prompt_muons_no", "prompt_muons.size()")
+    #df = df.Filter("prompt_muons.size() == 2") 
 
     if dataset.name in sigProcs:
         results.append(df.Histo1D(("higgs_decay_cut2", "", *bins_count), "daughter_higgs_collapsed"))
+        
+        # for the selected muons, check whether they come from the Higgs (to optimize the pairing)
+        df = df.Define("zll_leps_from_higgs", "FCCAnalyses::from_Higgsdecay(zll_leps, MCRecoAssociations0, MCRecoAssociations1, ReconstructedParticles, Particle, Particle0, Particle1)")
+        results.append(df.Histo1D(("zll_leps_from_higgs_cut2", "", *bins_count), "zll_leps_from_higgs"))
+        results.append(df.Histo1D(("prompt_muons_cut2", "", *bins_count), "prompt_muons_no"))
+        #df = df.Filter("zll_leps_from_higgs == 0")
+        #results.append(df.Histo1D(("zll_p_cut2", "", *bins_p_ll), "zll_p"))
         #results.append(df.Histo2D(("higgs_decay_zed_leptonic_m_cut1", "", *(bins_count + bins_m_ll)), "daughter_higgs_collapsed", "zll_m")) # 2D hists filling cannot be arrays
         #results.append(df.Histo2D(("higgs_decay_zed_leptonic_p_cut1", "", *(bins_count + bins_m_ll)), "daughter_higgs_collapsed", "zll_p"))
         #results.append(df.Histo1D(("zed_leptonic_m_cut2", "", *bins_m_ll), "zll_m"))
         #results.append(df.Histo1D(("zed_leptonic_recoil_m_cut2", "", *bins_recoil), "zll_recoil_m"))
         
-
+        # branch it off
+        df2 = df.Filter("zll_leps_from_higgs == 0")
+        results.append(df2.Histo1D(("zll_m_correctPairs", "", *bins_m_ll), "zll_m"))
+        results.append(df2.Histo1D(("zll_recoil_m_correctPairs", "", *bins_recoil), "zll_recoil_m"))
+        results.append(df2.Histo1D(("zll_p_correctPairs", "", *bins_p_ll), "zll_p"))
+        results.append(df2.Histo1D(("leps_p_correctPairs", "", *bins_p_mu), "zll_leps_p"))
+        results.append(df2.Histo1D(("zll_leps_dR_correctPairs", "", *bins_dR), "zll_leps_dR"))
+        results.append(df2.Histo1D(("zll_leps_theta_correctPairs", "", *bins_theta), "zll_leps_theta"))
+        
+        df3 = df.Filter("zll_leps_from_higgs > 0")
+        results.append(df3.Histo1D(("zll_m_incorrectPairs", "", *bins_m_ll), "zll_m"))
+        results.append(df3.Histo1D(("zll_recoil_m_incorrectPairs", "", *bins_recoil), "zll_recoil_m"))
+        results.append(df3.Histo1D(("zll_p_incorrectPairs", "", *bins_p_ll), "zll_p"))
+        results.append(df3.Histo1D(("leps_p_incorrectPairs", "", *bins_p_mu), "zll_leps_p"))
+        results.append(df3.Histo1D(("zll_leps_dR_incorrectPairs", "", *bins_dR), "zll_leps_dR"))
+        results.append(df3.Histo1D(("zll_leps_theta_incorrectPairs", "", *bins_theta), "zll_leps_theta"))
+        
+        results.append(df.Histo1D(("leps_all_from_higgs_cut2", "", *bins_count), "leps_all_from_higgs"))
+        results.append(df.Histo1D(("leps_from_higgs_cut2", "", *bins_count), "leps_from_higgs"))
     
     #########
     ### CUT 3: Z mass window
     #########  
-    df = df.Filter("zll_m > 86 && zll_m < 96")
+    df = df.Filter("zll_m > 86 && zll_m < 96").Define("cut3", "3")
+    results.append(df.Histo1D(("cutFlow_cut3", "", *bins_count), "cut3"))
     #df = df.Filter("zed_leptonic_m[0] > 73 &&  zed_leptonic_m[0] < 120")
     #results.append(df.Histo1D(("zll_m_cut3", "", *bins_m_ll), "zll_m"))
     #results.append(df.Histo1D(("zll_recoil_m_cut3", "", *bins_recoil), "zll_recoil_m"))
     #results.append(df.Histo1D(("zll_p_cut3", "", *bins_p_ll), "zll_p"))
     if dataset.name in sigProcs:
         results.append(df.Histo1D(("higgs_decay_cut3", "", *bins_count), "daughter_higgs_collapsed")) 
+        results.append(df.Histo1D(("zll_leps_from_higgs_cut3", "", *bins_count), "zll_leps_from_higgs"))
         #results.append(df.Histo2D(("higgs_decay_zed_leptonic_m_cut4", "", *(bins_count + bins_m_ll)), "daughter_higgs_collapsed", "zed_leptonic_m_"))
         #results.append(df.Histo2D(("higgs_decay_zed_leptonic_p_cut4", "", *(bins_count + bins_m_ll)), "daughter_higgs_collapsed", "zed_leptonic_p_"))
         #results.append(df.Histo1D(("zed_leptonic_m_cut4", "", *bins_m_ll), "zed_leptonic_m"))
@@ -253,9 +309,11 @@ def build_graph(df, dataset):
     #########
     ### CUT 4: Z momentum
     #########  
-    df = df.Filter("zll_p > 20 && zll_p < 70")
+    df = df.Filter("zll_p > 20 && zll_p < 70").Define("cut4", "4")
+    results.append(df.Histo1D(("cutFlow_cut4", "", *bins_count), "cut4"))
     if dataset.name in sigProcs:
         results.append(df.Histo1D(("higgs_decay_cut4", "", *bins_count), "daughter_higgs_collapsed")) 
+        results.append(df.Histo1D(("zll_leps_from_higgs_cut4", "", *bins_count), "zll_leps_from_higgs"))
         #results.append(df.Histo1D(("zed_leptonic_p_cut5", "", *bins_p_ll), "zed_leptonic_p"))
         #results.append(df.Histo1D(("selected_muons_p_cut5", "", *bins_p_mu), "selected_muons_p"))
         #results.append(df.Histo2D(("higgs_decay_zed_leptonic_m_cut5", "", *(bins_count + bins_m_ll)), "daughter_higgs_collapsed", "zed_leptonic_m_"))
@@ -265,12 +323,21 @@ def build_graph(df, dataset):
         
     
     #########
-    ### CUT 5: cosThetaMiss
+    ### CUT 5: cosThetaMiss, for mass analysis
     #########  
-    df = df.Define("cosTheta_miss", "FCCAnalyses::get_cosTheta_miss(MissingET)") ## TODO: re-define missing ET
-    #df = df.Filter("cosTheta_miss[0] < 0.98")
+    df = df.Define("missingEnergy", "FCCAnalyses::missingEnergy(240., ReconstructedParticles)")
+    #df = df.Define("cosTheta_miss", "FCCAnalyses::get_cosTheta_miss(missingEnergy)")
+    df = df.Define("cosTheta_miss", "FCCAnalyses::get_cosTheta_miss(MissingET)")
+    
+    
+    
+    results.append(df.Histo1D(("cosThetaMiss_cut4", "", *bins_cosThetaMiss), "cosTheta_miss"))
+    
+    df = df.Filter("cosTheta_miss[0] < 0.98").Define("cut5", "5") # 0.98
+    results.append(df.Histo1D(("cutFlow_cut5", "", *bins_count), "cut5"))
     if dataset.name in sigProcs: 
         results.append(df.Histo1D(("higgs_decay_cut5", "", *bins_count), "daughter_higgs_collapsed")) 
+        results.append(df.Histo1D(("zll_leps_from_higgs_cut5", "", *bins_count), "zll_leps_from_higgs"))
         #results.append(df.Histo1D(("zed_leptonic_p_cut6", "", *bins_p_ll), "zed_leptonic_p"))
         #results.append(df.Histo1D(("selected_muons_p_cut6", "", *bins_p_mu), "selected_muons_p"))
         #results.append(df.Histo1D(("cosThetaMiss_cut6", "", *bins_cosThetaMiss), "cosTheta_miss"))
@@ -278,7 +345,12 @@ def build_graph(df, dataset):
         #results.append(df.Histo2D(("higgs_decay_zed_leptonic_p_cut6", "", *(bins_count + bins_m_ll)), "daughter_higgs_collapsed", "zed_leptonic_p_"))
         #results.append(df.Histo1D(("zed_leptonic_m_cut6", "", *bins_m_ll), "zed_leptonic_m"))
         #results.append(df.Histo1D(("zed_leptonic_recoil_m_cut6", "", *bins_recoil), "zed_leptonic_recoil_m"))
-        
+    
+    # ISR photons
+    results.append(df.Histo1D(("photons_p_cut5", "", *bins_p_mu), "photons_p"))
+    results.append(df.Histo1D(("photons_theta_cut5", "", *bins_theta), "photons_theta"))
+    results.append(df.Histo1D(("photons_phi_cut5", "", *bins_phi), "photons_phi"))
+    results.append(df.Histo1D(("photons_no_cut5", "", *bins_count), "photons_no"))        
     
     
     #df = df.Filter("muons_theta[0] < 2.14 && muons_theta[0] > 1.0 && muons_theta[1] < 2.14 && muons_theta[1] > 1.0")
@@ -290,14 +362,29 @@ def build_graph(df, dataset):
     #########  
     
     # final selection and histograms
-    df = df.Filter("zll_recoil_m < 140 && zll_recoil_m > 120")
+    df = df.Filter("zll_recoil_m < 140 && zll_recoil_m > 120").Define("cut6", "6")
+    results.append(df.Histo1D(("cutFlow_cut6", "", *bins_count), "cut6"))
+    if dataset.name in sigProcs: 
+        results.append(df.Histo1D(("higgs_decay_cut6", "", *bins_count), "daughter_higgs_collapsed")) 
+        results.append(df.Histo1D(("zll_leps_from_higgs_cut6", "", *bins_count), "zll_leps_from_higgs"))
+    
+    # ISR photons
+    results.append(df.Histo1D(("photons_p_cut6", "", *bins_p_mu), "photons_p"))
+    results.append(df.Histo1D(("photons_theta_cut6", "", *bins_theta), "photons_theta"))
+    results.append(df.Histo1D(("photons_phi_cut6", "", *bins_phi), "photons_phi"))
+    results.append(df.Histo1D(("photons_no_cut6", "", *bins_count), "photons_no"))
+    
+    
+    ########################
+    # Final histograms
+    ########################
+    
     results.append(df.Histo2D(("zll_m", "", *(bins_m_ll + bins_cat)), "zll_m", "zll_category"))
     results.append(df.Histo2D(("zll_recoil_m", "", *(bins_recoil + bins_cat)), "zll_recoil_m", "zll_category"))
     results.append(df.Histo2D(("zll_p", "", *(bins_p_ll + bins_cat)), "zll_p", "zll_category"))
     results.append(df.Histo2D(("leps_p", "", *(bins_p_mu + bins_cat)), "leps_p", "zll_category"))
     results.append(df.Histo2D(("cosThetaMiss", "", *(bins_cosThetaMiss + bins_cat)), "cosTheta_miss", "zll_category"))
-    if dataset.name in sigProcs: 
-        results.append(df.Histo1D(("higgs_decay", "", *bins_count), "daughter_higgs_collapsed")) 
+    
     
     # MC based recoil
     results.append(df.Histo1D(("zed_leptonic_m_MC", "", *bins_m_ll), "zed_leptonic_m_MC"))
@@ -422,33 +509,36 @@ if __name__ == "__main__":
     datasets = []
 
     # import spring2021 IDEA samples
-    import FCCee_spring2021_IDEA
+    #import FCCee_spring2021_IDEA
     import FCCee_preproduction_IDEA
-    #datasets = FCCee_spring2021_IDEA.getDatasets(filt="p8_ee_ZH_ecm240") # p8_ee_ZH_ecm240 
-    #datasets += FCCee_spring2021_IDEA.getDatasets(filt="wzp6_ee_mumuH_ecm240")
-    #datasets += FCCee_spring2021_IDEA.getDatasets(filt="p8_ee_Zmumu_ecm91")
-    #datasets = FCCee_spring2021_IDEA.getDatasets(filt="wzp6_ee_mumuH_*ecm240")
-    
+
     
     if args.flavor == "mumu": 
         
-        datasets += FCCee_spring2021_IDEA.getDatasets(filt="wzp6_ee_mumuH_ecm240") # nominal
+
+        signal = ["wzp6_ee_mumuH_ecm240"]
+        signal_mass = ["wzp6_ee_mumuH_mH-higher-100MeV_ecm240", "wzp6_ee_mumuH_mH-higher-50MeV_ecm240", "wzp6_ee_mumuH_mH-lower-100MeV_ecm240", "wzp6_ee_mumuH_mH-lower-50MeV_ecm240"]
+        bkgs = ["p8_ee_WW_mumu_ecm240", "p8_ee_ZZ_Zll_ecm240", "wzp6_ee_mumu_ecm240", "wzp6_ee_tautau_ecm240", "p8_ee_Zll_ecm240"] # p8_ee_WW_ecm240 p8_ee_ZZ_ecm240
         
-        #datasets += FCCee_preproduction_IDEA.getDatasets(filt="wzp6_ee_mumuH_ecm240_prefall") # muon iso fix
-        #datasets += FCCee_preproduction_IDEA.getDatasets(filt="wz3p6_ee_mumuH_ecm240_prefall")
-        ####datasets += FCCee_preproduction_IDEA.getDatasets(filt="wz3p6_ee_mumuH_ecm240_winter") # muon reso fix
-        #datasets += FCCee_preproduction_IDEA.getDatasets(filt="wz3p6_ee_mumuH_ecm240_winter_v2") # electron fix
-        #datasets += FCCee_preproduction_IDEA.getDatasets(filt="wz2p6_ee_mumuH_ecm240_winter_v2")
-        
+        select = signal + signal_mass + bkgs
+        #select = ["wzp6_ee_mumuH_ecm240"]
+        datasets += FCCee_preproduction_IDEA.getDatasets(select=select)
+          
+
     
     if args.flavor == "ee":
-        #
-        datasets += FCCee_preproduction_IDEA.getDatasets(filt="wzp6_ee_eeH_ecm240_winter") 
-        #datasets += FCCee_preproduction_IDEA.getDatasets(filt="wzp6_ee_eeH_ecm240_winter_v2") # 2x reso
     
-    
-    
-    
+        signal = ["wzp6_ee_eeH_ecm240"]
+        signal_mass = ["wzp6_ee_eeH_mH-higher-100MeV_ecm240", "wzp6_ee_eeH_mH-higher-50MeV_ecm240", "wzp6_ee_eeH_mH-lower-100MeV_ecm240", "wzp6_ee_eeH_mH-lower-50MeV_ecm240"]
+        bkgs = ["p8_ee_WW_ecm240", "p8_ee_ZZ_Zll_ecm240", "wzp6_ee_ee_Mee_30_150_ecm240", "wzp6_ee_tautau_ecm240", "p8_ee_Zll_ecm240"] #  p8_ee_ZZ_ecm240
+        
+        select = signal + signal_mass + bkgs
+        #select = ["wzp6_ee_eeH_ecm240"]
+        datasets += FCCee_preproduction_IDEA.getDatasets(select=select)
+        
+        
+        
+
 
     result = functions.build_and_run(datasets, build_graph, "tmp/output_mass_xsec_%s.root" % args.flavor, maxFiles=args.maxFiles, norm=True, lumi=5000000)
     

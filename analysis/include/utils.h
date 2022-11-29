@@ -14,10 +14,131 @@
 
 namespace FCCAnalyses {
     
-float missingMass(float ecm, ROOT::VecOps::RVec<edm4hep::ReconstructedParticleData> in) {
+    
+// computes:
+/*
+struct eventVariables {
+    eventVariables(float arg_ecm, float arg_p_cutoff);
+    float ecm = 0;
+    float p_cutoff = 0;
+    int operator() (ROOT::VecOps::RVec<edm4hep::ReconstructedParticleData> in);
+};
+
+eventVariables::eventVariables(float arg_ecm, float arg_p_cutoff) : ecm(arg_ecm), p_cutoff(arg_p_cutoff) {};
+int eventVariables::operator() (ROOT::VecOps::RVec<edm4hep::ReconstructedParticleData> in) {
+    
+    ROOT::VecOps::RVec<edm4hep::ReconstructedParticleData> ret;
+    
     float px = 0, py = 0, pz = 0, e = 0;
     for(auto &p : in) {
-        if (std::sqrt(p.momentum.x * p.momentum.x + p.momentum.y*p.momentum.y) < 1.) continue;
+        if (std::sqrt(p.momentum.x * p.momentum.x + p.momentum.y*p.momentum.y) < p_cutoff) continue;
+        px += p.momentum.x;
+        py += p.momentum.y;
+        pz += p.momentum.z;
+        e += p.energy;
+    }
+    
+    // missing momentum/energy
+    edm4hep::ReconstructedParticleData Emiss;
+    Emiss.momentum.x = -px;
+    Emiss.momentum.y = -py;
+    Emiss.momentum.z = -pz;
+    Emiss.energy = ecm-e;
+    ret.emplace_back(Emiss);
+    
+    // visible energy
+    edm4hep::ReconstructedParticleData Evis;
+    Evis.momentum.x = px;
+    Evis.momentum.y = py;
+    Evis.momentum.z = pz;
+    Evis.energy = e;
+    ret.emplace_back(Evis);
+    
+    // missing mass
+    float ptot2 = std::pow(px, 2) + std::pow(py, 2) + std::pow(pz, 2);
+    float de2 = std::pow(ecm - e, 2);
+    if (de2 < ptot2) return -999.;
+    float Mmiss = std::sqrt(de2 - ptot2);
+    return Mmiss;
+    
+
+    // visible mass
+    de2 = std::pow(ecm - e, 2);
+    if (de2 < ptot2) return -999.;
+    float Mmiss = std::sqrt(de2 - ptot2);
+    return Mmiss;
+    
+    edm4hep::ReconstructedParticleData res;
+    res.momentum.x = px;
+    res.momentum.y = py;
+    res.momentum.z = pz;
+    res.energy = e;
+    ret.emplace_back(res);
+    return ret;
+}
+*/
+    
+  
+
+float deltaR(ROOT::VecOps::RVec<edm4hep::ReconstructedParticleData> in) {
+    
+    if(in.size() != 2) return -1;
+    
+    ROOT::Math::PxPyPzEVector tlv1;
+    tlv1.SetPxPyPzE(in.at(0).momentum.x, in.at(0).momentum.y, in.at(0).momentum.z, in.at(0).energy);
+
+    ROOT::Math::PxPyPzEVector tlv2;
+    tlv2.SetPxPyPzE(in.at(1).momentum.x, in.at(1).momentum.y, in.at(1).momentum.z, in.at(1).energy);
+    
+    return std::sqrt(std::pow(tlv1.Eta()-tlv2.Eta(), 2) + std::pow(tlv1.Phi()-tlv2.Phi(), 2));
+   
+}
+
+
+
+ROOT::VecOps::RVec<edm4hep::ReconstructedParticleData> missingEnergy(float ecm, ROOT::VecOps::RVec<edm4hep::ReconstructedParticleData> in, float p_cutoff = 0.0) {
+    float px = 0, py = 0, pz = 0, e = 0;
+    for(auto &p : in) {
+        if (std::sqrt(p.momentum.x * p.momentum.x + p.momentum.y*p.momentum.y) < p_cutoff) continue;
+        px += -p.momentum.x;
+        py += -p.momentum.y;
+        pz += -p.momentum.z;
+        e += p.energy;
+    }
+    
+    ROOT::VecOps::RVec<edm4hep::ReconstructedParticleData> ret;
+    edm4hep::ReconstructedParticleData res;
+    res.momentum.x = px;
+    res.momentum.y = py;
+    res.momentum.z = pz;
+    res.energy = ecm-e;
+    ret.emplace_back(res);
+    return ret;
+    
+}
+
+float visibleMass(float ecm, ROOT::VecOps::RVec<edm4hep::ReconstructedParticleData> in, float p_cutoff = 0.0) {
+    float px = 0, py = 0, pz = 0, e = 0;
+    for(auto &p : in) {
+        if (std::sqrt(p.momentum.x * p.momentum.x + p.momentum.y*p.momentum.y) < p_cutoff) continue;
+        px += p.momentum.x;
+        py += p.momentum.y;
+        pz += p.momentum.z;
+        e += p.energy;
+    }
+    if(ecm < e) return -99.;
+
+    float ptot2 = std::pow(px, 2) + std::pow(py, 2) + std::pow(pz, 2);
+    float de2 = std::pow(e, 2);
+    if (de2 < ptot2) return -999.;
+    float Mvis = std::sqrt(de2 - ptot2);
+    return Mvis;
+}
+  
+float missingMass(float ecm, ROOT::VecOps::RVec<edm4hep::ReconstructedParticleData> in, float p_cutoff = 0.0) {
+    float px = 0, py = 0, pz = 0, e = 0;
+    for(auto &p : in) {
+        if (std::sqrt(p.momentum.x * p.momentum.x + p.momentum.y*p.momentum.y) < p_cutoff) continue;
         px += p.momentum.x;
         py += p.momentum.y;
         pz += p.momentum.z;
@@ -442,7 +563,6 @@ ROOT::VecOps::RVec<edm4hep::ReconstructedParticleData>  sel_eta::operator() (ROO
 bool from_prompt(int i, ROOT::VecOps::RVec<edm4hep::MCParticleData> in, ROOT::VecOps::RVec<int> ind) {
 
     bool ret = false;
-    std::vector<int> res;
     // i = index of a MC particle in the Particle block
     // in = the Particle collection
     // ind = the block with the indices for the parents, Particle#0.index
@@ -459,15 +579,16 @@ bool from_prompt(int i, ROOT::VecOps::RVec<edm4hep::MCParticleData> in, ROOT::Ve
     //std::cout << "Chain for idx=" << i << " with PDG=" << in.at(i).PDG << " having db=" << db << " and de=" << de << std::endl;
     
 
-    if(db == de) return false; // top of tree
-    
+    if(db == de) return true; // top of tree
+
    
     for(int id = db; id < de; id++) { // loop over all parents
 
         int iparent = ind.at(id);
         //std::cout << " Analyze parent idx=" << iparent << " PDG=" << in.at(iparent).PDG << std::endl;
         
-        if(std::abs(in.at(iparent).PDG) == 11) ret = true; // if prompt
+        //if(std::abs(in.at(iparent).PDG) == 11) ret = true; // if prompt
+        if(iparent == 0) return true;
         else if(std::abs(in.at(iparent).PDG) == 25) ret = false; // non prompt, from Higgs decays
         else ret = from_prompt(iparent, in, ind); // otherwise go up in the decay tree
     }

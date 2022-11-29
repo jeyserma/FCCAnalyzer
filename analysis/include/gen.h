@@ -222,7 +222,6 @@ std::vector<int> FSR(ROOT::VecOps::RVec<edm4hep::MCParticleData> mc, ROOT::VecOp
 bool from_Higgsdecay(int i, ROOT::VecOps::RVec<edm4hep::MCParticleData> in, ROOT::VecOps::RVec<int> ind) {
 
     bool ret = false;
-    std::vector<int> res;
     // i = index of a MC particle in the Particle block
     // in = the Particle collection
     // ind = the block with the indices for the parents, Particle#0.index
@@ -257,17 +256,16 @@ bool from_Higgsdecay(int i, ROOT::VecOps::RVec<edm4hep::MCParticleData> in, ROOT
 
 
 
-// for a given muon collection (legs), it returns whether or not one of these muons come (indirectly) from a Higgs decay
-bool from_Higgsdecay(ROOT::VecOps::RVec<edm4hep::ReconstructedParticleData> legs, ROOT::VecOps::RVec<int> recind, ROOT::VecOps::RVec<int> mcind, ROOT::VecOps::RVec<edm4hep::ReconstructedParticleData> reco, ROOT::VecOps::RVec<edm4hep::MCParticleData> mc, ROOT::VecOps::RVec<int> parents, ROOT::VecOps::RVec<int> daugther) {
+// for a given lepton collection (legs), it returns whether or not one of these muons come (indirectly) from a Higgs decay
+int from_Higgsdecay(ROOT::VecOps::RVec<edm4hep::ReconstructedParticleData> legs, ROOT::VecOps::RVec<int> recind, ROOT::VecOps::RVec<int> mcind, ROOT::VecOps::RVec<edm4hep::ReconstructedParticleData> reco, ROOT::VecOps::RVec<edm4hep::MCParticleData> mc, ROOT::VecOps::RVec<int> parents, ROOT::VecOps::RVec<int> daugther) {
     
-    bool ret = false;
+    int ret = 0;
     for (size_t i = 0; i < legs.size(); ++i) {
         
         int track_index = legs[i].tracks_begin;
         int mc_index = ReconstructedParticle2MC::getTrack2MC_index(track_index, recind, mcind, reco);
         if(from_Higgsdecay(mc_index, mc, parents)) {
-            ret = true;
-            break;
+            ret += 1;
         }
     }
     
@@ -745,20 +743,21 @@ ROOT::VecOps::RVec<edm4hep::ReconstructedParticleData> resonanceBuilder_mass_rec
             float boost = tg.P();
             float mass = std::pow(result.at(i).mass - m_resonance_mass, 2); // mass
             float rec = std::pow(recoil_fcc.mass - m_recoil_mass, 2); // recoil
-            float d = mass + chi2_recoil_frac*rec;
+            float d = (1.0-chi2_recoil_frac)*mass + chi2_recoil_frac*rec;
             
             if(d < d_min) {
                 d_min = d;
                 idx_min = i;
             }
+
      
         }
         if(idx_min > -1) { 
             bestReso.push_back(result.at(idx_min));
             auto & l1 = legs[pairs[idx_min][0]];
             auto & l2 = legs[pairs[idx_min][1]];
-            result.emplace_back(l1);
-            result.emplace_back(l2);
+            bestReso.emplace_back(l1);
+            bestReso.emplace_back(l2);
         }
         else {
             std::cout << "ERROR: resonanceBuilder_mass_recoil, no mininum found." << std::endl;

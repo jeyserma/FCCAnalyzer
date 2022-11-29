@@ -129,8 +129,7 @@ def makeResolutionPlot(hName, xMin, xMax, yMin, yMax, xTitle, yTitle, rebin=1, l
     leg.SetNColumns(1)
     leg.SetTextSize(0.035)
     leg.SetMargin(0.1)
-    leg.AddEntry(h1, "%s (RMS=%.5f)" % (l1, h1.GetRMS()), "L")
-    leg.AddEntry(h2, "%s (RMS=%.5f)" % (l2, h2.GetRMS()), "L")
+    
     
     cfg = {
 
@@ -148,6 +147,22 @@ def makeResolutionPlot(hName, xMin, xMax, yMin, yMax, xTitle, yTitle, rebin=1, l
         'topRight'          : "#sqrt{s} = 240 GeV, 5 ab^{#minus1}", 
         'topLeft'           : "#bf{FCCee} #scale[0.7]{#it{Simulation}}",
     }
+    
+    a = h1.GetBinCenter(h1.FindFirstBinAbove(h1.GetMaximum()/2))
+    b = h1.GetBinCenter(h1.FindLastBinAbove(h1.GetMaximum()/2))
+    gauss1 = ROOT.TF1("gauss1", "gaus", a, b)
+    h1.Fit("gauss1", "R")
+    
+    a = h2.GetBinCenter(h2.FindFirstBinAbove(h2.GetMaximum()/2))
+    b = h2.GetBinCenter(h2.FindLastBinAbove(h2.GetMaximum()/2))    
+    gauss2 = ROOT.TF1("gauss2", "gaus", a, b)
+    h2.Fit("gauss2", "R")                  
+                
+    sigma1 = gauss1.GetParameter(2)
+    sigma2 = gauss2.GetParameter(2)
+    
+    leg.AddEntry(h1, "%s (RMS=%.2f, #sigma=%.2f MeV)" % (l1, h1.GetRMS()*1000, sigma1*1000), "L")
+    leg.AddEntry(h2, "%s (RMS=%.2f, #sigma=%.2f MeV)" % (l2, h2.GetRMS()*1000, sigma2*1000), "L")
 
     plotter.cfg = cfg
     canvas = plotter.canvas()
@@ -155,7 +170,14 @@ def makeResolutionPlot(hName, xMin, xMax, yMin, yMax, xTitle, yTitle, rebin=1, l
     dummy.Draw("HIST")
         
     h1.Draw("SAME HIST")
-    h2.Draw("SAME HIST")    
+    h2.Draw("SAME HIST")
+    
+    gauss1.Draw("L SAME")
+    gauss1.SetLineColor(ROOT.kBlack)
+    
+    gauss2.Draw("L SAME")
+    gauss2.SetLineColor(ROOT.kBlack)
+    
     leg.Draw("SAME") 
     plotter.aux()
     canvas.SetGrid()  
@@ -189,16 +211,20 @@ if __name__ == "__main__":
     outDir = "/eos/user/j/jaeyserm/www/FCCee/ZH_mass_xsec/sampleComparison/spring2021_winter2023/"
     
     
-    #f1, p1, l1 = "tmp/output_mass_xsec_mumu.root", "wz2p6_ee_mumuH_ecm240_winter_v2", "Winter 2023, muons"
-    #f2, p2, l2 = "tmp/output_mass_xsec_ee.root", "wzp6_ee_eeH_ecm240_winter", "Winter 2023, electrons"
-    #outDir = "/eos/user/j/jaeyserm/www/FCCee/ZH_mass_xsec/sampleComparison/winter2023_electron_muon/"
+    f1, p1, l1 = "tmp/validation_mumu.root", "wzp6_ee_mumuH_ecm240", "Winter 2023, muons"
+    f2, p2, l2 = "tmp/validation_ee.root", "wzp6_ee_eeH_ecm240", "Winter 2023, electrons"
+    outDir = "/eos/user/j/jaeyserm/www/FCCee/ZH_mass_xsec/sampleComparison/winter2023_electron_muon/"
+    
+    f1, p1, l1 = "tmp/validation_mumu.root", "muon_gun", "Winter 2023, muon gun"
+    f2, p2, l2 = "tmp/validation_mumu.root", "muon_gun", "Winter 2023, muon gun"
+    outDir = "/eos/user/j/jaeyserm/www/FCCee/ZH_mass_xsec/sampleComparison/winter2023_gun/"
     
     #f1, p1, l1 = "tmp/output_mass_xsec_ee.root", "wzp6_ee_eeH_ecm240_winter", "Winter 2023, electrons"
     #f2, p2, l2 = "tmp/output_mass_xsec_ee.root", "wzp6_ee_eeH_ecm240_winter_v2", "Winter 2023, electrons, smeared"
     #outDir = "/eos/user/j/jaeyserm/www/FCCee/ZH_mass_xsec/sampleComparison/winter2023_electrons/"
     
-   
-
+    makeResolutionPlot("muons_reso_cut0", 0.98, 1.02, 0, 0.03, "Resolution (p_{reco}/p_{gen})", "Events (normalized)", rebin=10)
+    quit()
     makePlot("muons_p_cut0", 0, 100, 0, 0.05, "p (GeV)", "Events (normalized)", rebin=100)
     makePlot("muons_p_gen_cut0", 0, 100, 0, 0.05, "p (GeV)", "Events (normalized)", rebin=100)
     makePlot("muons_no_cut0", 0, 8, 0, 1, "Multiplicity", "Events (normalized)", rebin=1)

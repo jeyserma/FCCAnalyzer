@@ -40,7 +40,7 @@ def build_graph(df, dataset):
 
     print("build graph", dataset.name)
     results = []
-    sigProcs = ["wzp6_ee_mumuH_ecm240", "p8_ee_ZH_ecm240", "wzp6_ee_mumuH_ecm240_prefall", "wz3p6_ee_mumuH_ecm240_prefall", "wz3p6_ee_mumuH_ecm240_winter", "wz3p6_ee_mumuH_ecm240_winter_v2", "wzp6_ee_eeH_ecm240_winter", "wzp6_ee_eeH_ecm240_winter_v2", "wz2p6_ee_mumuH_ecm240_winter_v2"]
+    sigProcs = ["wzp6_ee_mumuH_ecm240", "p8_ee_ZH_ecm240", "wzp6_ee_mumuH_ecm240_prefall", "wz3p6_ee_mumuH_ecm240_prefall", "wz3p6_ee_mumuH_ecm240_winter", "wz3p6_ee_mumuH_ecm240_winter_v2", "wzp6_ee_eeH_ecm240_winter", "wzp6_ee_eeH_ecm240_winter_v2", "wz2p6_ee_mumuH_ecm240_winter_v2", "wzp6_ee_eeH_ecm240"]
     
     df = df.Define("weight", "1.0")
     weightsum = df.Sum("weight")
@@ -52,10 +52,7 @@ def build_graph(df, dataset):
     df = df.Alias("MCRecoAssociations1", "MCRecoAssociations#1.index")
     df = df.Alias("Photon0", "Photon#0.index")
     if args.flavor == "mumu":
-        if dataset.name == "wzp6_ee_mumuH_ecm240":
-            df = df.Alias("Muon0", "AllMuon#0.index")
-        else:
-            df = df.Alias("Muon0", "Muon#0.index")
+        df = df.Alias("Muon0", "Muon#0.index")
     else:
         df = df.Alias("Muon0", "Electron#0.index")
      
@@ -166,7 +163,7 @@ def build_graph(df, dataset):
     results.append(df.Histo1D(("muons_iso_cut0", "", *bins_iso), "muons_iso"))
     results.append(df.Histo1D(("muons_reso_cut0", "", *bins_resolution), "muons_reso"))
     
-
+    
     results.append(df.Histo1D(("selected_muons_p_cut0", "", *bins_p_mu), "selected_muons_p"))
     results.append(df.Histo1D(("selected_muons_theta_cut0", "", *bins_theta), "selected_muons_theta"))
     results.append(df.Histo1D(("selected_muons_phi_cut0", "", *bins_phi), "selected_muons_phi"))
@@ -174,7 +171,8 @@ def build_graph(df, dataset):
     results.append(df.Histo1D(("selected_muons_no_cut0", "", *bins_count), "selected_muons_no"))
     results.append(df.Histo1D(("selected_muons_iso_cut0", "", *bins_iso), "selected_muons_iso"))
     results.append(df.Histo1D(("selected_muons_reso_cut0", "", *bins_resolution), "selected_muons_reso"))
-    
+    return results, weightsum
+    '''
     results.append(df.Histo1D(("prompt_muons_p_cut0", "", *bins_p_mu), "prompt_muons_p"))
     results.append(df.Histo1D(("prompt_muons_theta_cut0", "", *bins_theta), "prompt_muons_theta"))
     results.append(df.Histo1D(("prompt_muons_phi_cut0", "", *bins_phi), "prompt_muons_phi"))
@@ -188,7 +186,7 @@ def build_graph(df, dataset):
     results.append(df.Histo1D(("gen_prompt_muons_phi_cut0", "", *bins_phi), "gen_prompt_muons_phi"))
     results.append(df.Histo1D(("gen_prompt_muons_charge_cut0", "", *bins_charge), "gen_prompt_muons_charge"))
     results.append(df.Histo1D(("gen_prompt_muons_no_cut0", "", *bins_count), "gen_prompt_muons_no"))
-    
+    '''
     results.append(df.Histo1D(("photons_p", "", *bins_p_mu), "photons_p"))
     results.append(df.Histo1D(("photons_theta", "", *bins_theta), "photons_theta"))
     results.append(df.Histo1D(("photons_phi", "", *bins_phi), "photons_phi"))
@@ -206,6 +204,7 @@ def build_graph(df, dataset):
     
     
     # forward/central resolution
+    '''
     df = df.Define("muons_central", "FCCAnalyses::sel_eta(0,0.8,1)(muons)")
     df = df.Define("muons_forward", "FCCAnalyses::sel_eta(0.8,20,1)(muons)")
     df = df.Define("muons_forward_m", "FCCAnalyses::sel_eta(-20,-0.8,0)(muons)")
@@ -245,7 +244,7 @@ def build_graph(df, dataset):
     if dataset.name in sigProcs: results.append(df.Histo1D(("higgs_decay_cut0", "", *bins_count), "daughter_higgs_collapsed"))
     
     # bare plots
-    
+    '''
    
     #########
     ### CUT 1
@@ -389,12 +388,12 @@ if __name__ == "__main__":
         #datasets += FCCee_preproduction_IDEA.getDatasets(filt="wz3p6_ee_mumuH_ecm240_prefall")
         ####datasets += FCCee_preproduction_IDEA.getDatasets(filt="wz3p6_ee_mumuH_ecm240_winter") # muon reso fix
         #datasets += FCCee_preproduction_IDEA.getDatasets(filt="wz3p6_ee_mumuH_ecm240_winter_v2") # electron fix
-        datasets += FCCee_preproduction_IDEA.getDatasets(filt="wz2p6_ee_mumuH_ecm240_winter_v2")
-        
+        #datasets += FCCee_preproduction_IDEA.getDatasets(filt="wzp6_ee_mumuH_ecm240")
+        datasets = FCCee_preproduction_IDEA.getDatasets(filt="muon_gun")
     
     if args.flavor == "ee":
         #
-        datasets += FCCee_preproduction_IDEA.getDatasets(filt="wzp6_ee_eeH_ecm240_winter") 
+        datasets += FCCee_preproduction_IDEA.getDatasets(filt="wzp6_ee_eeH_ecm240") 
         #datasets += FCCee_preproduction_IDEA.getDatasets(filt="wzp6_ee_eeH_ecm240_winter_v2") # 2x reso
     
     

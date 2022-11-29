@@ -4,6 +4,8 @@ import time
 import ROOT
 from dataset import Dataset
 
+ROOT.TH1.SetDefaultSumw2(True)
+
 
 def build_and_run(datadict, build_function, outfile, maxFiles=-1, norm=False, lumi=1.):
     time0 = time.time()
@@ -25,12 +27,12 @@ def build_and_run(datadict, build_function, outfile, maxFiles=-1, norm=False, lu
             chain.Add(fpath)
             nFiles += 1
             if maxFiles > 0 and nFiles >= maxFiles: break
-        print(f"Import {dataset.name} with {nFiles} files")
+        nEvents = chain.GetEntries()
+        print(f"Import {dataset.name} with {nFiles} files and {nEvents} events")
     
         # black magic why this needs to be protected from gc
         chains.append(chain)
 
-        print("event df")
         df = ROOT.ROOT.RDataFrame(chain)
 
         evtcount = df.Count()
