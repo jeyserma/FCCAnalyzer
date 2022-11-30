@@ -8,7 +8,7 @@ ROOT.gStyle.SetOptTitle(0)
 import plotter
 
 
-def makePlot(hName, outName, xMin=0, xMax=100, yMin=1, yMax=1e5, xLabel="xlabel", yLabel="Events", logX=False, logY=True, rebin=1, legPos=[0.65, 0.75, 0.9, 0.9]):
+def makeStackedPlot(hName, outName, xMin=0, xMax=100, yMin=1, yMax=1e5, xLabel="xlabel", yLabel="Events", logX=False, logY=True, rebin=1, legPos=[0.65, 0.75, 0.9, 0.9]):
 
 
     st = ROOT.THStack()
@@ -53,7 +53,7 @@ def makePlot(hName, outName, xMin=0, xMax=100, yMin=1, yMax=1e5, xLabel="xlabel"
         'xtitle'            : xLabel,
         'ytitle'            : yLabel,
             
-        'topRight'          : "#sqrt{s} = 91 GeV, 155 ab^{#minus1}",
+        'topRight'          : "#sqrt{s} = 91 GeV, 150 ab^{#minus1}",
         'topLeft'           : "#bf{FCC-ee} #scale[0.7]{#it{Simulation}}",
 
     }
@@ -94,12 +94,8 @@ if __name__ == "__main__":
     fIn = ROOT.TFile("tmp/output_z_xsec_%s.root" % flavor)
     outDir = "/eos/user/j/jaeyserm/www/FCCee/Z_xsec/plots_%s/" % flavor
     
-    cuts = ["cut0", "cut1", "cut2", "cut3", "cut4"]
-
     if flavor == "mumu":
-    
-        labels = ["All events", "#geq 1 #mu^{#pm}", "#geq 2 #mu^{#pm}", "#mu^{+}#mu^{#minus} pair", "73 < m_{#mu^{+}#mu^{#minus}} < 109"]
-    
+        
         procs = ["Zmumu", "Ztautau"] # this is the order of the plot
         procs_legends = ["Z #rightarrow #mu^{+}#mu^{#minus}", "Z #rightarrow #tau^{+}#tau^{#minus}"]
         procs_colors = [ROOT.TColor.GetColor(248, 206, 104), ROOT.TColor.GetColor(222, 90, 106), ROOT.TColor.GetColor(100, 192, 232), ROOT.TColor.GetColor(155, 152, 204)] # from
@@ -110,7 +106,26 @@ if __name__ == "__main__":
             "Zcc"           : ["p8_ee_Zcc_ecm91"]
         }
         
+
+        makeStackedPlot("zll_m_cut4", "zll_m_cut4", xMin=86, xMax=96, yMin=1e7, yMax=1e10, xLabel="m_{ll} (GeV)", yLabel="Events / 10 MeV", logY=True, rebin=1)
+        makeStackedPlot("zll_m_cut4", "zll_m_cut4_noLogY", xMin=86, xMax=96, yMin=1e7, yMax=5e9, xLabel="m_{ll} (GeV)", yLabel="Events / 10 MeV", logY=False, rebin=1)
+        makeStackedPlot("zll_p_cut4", "zll_p_cut4", xMin=0, xMax=5, yMin=1e7, yMax=1e10, xLabel="p_{ll} (GeV)", yLabel="Events / 10 MeV", logY=True, rebin=1)
+        makeStackedPlot("leps_p_cut4", "leps_p_cut4", xMin=0, xMax=80, yMin=1e5, yMax=1e11, xLabel="p leptons (GeV)", yLabel="Events / 10 MeV", logY=True, rebin=1)
+
+
+    if flavor == "qq":
     
-    makePlot("zll_m_cut4", "zll_m_cut4", xMin=73, xMax=109, yMin=1e6, yMax=1e10, xLabel="m_{ll} (GeV)", yLabel="Events / 10 MeV", logY=True, rebin=1)
-    makePlot("zll_p_cut4", "zll_p_cut4", xMin=0, xMax=5, yMin=1e7, yMax=1e10, xLabel="p_{ll} (GeV)", yLabel="Events / 10 MeV", logY=True, rebin=1)
-    makePlot("leps_p_cut4", "leps_p_cut4", xMin=0, xMax=80, yMin=1e5, yMax=1e11, xLabel="p leptons (GeV)", yLabel="Events / 10 MeV", logY=True, rebin=1)
+        procs = ["Zbb", "Zcc", "Zuds"] # this is the order of the plot
+        procs_legends = ["Z #rightarrow b#bar{b}", "Z #rightarrow c#bar{c}", "Z #rightarrow q#bar{q} (light)"]
+        procs_colors = [ROOT.TColor.GetColor(248, 206, 104), ROOT.TColor.GetColor(222, 90, 106), ROOT.TColor.GetColor(100, 192, 232), ROOT.TColor.GetColor(155, 152, 204)] # from
+        procs_cfg = { 
+            "Zbb"   : ["p8_ee_Zbb_ecm91"],
+            "Zcc"   : ["p8_ee_Zcc_ecm91"],
+            "Zuds"  : ["p8_ee_Zuds_ecm91"],
+        }
+        
+
+        makeStackedPlot("dijet_m", "dijet_m", xMin=40, xMax=120, yMin=1e7, yMax=1e11, xLabel="m_{jj} (GeV)", yLabel="Events / 100 MeV", logY=True, rebin=1, legPos=[0.2, 0.75, 0.5, 0.9])
+        makeStackedPlot("njets", "njets", xMin=0, xMax=10, yMin=1e7, yMax=1e13, xLabel="Number of jets", yLabel="Events", logY=True, rebin=1)
+        makeStackedPlot("visibleMass", "visibleMass", xMin=40, xMax=120, yMin=1e7, yMax=1e11, xLabel="Visible mass (GeV)", yLabel="Events / 100 MeV", logY=True, rebin=1, legPos=[0.2, 0.75, 0.5, 0.9])
+        makeStackedPlot("missingEnergy", "missingEnergy", xMin=0, xMax=50, yMin=1e7, yMax=1e11, xLabel="Missing energy (GeV)", yLabel="Events / 100 MeV", logY=True, rebin=1)
