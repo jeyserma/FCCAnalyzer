@@ -5,7 +5,8 @@ This analysis code uses class definitions, functions and modules of the main FCC
 
 ## Setup
 Fork FCC analysis repo: https://github.com/HEP-FCC/FCCAnalyses
-Fork this repo https://github.com/HEP-FCC/FCCAnalyses
+
+Fork this repo https://github.com/jeyserma/FCCAnalyzer
 
 Clone the repository with the FCCAnalyses as submodule:
 
@@ -31,7 +32,6 @@ To use the FCCAnalyzer, just source the setup bash script:
 
 ```shell
 source ./setup.sh
-cd ..
 ```
 
 ## Combine environment
@@ -51,5 +51,4 @@ In order to run Combine, source the following script (instead of setup.sh):
 
 ```shell
 source ./initCombine.sh
-cd ..
 ```
