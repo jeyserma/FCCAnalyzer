@@ -10,9 +10,6 @@ ROOT.gStyle.SetOptTitle(0)
 
 def makePlot(g_pulls, h_pulls, avg=0):
 
-    print(avg)
-
-    ############# xsec
     canvas = ROOT.TCanvas("c", "c", 800, 800)
     canvas.SetTopMargin(0.08)
     canvas.SetBottomMargin(0.1)
@@ -22,11 +19,8 @@ def makePlot(g_pulls, h_pulls, avg=0):
     canvas.SetGrid(1, 0)
     canvas.SetTickx(1)
 
-    xTitle = "Selection efficiency (%)"
-
-
-
-       
+    xTitle = "Selection efficiency Z(#mu^{#plus}#mu^{#minus})H  (%)"
+    if flavor == "ee": xTitle = "Selection efficiency Z(e^{#plus}e^{#minus})H  (%)"
 
 
     h_pulls.GetXaxis().SetTitleSize(0.04)
@@ -62,7 +56,7 @@ def makePlot(g_pulls, h_pulls, avg=0):
     g_pulls.SetMarkerSize(1.2)
     g_pulls.SetMarkerStyle(20)
     g_pulls.SetLineWidth(2)
-    g_pulls.Draw('P SAME')
+    g_pulls.Draw('P0 SAME')
     
     
     latex = ROOT.TLatex()
@@ -84,8 +78,6 @@ def makePlot(g_pulls, h_pulls, avg=0):
     latex.SetTextColor(ROOT.kGray+1)
     latex.DrawLatex(0.2, 0.17, "avg. #pm 0.1 %")
     
-
-        
     canvas.SaveAs("/eos/user/j/jaeyserm/www/FCCee/ZH_mass_xsec/plots_%s/decay_mode_independence.png" % flavor)
     canvas.SaveAs("/eos/user/j/jaeyserm/www/FCCee/ZH_mass_xsec/plots_%s/decay_mode_independence.pdf" % flavor)    
     
@@ -93,27 +85,36 @@ def makePlot(g_pulls, h_pulls, avg=0):
 
 if __name__ == "__main__":
 
-    flavor = "mumu"
-    proc = "wzp6_ee_mumuH_ecm240" # wzp6_ee_mumuH_ecm240 wzp6_ee_mumuH_ecm240_prefall wz3p6_ee_mumuH_ecm240_prefall
+    flavor = "ee"
+    proc = "wzp6_ee_%sH_ecm240" % flavor
     
-    # p8_ee_ZH_ecm240 wzp6_ee_mumuH_ecm240
-    cuts = ["_cut0", "_cut1", "_cut2", "_cut3", "_cut4", ""]
+
+    # cuts with cos(theta)
     cuts = ["_cut0", "_cut1", "_cut2", "_cut3", "_cut4", "_cut5", "_cut6"]
-    cut_labels = [r"No selection", r"$\geq 1 \mu$", r"$\geq 2 \mu$", r"$\mu^{+}\mu^{-}$ pair", r"$86 < m_{\mu^{+}\mu^{-}} < 96$", r"$20 < p_{\mu^{+}\mu^{-}} < 70$", r"$\cos(\theta_{miss})$", r"$120 < m(rec) < 140$"]
+    cut_labels = [r"No selection", r"$\geq 1 \mu$ + ISO", r"$\geq 2 \mu$ + OS", r"$86 < m_{\mu^{+}\mu^{-}} < 96$", r"$20 < p_{\mu^{+}\mu^{-}} < 70$", r"$\cos(\theta_{miss}) < 0.98$", r"$120 < m_{rec} < 140$"]
     
-    cuts = ["_cut0", "_cut1", "_cut2", "_cut3", "_cut4", "_cut5", "_cut6"]
-    cut_labels = [r"No selection", r"$\geq 1 \mu$", r"$\geq 2 \mu$", r"$\mu^{+}\mu^{-}$ pair", r"$86 < m_{\mu^{+}\mu^{-}} < 96$", r"$20 < p_{\mu^{+}\mu^{-}} < 70$", r"$120 < m_{rec} < 140$"]
+    # cuts without cos(theta)
+    cuts = ["_cut0", "_cut1", "_cut2", "_cut3", "_cut4", "_cut6"]
+    cut_labels = [r"No selection", r"$\geq 1 \mu$ + ISO", r"$\geq 2 \mu$ + OS", r"$86 < m_{\mu^{+}\mu^{-}} < 96$", r"$20 < p_{\mu^{+}\mu^{-}} < 70$", r"$120 < m_{rec} < 140$"]
+    
+    xMin, xMax = 65, 75#55, 75
+    if flavor == "ee":
+        xMin, xMax = 60, 70 #50, 65
+        cut_labels = [x.replace("\mu", "e") for x in cut_labels]
+    
+    
     
     decay_pdgids = [4, 5, 13, 15, 21, 22, 23, 24]
     decay_names = [r"cc", r"bb", r"$\mu\mu$", r"$\tau\tau$", r"gg", r"$\gamma\gamma$", r"ZZ", r"WW"]
     decay_names_tex = ["cc", "bb", "#mu#mu", "#tau#tau", "gg", "#gamma#gamma", "ZZ", "WW"]
     fIn = ROOT.TFile("tmp/output_mass_xsec_%s.root" % flavor)
-    #fIn = ROOT.TFile("tmp/output_mass_xsec.root")
     
-    xMin, xMax = 60, 80
+    
+        
+        
     h_pulls = ROOT.TH2F("pulls", "pulls", (xMax-xMin)*10, xMin, xMax, len(decay_pdgids)+1, 0, len(decay_pdgids)+1)
     g_pulls = ROOT.TGraphErrors(len(decay_pdgids)+1)
-    #
+    
     print("Branching ratios")
     for pdg in decay_names: print("%s\t" % pdg, end=" ")
     print()
@@ -238,11 +239,8 @@ if __name__ == "__main__":
             else: print(r" &  %.2f $\pm$ %.2f" % (sel_eff*100., sel_eff_err*100.), end=" ")
             
             if i == len(cuts)-1:
-                g_pulls.SetPoint(ip, sel_eff*100., float(ip) + 0.5)
-                #g_pulls.SetPointError(ip, sel_eff_err*100., sel_eff_err*100., 0., 0.)
-                
+                g_pulls.SetPoint(ip, sel_eff*100., float(ip) + 0.5)                
                 g_pulls.SetPointError(ip, sel_eff_err*100., 0.)
-                ##print("ddddddddddd", sel_eff*100., sel_eff_err*100.)
                 h_pulls.GetYaxis().SetBinLabel(ip + 1, decay_names_tex[k])
                 ip += 1
         

@@ -140,10 +140,10 @@ def build_graph(df, dataset):
     df = df.Define("leps_reso_p", "FCCAnalyses::leptonResolution_p(leps, MCRecoAssociations0, MCRecoAssociations1, ReconstructedParticles, Particle)")
     
     # build the Z resonance and recoil using MC information from the selected muons
-    df = df.Define("zed_leptonic_MC", "FCCAnalyses::resonanceZBuilder2(91, true)(leps, MCRecoAssociations0, MCRecoAssociations1, ReconstructedParticles, Particle)")
-    df = df.Define("zed_leptonic_m_MC", "FCCAnalyses::ReconstructedParticle::get_mass(zed_leptonic_MC)")
-    df = df.Define("zed_leptonic_recoil_MC",  "FCCAnalyses::ReconstructedParticle::recoilBuilder(240)(zed_leptonic_MC)")
-    df = df.Define("zed_leptonic_recoil_m_MC", "FCCAnalyses::ReconstructedParticle::get_mass(zed_leptonic_recoil_MC)")
+    #df = df.Define("zed_leptonic_MC", "FCCAnalyses::resonanceZBuilder2(91, true)(leps, MCRecoAssociations0, MCRecoAssociations1, ReconstructedParticles, Particle)")
+    #df = df.Define("zed_leptonic_m_MC", "FCCAnalyses::ReconstructedParticle::get_mass(zed_leptonic_MC)")
+    #df = df.Define("zed_leptonic_recoil_MC",  "FCCAnalyses::ReconstructedParticle::recoilBuilder(240)(zed_leptonic_MC)")
+    #df = df.Define("zed_leptonic_recoil_m_MC", "FCCAnalyses::ReconstructedParticle::get_mass(zed_leptonic_recoil_MC)")
         
     # gen analysis
     if dataset.name in sigProcs:
@@ -228,16 +228,16 @@ def build_graph(df, dataset):
     
     
     #########
-    ### CUT 2 :at least 2 leptons, and build the resonance
+    ### CUT 2 :at least 2 OS leptons, and build the resonance
     #########
-    df = df.Filter("leps_no >= 2").Define("cut2", "2")
+    df = df.Filter("leps_no >= 2 && abs(Sum(leps_q)) < leps_q.size()").Define("cut2", "2")
     results.append(df.Histo1D(("cutFlow_cut2", "", *bins_count), "cut2"))
     
     #df = df.Filter("leps_no == 2")
 
     # build the Z resonance based on the available leptons. Returns the best lepton pair compatible with the Z mass and recoil at 125 GeV
     # technically, it returns a ReconstructedParticleData object with index 0 the di-lepton system, index and 2 the leptons of the pair
-    df = df.Define("zbuilder_result", "FCCAnalyses::resonanceBuilder_mass_recoil(91.2, 125, 0.4, 240, true)(leps, MCRecoAssociations0, MCRecoAssociations1, ReconstructedParticles, Particle, Particle0, Particle1)")
+    df = df.Define("zbuilder_result", "FCCAnalyses::resonanceBuilder_mass_recoil(91.2, 125, 0.4, 240, false)(leps, MCRecoAssociations0, MCRecoAssociations1, ReconstructedParticles, Particle, Particle0, Particle1)")
     df = df.Define("zll", "ROOT::VecOps::RVec<edm4hep::ReconstructedParticleData>{zbuilder_result[0]}") # the Z
     df = df.Define("zll_leps", "ROOT::VecOps::RVec<edm4hep::ReconstructedParticleData>{zbuilder_result[1],zbuilder_result[2]}") # the leptons
     df = df.Define("zll_m", "FCCAnalyses::ReconstructedParticle::get_mass(zll)[0]")
@@ -250,7 +250,7 @@ def build_graph(df, dataset):
     df = df.Define("zll_leps_dR", "FCCAnalyses::deltaR(zll_leps)")
     df = df.Define("zll_leps_theta", "FCCAnalyses::ReconstructedParticle::get_theta(zll_leps)")
      
-    df = df.Define("prompt_muons", "FCCAnalyses::select_prompt_leptons(zll_leps, MCRecoAssociations0, MCRecoAssociations1, ReconstructedParticles, Particle, Particle0, Particle1)")
+    df = df.Define("prompt_muons", "FCCAnalyses::whizard_zh_select_prompt_leptons(zll_leps, MCRecoAssociations0, MCRecoAssociations1, ReconstructedParticles, Particle, Particle0, Particle1)")
     df = df.Define("prompt_muons_no", "prompt_muons.size()")
     #df = df.Filter("prompt_muons.size() == 2") 
 
@@ -333,7 +333,7 @@ def build_graph(df, dataset):
     
     results.append(df.Histo1D(("cosThetaMiss_cut4", "", *bins_cosThetaMiss), "cosTheta_miss"))
     
-    df = df.Filter("cosTheta_miss[0] < 0.98").Define("cut5", "5") # 0.98
+    df = df.Filter("cosTheta_miss < 5").Define("cut5", "5") # 0.98
     results.append(df.Histo1D(("cutFlow_cut5", "", *bins_count), "cut5"))
     if dataset.name in sigProcs: 
         results.append(df.Histo1D(("higgs_decay_cut5", "", *bins_count), "daughter_higgs_collapsed")) 
@@ -387,8 +387,8 @@ def build_graph(df, dataset):
     
     
     # MC based recoil
-    results.append(df.Histo1D(("zed_leptonic_m_MC", "", *bins_m_ll), "zed_leptonic_m_MC"))
-    results.append(df.Histo1D(("zed_leptonic_recoil_m_MC", "", *bins_recoil), "zed_leptonic_recoil_m_MC"))
+    #results.append(df.Histo1D(("zed_leptonic_m_MC", "", *bins_m_ll), "zed_leptonic_m_MC"))
+    #results.append(df.Histo1D(("zed_leptonic_recoil_m_MC", "", *bins_recoil), "zed_leptonic_recoil_m_MC"))
     
     
     
@@ -521,7 +521,7 @@ if __name__ == "__main__":
         bkgs = ["p8_ee_WW_mumu_ecm240", "p8_ee_ZZ_Zll_ecm240", "wzp6_ee_mumu_ecm240", "wzp6_ee_tautau_ecm240", "p8_ee_Zll_ecm240"] # p8_ee_WW_ecm240 p8_ee_ZZ_ecm240
         
         select = signal + signal_mass + bkgs
-        #select = ["wzp6_ee_mumuH_ecm240"]
+        select = ["wzp6_ee_mumuH_ecm240"]
         datasets += FCCee_preproduction_IDEA.getDatasets(select=select)
           
 
@@ -533,7 +533,7 @@ if __name__ == "__main__":
         bkgs = ["p8_ee_WW_ecm240", "p8_ee_ZZ_Zll_ecm240", "wzp6_ee_ee_Mee_30_150_ecm240", "wzp6_ee_tautau_ecm240", "p8_ee_Zll_ecm240"] #  p8_ee_ZZ_ecm240
         
         select = signal + signal_mass + bkgs
-        #select = ["wzp6_ee_eeH_ecm240"]
+        select = ["wzp6_ee_eeH_ecm240"]
         datasets += FCCee_preproduction_IDEA.getDatasets(select=select)
         
         

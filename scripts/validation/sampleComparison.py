@@ -223,7 +223,17 @@ if __name__ == "__main__":
     #f2, p2, l2 = "tmp/output_mass_xsec_ee.root", "wzp6_ee_eeH_ecm240_winter_v2", "Winter 2023, electrons, smeared"
     #outDir = "/eos/user/j/jaeyserm/www/FCCee/ZH_mass_xsec/sampleComparison/winter2023_electrons/"
     
-    makeResolutionPlot("muons_reso_cut0", 0.98, 1.02, 0, 0.03, "Resolution (p_{reco}/p_{gen})", "Events (normalized)", rebin=10)
+    #makeResolutionPlot("muons_reso_cut0", 0.98, 1.02, 0, 0.03, "Resolution (p_{reco}/p_{gen})", "Events (normalized)", rebin=10)
+    
+    f1, p1, l1 = "tmp/validation_mumu_2021.root", "p8_ee_ZZ_Zll_ecm240", "2021"
+    f2, p2, l2 = "tmp/validation_mumu.root", "p8_ee_ZZ_Zll_ecm240", "2023"
+    outDir = "/eos/user/j/jaeyserm/www/FCCee/ZH_mass_xsec/sampleComparison/photon_2021_2023/"
+    
+    makePlot("photons_p", 0, 10, 0, 0.15, "p (GeV)", "Events (normalized)", rebin=10) # 0.15
+    makePlot("photons_no", 0, 10, 0, 0.2, "Multiplicity", "Events (normalized)", rebin=1) # 0.2
+    makePlot("photons_phi", -5, 5, 0, 0.005, "#phi (rad)", "Events (normalized)", rebin=1)
+    makePlot("photons_theta", 0, 3.14, 0, 0.015, "#theta (rad)", "Events (normalized)", rebin=1)
+    
     quit()
     makePlot("muons_p_cut0", 0, 100, 0, 0.05, "p (GeV)", "Events (normalized)", rebin=100)
     makePlot("muons_p_gen_cut0", 0, 100, 0, 0.05, "p (GeV)", "Events (normalized)", rebin=100)

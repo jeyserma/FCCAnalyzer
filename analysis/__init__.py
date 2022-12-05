@@ -20,7 +20,10 @@ _fcc  = ROOT.dummyLoader
 # load c++ macros
 ROOT.gInterpreter.ProcessLine(".O3")
 ROOT.gInterpreter.AddIncludePath(f"{pathlib.Path(__file__).parent}/include/")
+ROOT.gInterpreter.Declare('#include "defines.h"')
 ROOT.gInterpreter.Declare('#include "utils.h"')
 ROOT.gInterpreter.Declare('#include "gen.h"')
+ROOT.gInterpreter.Declare('#include "zh_mass_xsec.h"')
+ROOT.gInterpreter.Declare('#include "zh_mass_xsec_gen.h"')
 ROOT.gInterpreter.Declare('#include "photon.h"')
 ROOT.gInterpreter.Declare('#include "z_xsec.h"')

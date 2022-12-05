@@ -1,25 +1,26 @@
-#ifndef ZH_UTILS_H
-#define ZH_UTILS_H
+#ifndef FCCANALYZER_UTILS_H
+#define FCCANALYZER_UTILS_H
 
-#include <cmath>
-#include <vector>
-
-#include "TLorentzVector.h"
-#include "ROOT/RVec.hxx"
-#include "edm4hep/ReconstructedParticleData.h"
-#include "edm4hep/MCParticleData.h"
-#include "edm4hep/ParticleIDData.h"
-
-#include "ReconstructedParticle2MC.h"
+#include "defines.h"
 
 namespace FCCAnalyses {
     
+// maps theta [pi/2, pi] to [0, pi/2]
+Vec_f theta_abs(Vec_f in) {
     
-
-  
-
-float deltaR(ROOT::VecOps::RVec<edm4hep::ReconstructedParticleData> in) {
+    Vec_f result;
+    result.reserve(in.size());
     
+    for(int i = 0; i < in.size(); ++i) {
+        
+        if(in[i] > M_PI/2.0) result.push_back(M_PI/2.0-in[i]);
+        else result.push_back(in[i]);
+    }
+    return result;
+}
+
+// deltaR between two reco particles, based on eta
+float deltaR(Vec_rp in) {
     if(in.size() != 2) return -1;
     
     ROOT::Math::PxPyPzEVector tlv1;
@@ -29,12 +30,41 @@ float deltaR(ROOT::VecOps::RVec<edm4hep::ReconstructedParticleData> in) {
     tlv2.SetPxPyPzE(in.at(1).momentum.x, in.at(1).momentum.y, in.at(1).momentum.z, in.at(1).energy);
     
     return std::sqrt(std::pow(tlv1.Eta()-tlv2.Eta(), 2) + std::pow(tlv1.Phi()-tlv2.Phi(), 2));
-   
 }
 
+// acolinearity between two reco particles
+float acolinearity(Vec_rp in) {
+    if(in.size() != 2) return -1;
 
+    TLorentzVector p1;
+    p1.SetXYZM(in[0].momentum.x, in[0].momentum.y, in[0].momentum.z, in[0].mass);
 
-ROOT::VecOps::RVec<edm4hep::ReconstructedParticleData> missingEnergy(float ecm, ROOT::VecOps::RVec<edm4hep::ReconstructedParticleData> in, float p_cutoff = 0.0) {
+    TLorentzVector p2;
+    p2.SetXYZM(in[1].momentum.x, in[1].momentum.y, in[1].momentum.z, in[1].mass);
+
+    float acol = abs(p1.Theta() - p2.Theta());
+    return acol;
+}
+
+// acoplanarity between two reco particles
+float acoplanarity(Vec_rp in) {
+    if(in.size() != 2) return -1;
+
+    TLorentzVector p1;
+    p1.SetXYZM(in[0].momentum.x, in[0].momentum.y, in[0].momentum.z, in[0].mass);
+
+    TLorentzVector p2;
+    p2.SetXYZM(in[1].momentum.x, in[1].momentum.y, in[1].momentum.z, in[1].mass);
+
+    float acop = abs(p1.Phi() - p2.Phi());
+    if(acop > M_PI) acop = 2 * M_PI - acop;
+    acop = M_PI - acop;
+
+    return acop;
+}
+
+// returns missing energy vector, based on reco particles
+Vec_rp missingEnergy(float ecm, Vec_rp in, float p_cutoff = 0.0) {
     float px = 0, py = 0, pz = 0, e = 0;
     for(auto &p : in) {
         if (std::sqrt(p.momentum.x * p.momentum.x + p.momentum.y*p.momentum.y) < p_cutoff) continue;
@@ -44,8 +74,8 @@ ROOT::VecOps::RVec<edm4hep::ReconstructedParticleData> missingEnergy(float ecm, 
         e += p.energy;
     }
     
-    ROOT::VecOps::RVec<edm4hep::ReconstructedParticleData> ret;
-    edm4hep::ReconstructedParticleData res;
+    Vec_rp ret;
+    rp res;
     res.momentum.x = px;
     res.momentum.y = py;
     res.momentum.z = pz;
@@ -55,7 +85,8 @@ ROOT::VecOps::RVec<edm4hep::ReconstructedParticleData> missingEnergy(float ecm, 
     
 }
 
-float visibleMass(ROOT::VecOps::RVec<edm4hep::ReconstructedParticleData> in, float p_cutoff = 0.0) {
+// calculate the visisble mass of the event
+float visibleMass(Vec_rp in, float p_cutoff = 0.0) {
     float px = 0, py = 0, pz = 0, e = 0;
     for(auto &p : in) {
         if (std::sqrt(p.momentum.x * p.momentum.x + p.momentum.y*p.momentum.y) < p_cutoff) continue;
@@ -72,7 +103,8 @@ float visibleMass(ROOT::VecOps::RVec<edm4hep::ReconstructedParticleData> in, flo
     return Mvis;
 }
   
-float missingMass(float ecm, ROOT::VecOps::RVec<edm4hep::ReconstructedParticleData> in, float p_cutoff = 0.0) {
+// calculate the missing mass, given a ECM value
+float missingMass(float ecm, Vec_rp in, float p_cutoff = 0.0) {
     float px = 0, py = 0, pz = 0, e = 0;
     for(auto &p : in) {
         if (std::sqrt(p.momentum.x * p.momentum.x + p.momentum.y*p.momentum.y) < p_cutoff) continue;
@@ -90,75 +122,13 @@ float missingMass(float ecm, ROOT::VecOps::RVec<edm4hep::ReconstructedParticleDa
     return Mmiss;
 }
     
-float sumScalar(ROOT::VecOps::RVec<float> in){
-    
-    float tot = std::accumulate(in.begin(), in.end(), 0);
-    return tot;
-}
 
 
-// perturb the scale of the particles
-struct polarAngleCategorization {
-    polarAngleCategorization(float arg_thetaMin, float arg_thetaMax);
-    float thetaMin = 0;
-    float thetaMax = 5;
-    int operator() (ROOT::VecOps::RVec<edm4hep::ReconstructedParticleData> in);
-};
-
-polarAngleCategorization::polarAngleCategorization(float arg_thetaMin, float arg_thetaMax) : thetaMin(arg_thetaMin), thetaMax(arg_thetaMax) {};
-int polarAngleCategorization::operator() (ROOT::VecOps::RVec<edm4hep::ReconstructedParticleData> in) {
-    
-    int nFwd = 0; // number of forward leptons
-    for (size_t i = 0; i < in.size(); ++i) {
-        
-        auto & p = in[i];
-        TLorentzVector lv;
-        lv.SetXYZM(p.momentum.x, p.momentum.y, p.momentum.z, p.mass);
-        if(lv.Theta() < thetaMin || lv.Theta() > thetaMax) nFwd += 1;
-    }
-    return nFwd;
-}
 
 
-    
-
-ROOT::VecOps::RVec<edm4hep::ReconstructedParticleData>  muon_quality_check(ROOT::VecOps::RVec<edm4hep::ReconstructedParticleData> in){
-	
-    ROOT::VecOps::RVec<edm4hep::ReconstructedParticleData> result;
-
-    //at least one muon + and one muon - in each event
-    int n_muon_plus = 0;
-    int n_muon_minus = 0;
-    int n = in.size();
-    for(int i = 0; i < n; ++i) {
-        if (in[i].charge == 1.0){
-			++n_muon_plus;
-        }
-        else if (in[i].charge == -1.0){
-            ++n_muon_minus;
-        }
-    }
-    if(n_muon_plus >= 1 && n_muon_minus >= 1){
-        result = in;
-    }
-    return result;
-}
+   
 
 
-ROOT::VecOps::RVec<float> get_cosTheta_miss(ROOT::VecOps::RVec<edm4hep::ReconstructedParticleData> met){
-    
-    ROOT::VecOps::RVec<float> result;
-    float costheta = 0.;
-    if(met.size() > 0) {
-        
-        TLorentzVector lv_met;
-        lv_met.SetPxPyPzE(met[0].momentum.x, met[0].momentum.y, met[0].momentum.z, met[0].energy);
-        costheta = fabs(std::cos(lv_met.Theta()));
-
-    }
-    result.push_back(costheta);
-    return result;
-}
 
 
 
@@ -179,7 +149,8 @@ ROOT::VecOps::RVec<float> leptonResolution_p(ROOT::VecOps::RVec<edm4hep::Reconst
         if(mc_index >= 0 && mc_index < (int)mc.size()) {
             TLorentzVector mc_;
             mc_.SetXYZM(mc.at(mc_index).momentum.x, mc.at(mc_index).momentum.y, mc.at(mc_index).momentum.z, mc.at(mc_index).mass);
-            if(mc_.P() > 20) result.push_back(reco_.P()/mc_.P());
+            result.push_back(reco_.P()/mc_.P());
+            //if(mc_.P() > 20) result.push_back(reco_.P()/mc_.P());
 		}
     } 
     return result;
@@ -237,152 +208,49 @@ ROOT::VecOps::RVec<edm4hep::ReconstructedParticleData> resonanceBuilder::operato
 
 
 
-ROOT::VecOps::RVec<float> acolinearity(ROOT::VecOps::RVec<edm4hep::ReconstructedParticleData> in){
- ROOT::VecOps::RVec<float> result;
- if(in.size() != 2) return result;
-
- TLorentzVector p1;
- p1.SetXYZM(in[0].momentum.x, in[0].momentum.y, in[0].momentum.z, in[0].mass);
-
- TLorentzVector p2;
- p2.SetXYZM(in[1].momentum.x, in[1].momentum.y, in[1].momentum.z, in[1].mass);
-
- float acol = abs(p1.Theta() - p2.Theta());
-
- result.push_back(acol);
- return result;
-}
-
-
-
-ROOT::VecOps::RVec<float> acoplanarity(ROOT::VecOps::RVec<edm4hep::ReconstructedParticleData> in){
- ROOT::VecOps::RVec<float> result;
- if(in.size() != 2) return result;
-
- TLorentzVector p1;
- p1.SetXYZM(in[0].momentum.x, in[0].momentum.y, in[0].momentum.z, in[0].mass);
-
- TLorentzVector p2;
- p2.SetXYZM(in[1].momentum.x, in[1].momentum.y, in[1].momentum.z, in[1].mass);
-
- float acop = abs(p1.Phi() - p2.Phi());
- if(acop > M_PI) acop = 2 * M_PI - acop;
- acop = M_PI - acop;
-
- result.push_back(acop);
- return result;
-}
-
-
-// perturb the scale of the particles
-struct momentum_scale {
-    momentum_scale(float arg_scaleunc);
-    float scaleunc = 1.;
-    ROOT::VecOps::RVec<edm4hep::ReconstructedParticleData>  operator() (ROOT::VecOps::RVec<edm4hep::ReconstructedParticleData> in);
-};
-
-momentum_scale::momentum_scale(float arg_scaleunc) : scaleunc(arg_scaleunc) {};
-ROOT::VecOps::RVec<edm4hep::ReconstructedParticleData>  momentum_scale::operator() (ROOT::VecOps::RVec<edm4hep::ReconstructedParticleData> in) {
-    ROOT::VecOps::RVec<edm4hep::ReconstructedParticleData> result;
-    result.reserve(in.size());
-
-    for (size_t i = 0; i < in.size(); ++i) {
-        
-        auto & p = in[i];
-
-        /*
-        TLorentzVector lv;
-        lv.SetXYZM(p.momentum.x, p.momentum.y, p.momentum.z, p.mass);
-        lv *= (1. + scaleunc);
-
-        p.momentum.x = lv.Px();
-        p.momentum.y = lv.Py();
-        p.momentum.z = lv.Pz();
-        //p.energy = lv.E();
-        */
-
-
-
-        p.momentum.x = p.momentum.x*(1. + scaleunc);
-        p.momentum.y = p.momentum.y*(1. + scaleunc);
-        p.momentum.z = p.momentum.z*(1. + scaleunc);
-        result.emplace_back(p);
-    }
-    
-    return result;
-}
 
 
 
 
-/*                             
-                                                       
-    Tracks input: ROOT::VecOps::RVec<edm4hep::TrackState> tracks                                                   
-
-    // make track Lorentzvectors
-    for(size_t i = 0; i < tracks.size(); ++i) {
-      
-        double pT = 1e-3 * 0.3*2*TMath::Abs(1./tracks.at(i).omega);
-        double theta = TMath::ATan(1./tracks.at(i).tanLambda); // tan(lambda) = cotan(theta)
-        while(theta < 0) theta += TMath::Pi();
-        double eta = - TMath::Log(TMath::Tan(theta/2.));
-        double phi = tracks.at(i).phi;
-        
-        ROOT::Math::PtEtaPhiMVector tlv;
-        tlv.SetPt(pT);
-        tlv.SetEta(eta);
-        tlv.SetPhi(phi);
-        tlv.SetM(0);
-        lv_track.push_back(tlv);
-
-        //std::cout << "track " << i << " pT=" << pT << " theta=" << theta << " eta=" << eta << " phi=" << phi << std::endl;
-      
-    }
-
-                                                       
-  
-*/
 
 
 
 
+
+// compute the cone isolation for reco particles
 struct coneIsolation {
 
     coneIsolation(float arg_dr_min, float arg_dr_max);
-    
     double deltaR(double eta1, double phi1, double eta2, double phi2) { return TMath::Sqrt(TMath::Power(eta1-eta2, 2) + (TMath::Power(phi1-phi2, 2))); };
 
     float dr_min = 0;
     float dr_max = 0.4;
-    ROOT::VecOps::RVec<double>  operator() ( ROOT::VecOps::RVec<edm4hep::ReconstructedParticleData> recop, 
-									 ROOT::VecOps::RVec<edm4hep::ReconstructedParticleData> rp) ;
+    Vec_f operator() (Vec_rp in, Vec_rp rps) ;
 };
 
 coneIsolation::coneIsolation(float arg_dr_min, float arg_dr_max) : dr_min(arg_dr_min), dr_max( arg_dr_max ) { };
-
-ROOT::VecOps::RVec<double>  coneIsolation::coneIsolation::operator() (ROOT::VecOps::RVec<edm4hep::ReconstructedParticleData> recop,
-											       ROOT::VecOps::RVec<edm4hep::ReconstructedParticleData> rp) {
+Vec_f coneIsolation::coneIsolation::operator() (Vec_rp in, Vec_rp rps) {
   
-    ROOT::VecOps::RVec<double> result;
-    result.reserve(recop.size());
+    Vec_f result;
+    result.reserve(in.size());
 
     std::vector<ROOT::Math::PxPyPzEVector> lv_reco;
     std::vector<ROOT::Math::PxPyPzEVector> lv_charged;
     std::vector<ROOT::Math::PxPyPzEVector> lv_neutral;
 
-    for(size_t i = 0; i < rp.size(); ++i) {
+    for(size_t i = 0; i < rps.size(); ++i) {
 
         ROOT::Math::PxPyPzEVector tlv;
-        tlv.SetPxPyPzE(rp.at(i).momentum.x, rp.at(i).momentum.y, rp.at(i).momentum.z, rp.at(i).energy);
+        tlv.SetPxPyPzE(rps.at(i).momentum.x, rps.at(i).momentum.y, rps.at(i).momentum.z, rps.at(i).energy);
         
-        if(rp.at(i).charge == 0) lv_neutral.push_back(tlv);
+        if(rps.at(i).charge == 0) lv_neutral.push_back(tlv);
         else lv_charged.push_back(tlv);
     }
     
-    for(size_t i = 0; i < recop.size(); ++i) {
+    for(size_t i = 0; i < in.size(); ++i) {
 
         ROOT::Math::PxPyPzEVector tlv;
-        tlv.SetPxPyPzE(recop.at(i).momentum.x, recop.at(i).momentum.y, recop.at(i).momentum.z, recop.at(i).energy);
+        tlv.SetPxPyPzE(in.at(i).momentum.x, in.at(i).momentum.y, in.at(i).momentum.z, in.at(i).energy);
         lv_reco.push_back(tlv);
     }
 
@@ -415,27 +283,57 @@ ROOT::VecOps::RVec<double>  coneIsolation::coneIsolation::operator() (ROOT::VecO
 }
 
 
+// filter reconstructed particles (in) based a property (prop) within a defined range (m_min, m_max)
+struct sel_range {
+    sel_range(float arg_min, float arg_max, bool arg_abs = false);
+    float m_min = 0.;
+    float m_max = 1.;
+    bool m_abs = false;
+    Vec_rp operator() (Vec_rp in, Vec_f prop);
+};
 
-struct sel_iso {
-    sel_iso(float arg_max_iso);
-    float m_max_iso = .25;
-    ROOT::VecOps::RVec<edm4hep::ReconstructedParticleData>  operator() (ROOT::VecOps::RVec<edm4hep::ReconstructedParticleData> in, ROOT::VecOps::RVec<double> iso);
-  };
-
-sel_iso::sel_iso(float arg_max_iso) : m_max_iso(arg_max_iso) {};
-ROOT::VecOps::RVec<edm4hep::ReconstructedParticleData>  sel_iso::operator() (ROOT::VecOps::RVec<edm4hep::ReconstructedParticleData> in, ROOT::VecOps::RVec<double> iso) {
-  ROOT::VecOps::RVec<edm4hep::ReconstructedParticleData> result;
-  result.reserve(in.size());
-  for (size_t i = 0; i < in.size(); ++i) {
-    auto & p = in[i];
-    if (iso[i] < m_max_iso) {
-      result.emplace_back(p);
+sel_range::sel_range(float arg_min, float arg_max, bool arg_abs) : m_min(arg_min), m_max(arg_max), m_abs(arg_abs) {};
+Vec_rp sel_range::operator() (Vec_rp in, Vec_f prop) {
+    Vec_rp result;
+    result.reserve(in.size());
+    for (size_t i = 0; i < in.size(); ++i) {
+        auto & p = in[i];
+        float val = (m_abs) ? abs(prop[i]) : prop[i];
+        if(val > m_min && val < m_max) result.emplace_back(p);
     }
-  }
-  return result;
+    return result;
 }
 
 
+
+
+
+
+
+
+
+// obsolete
+struct sel_iso {
+    sel_iso(float arg_max_iso);
+    float m_max_iso = .25;
+    Vec_rp operator() (Vec_rp in, Vec_f iso);
+  };
+
+sel_iso::sel_iso(float arg_max_iso) : m_max_iso(arg_max_iso) {};
+ROOT::VecOps::RVec<edm4hep::ReconstructedParticleData>  sel_iso::operator() (Vec_rp in, Vec_f iso) {
+    Vec_rp result;
+    result.reserve(in.size());
+    for (size_t i = 0; i < in.size(); ++i) {
+        auto & p = in[i];
+        if (iso[i] < m_max_iso) {
+            result.emplace_back(p);
+        }
+    }
+    return result;
+}
+
+
+// obsolete
 struct sel_eta {
     sel_eta(float arg_min_eta, float arg_max_eta = 1e10, bool arg_abs = true);
     float m_min_eta = 1.;
@@ -459,66 +357,6 @@ ROOT::VecOps::RVec<edm4hep::ReconstructedParticleData>  sel_eta::operator() (ROO
     return result;
 }
 
-
-// for a given MC index, it returns whether or not one of these muons come (indirectly) from a Higgs decay
-bool from_prompt(int i, ROOT::VecOps::RVec<edm4hep::MCParticleData> in, ROOT::VecOps::RVec<int> ind) {
-
-    bool ret = false;
-    // i = index of a MC particle in the Particle block
-    // in = the Particle collection
-    // ind = the block with the indices for the parents, Particle#0.index
-
-    // returns whether the particle i comes from the chain containing the Higgs
-
-    if ( i < 0 || i >= in.size() ) return ret;
-
-    int db = in.at(i).parents_begin;
-    int de = in.at(i).parents_end;
-  
-    //std::cout << "Chain for " << in.at(i).PDG << std::endl;
-    //std::cout << "Chain for " << in.at(i).PDG << std::endl;
-    //std::cout << "Chain for idx=" << i << " with PDG=" << in.at(i).PDG << " having db=" << db << " and de=" << de << std::endl;
-    
-
-    if(db == de) return true; // top of tree
-
-   
-    for(int id = db; id < de; id++) { // loop over all parents
-
-        int iparent = ind.at(id);
-        //std::cout << " Analyze parent idx=" << iparent << " PDG=" << in.at(iparent).PDG << std::endl;
-        
-        //if(std::abs(in.at(iparent).PDG) == 11) ret = true; // if prompt
-        if(iparent == 0) return true;
-        else if(std::abs(in.at(iparent).PDG) == 25) ret = false; // non prompt, from Higgs decays
-        else ret = from_prompt(iparent, in, ind); // otherwise go up in the decay tree
-    }
-    
-    return ret;
-}
-
-
-// returns the gen particles with given PDGID (absolute) that have the e+/e- as parent, i.e. from prompt
-// in Whizard, the prompt leptons from the collision have two parents, the electron and positron
-ROOT::VecOps::RVec<edm4hep::ReconstructedParticleData> select_prompt_leptons(ROOT::VecOps::RVec<edm4hep::ReconstructedParticleData> in, 
-                ROOT::VecOps::RVec<int> recind,
-				ROOT::VecOps::RVec<int> mcind,
-				ROOT::VecOps::RVec<edm4hep::ReconstructedParticleData> reco,
-                ROOT::VecOps::RVec<edm4hep::MCParticleData> mc,
-                ROOT::VecOps::RVec<int> parents, 
-                ROOT::VecOps::RVec<int> daugther) {
-
-    ROOT::VecOps::RVec<edm4hep::ReconstructedParticleData> result;
-    for (size_t i = 0; i < in.size(); ++i) {
-        int track_index = in[i].tracks_begin;
-        int mc_index = FCCAnalyses::ReconstructedParticle2MC::getTrack2MC_index(track_index, recind, mcind, reco);
-        if(from_prompt(mc_index, mc, parents)) {
-            result.emplace_back(in[i]);
-        }
-    }
-    return result;
-} 
-   
 
 
 

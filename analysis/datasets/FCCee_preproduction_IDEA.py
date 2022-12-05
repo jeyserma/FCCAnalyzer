@@ -84,6 +84,7 @@ def getDatasets(filt=None, select=[], baseDir = ""):
     # winter v2 (electrons smeared with twice the resolution)
     #winter_v2 = "/eos/experiment/fcc/ee/generation/DelphesStandalone/Edm4Hep/pre_winter2023_tests_v2"
     winter_v2 = "/data/shared/jaeyserm/fccee/pre_winter2023_tests_v2"
+    winter_v1 = "/eos/experiment/fcc/ee/generation/DelphesStandalone/Edm4Hep/pre_winter2023_tests_v1"
     
     # muon signal
     datasets.append({
@@ -154,6 +155,11 @@ def getDatasets(filt=None, select=[], baseDir = ""):
     })
     
     
+    datasets.append({
+        "name"      : "wzp6_ee_eeH_ecm240_v1",
+        "datadir"   : "%s/wzp6_ee_eeH_ecm240" % winter_v1,
+        "xsec"      : 0.0071611
+    })
 
 
 
@@ -209,13 +215,26 @@ def getDatasets(filt=None, select=[], baseDir = ""):
     })
     
     
-    # muon gun
-    
+    # particle guns
     datasets.append({
-        "name"      : "muon_gun", # Z/Gamma* ecm=240GeV, leptonic decays (e/mu/tau) - replaced by Whizard
+        "name"      : "muon_gun",
         "datadir"   : "/data/shared/jaeyserm/fccee/pre_winter2023_tests_v2/guns/muon/",
         "xsec"      : 1
     })
+    
+    datasets.append({
+        "name"      : "muon_gun_smear2x",
+        "datadir"   : "/data/shared/jaeyserm/fccee/pre_winter2023_tests_v2/guns/muon_smear2x/",
+        "xsec"      : 1
+    })
+    
+    datasets.append({
+        "name"      : "electron_gun",
+        "datadir"   : "/data/shared/jaeyserm/fccee/pre_winter2023_tests_v2/guns/electron/",
+        "xsec"      : 1
+    })
+    
+    
     
     
     # othters   

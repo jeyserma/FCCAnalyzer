@@ -8,34 +8,7 @@ ROOT.gStyle.SetOptTitle(0)
 
 import plotter
 
-def getYield(proc, sel):
 
-    hName = "cosTheta_miss" # take an event variable, always filled regardless the cut
-    
-    xMin=-1e6
-    xMax=1e6
-        
-    fIn = ROOT.TFile("%s/%s_hists.root" % (histDir, proc))
-    h = fIn.Get("%s_%s" % (hName, sel))
-    h.Scale(lumi*ds.datasets[proc]['xsec']*1e6/ds.datasets[proc]['nevents'])
-
-
-    xbinMin = h.GetXaxis().FindBin(xMin)
-    xbinMax = h.GetXaxis().FindBin(xMax)
-    
- 
-    evYield, err = 0, 0
-    for i in range(xbinMin, xbinMax):
-    
-        evYield += h.GetBinContent(i) 
-        err += h.GetBinError(i)**2
-    
-    err = err**0.5
-
-    y = h.Integral()
-    fIn.Close()
-    
-    return y, err
 
 def makePlot():
 	
@@ -43,7 +16,7 @@ def makePlot():
 
     totEntries = 1 + len(bkgs)
     #leg = ROOT.TLegend(.5, 1.0-totEntries*0.06, .92, .90)
-    leg = ROOT.TLegend(.5, 0.97-(len(bkgs)+2)*0.055, .8, .90)
+    leg = ROOT.TLegend(.63, 0.97-(len(bkgs)+2)*0.055, .95, .90)
     leg.SetBorderSize(0)
     leg.SetFillStyle(0)
     leg.SetTextSize(0.035)
@@ -100,7 +73,7 @@ def makePlot():
         'xmin'              : 0,
         'xmax'              : 7,
         'ymin'              : 1e4,
-        'ymax'              : 1e10 ,
+        'ymax'              : 1e9 ,
             
         'xtitle'            : "",
         'ytitle'            : "Events",
@@ -145,14 +118,12 @@ if __name__ == "__main__":
     outDir = "/eos/user/j/jaeyserm/www/FCCee/ZH_mass_xsec/plots_%s/" % flavor
     
     cuts = ["cut0", "cut1", "cut2", "cut3", "cut4", "cut5", "cut6"]
-    labels = ["All events", "#mu^{+}#mu^{#minus} pair", "86 < m_{#mu^{+}#mu^{#minus}} < 96", "20 < p_{T}^{#mu^{+}#mu^{#minus}} < 70", "|cos#theta_{missing}| < 0.98", "120 < m_{rec} < 140"]
-    labels = ["All events", "#geq 1 #mu^{#pm}", "#geq 2 #mu^{#pm}", "86 < m_{#mu^{+}#mu^{#minus}} < 96", "20 < p_{T}^{#mu^{+}#mu^{#minus}} < 70", "|cos#theta_{missing}| < 0.98", "120 < m_{rec} < 140"]
     
     
     
     if flavor == "mumu":
     
-        labels = ["All events", "#geq 1 #mu^{#pm}", "#geq 2 #mu^{#pm}", "86 < m_{#mu^{+}#mu^{#minus}} < 96", "20 < p_{T}^{#mu^{+}#mu^{#minus}} < 70", "|cos#theta_{missing}| < 0.98", "120 < m_{rec} < 140"]
+        labels = ["All events", "#geq 1 #mu^{#pm} + ISO", "#geq 2 #mu^{#pm} + OS", "86 < m_{#mu^{+}#mu^{#minus}} < 96", "20 < p_{T}^{#mu^{+}#mu^{#minus}} < 70", "|cos#theta_{miss}| < 0.98", "120 < m_{rec} < 140"]
     
         sigs = ["wzp6_ee_mumuH_ecm240"]
         sig_scale = 10
@@ -171,7 +142,7 @@ if __name__ == "__main__":
         
     if flavor == "ee":
     
-        labels = ["All events", "#geq 1 e^{#pm}", "#geq 2 e^{#pm}", "86 < m_{e^{+}e^{#minus}} < 96", "20 < p_{T}^{e^{+}e^{#minus}} < 70", "|cos#theta_{missing}| < 0.98", "120 < m_{rec} < 140"]
+        labels = ["All events", "#geq 1 e^{#pm} + ISO", "#geq 2 e^{#pm} + OS", "86 < m_{e^{+}e^{#minus}} < 96", "20 < p_{T}^{e^{+}e^{#minus}} < 70", "|cos#theta_{miss}| < 0.98", "120 < m_{rec} < 140"]
     
         sigs = ["wzp6_ee_eeH_ecm240"]
         sig_scale = 10

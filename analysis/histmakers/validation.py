@@ -36,6 +36,9 @@ bins_massweights = (5, 0, 5)
 
 bins_resolution = (10000, 0.95, 1.05)
 
+bins_theta_abs = (100, 0, 2)
+
+
 def build_graph(df, dataset):
 
     print("build graph", dataset.name)
@@ -114,7 +117,7 @@ def build_graph(df, dataset):
     df = df.Define("selected_muons_iso", "FCCAnalyses::coneIsolation(0.01, 0.5)(selected_muons, ReconstructedParticles)")
     
     # prompt muons
-    df = df.Define("prompt_muons", "FCCAnalyses::select_prompt_leptons(muons, MCRecoAssociations0, MCRecoAssociations1, ReconstructedParticles, Particle, Particle0, Particle1)")
+    df = df.Define("prompt_muons", "FCCAnalyses::whizard_zh_select_prompt_leptons(muons, MCRecoAssociations0, MCRecoAssociations1, ReconstructedParticles, Particle, Particle0, Particle1)")
     df = df.Define("prompt_muons_p", "FCCAnalyses::ReconstructedParticle::get_p(prompt_muons)")
     df = df.Define("prompt_muons_theta", "FCCAnalyses::ReconstructedParticle::get_theta(prompt_muons)")
     df = df.Define("prompt_muons_phi", "FCCAnalyses::ReconstructedParticle::get_phi(prompt_muons)")
@@ -140,7 +143,8 @@ def build_graph(df, dataset):
     df = df.Define("prompt_muons_reso", "FCCAnalyses::leptonResolution_p(prompt_muons, MCRecoAssociations0, MCRecoAssociations1, ReconstructedParticles, Particle)")
     
     # build the Z resonance and recoil using MC information from the selected muons
-    df = df.Define("zed_leptonic_MC", "FCCAnalyses::resonanceZBuilder2(91, true)(selected_muons, MCRecoAssociations0, MCRecoAssociations1, ReconstructedParticles, Particle)")
+    #df = df.Define("zed_leptonic_MC", "FCCAnalyses::resonanceZBuilder2(91, true)(selected_muons, MCRecoAssociations0, MCRecoAssociations1, ReconstructedParticles, Particle)")
+    df = df.Define("zed_leptonic_MC", "FCCAnalyses::resonanceBuilder(91)(selected_muons)")
     df = df.Define("zed_leptonic_m_MC", "FCCAnalyses::ReconstructedParticle::get_mass(zed_leptonic_MC)")
     df = df.Define("zed_leptonic_recoil_MC",  "FCCAnalyses::ReconstructedParticle::recoilBuilder(240)(zed_leptonic_MC)")
     df = df.Define("zed_leptonic_recoil_m_MC", "FCCAnalyses::ReconstructedParticle::get_mass(zed_leptonic_recoil_MC)")
@@ -163,6 +167,12 @@ def build_graph(df, dataset):
     results.append(df.Histo1D(("muons_iso_cut0", "", *bins_iso), "muons_iso"))
     results.append(df.Histo1D(("muons_reso_cut0", "", *bins_resolution), "muons_reso"))
     
+    df = df.Define("muons_theta_abs", "FCCAnalyses::theta_abs(muons_theta)")
+    
+    
+    #df = df.Filter("muons_theta.size() == muons_reso.size()")
+    results.append(df.Histo2D(("muons_theta_reso_cut0", "", *(bins_theta_abs + bins_resolution)), "muons_theta_abs", "muons_reso"))
+    
     
     results.append(df.Histo1D(("selected_muons_p_cut0", "", *bins_p_mu), "selected_muons_p"))
     results.append(df.Histo1D(("selected_muons_theta_cut0", "", *bins_theta), "selected_muons_theta"))
@@ -171,7 +181,6 @@ def build_graph(df, dataset):
     results.append(df.Histo1D(("selected_muons_no_cut0", "", *bins_count), "selected_muons_no"))
     results.append(df.Histo1D(("selected_muons_iso_cut0", "", *bins_iso), "selected_muons_iso"))
     results.append(df.Histo1D(("selected_muons_reso_cut0", "", *bins_resolution), "selected_muons_reso"))
-    return results, weightsum
     '''
     results.append(df.Histo1D(("prompt_muons_p_cut0", "", *bins_p_mu), "prompt_muons_p"))
     results.append(df.Histo1D(("prompt_muons_theta_cut0", "", *bins_theta), "prompt_muons_theta"))
@@ -197,11 +206,11 @@ def build_graph(df, dataset):
     results.append(df.Histo1D(("gen_photons_phi", "", *bins_phi), "gen_photons_phi"))
     results.append(df.Histo1D(("gen_photons_no", "", *bins_count), "gen_photons_no"))
     
-    results.append(df.Histo1D(("deltaR_gen_leps", "", *bins_dR), "deltaR_gen_leps"))
-    results.append(df.Histo1D(("mll_gen_leps", "", *bins_m_ll), "mll_gen_leps"))
+    #results.append(df.Histo1D(("deltaR_gen_leps", "", *bins_dR), "deltaR_gen_leps"))
+    #results.append(df.Histo1D(("mll_gen_leps", "", *bins_m_ll), "mll_gen_leps"))
     
-    results.append(df.Histo1D(("missingMass", "", *bins_m_ll), "missingMass"))
-    
+    #results.append(df.Histo1D(("missingMass", "", *bins_m_ll), "missingMass"))
+    return results, weightsum
     
     # forward/central resolution
     '''
@@ -374,6 +383,7 @@ if __name__ == "__main__":
     # import spring2021 IDEA samples
     import FCCee_spring2021_IDEA
     import FCCee_preproduction_IDEA
+    
     #datasets = FCCee_spring2021_IDEA.getDatasets(filt="p8_ee_ZH_ecm240") # p8_ee_ZH_ecm240 
     #datasets += FCCee_spring2021_IDEA.getDatasets(filt="wzp6_ee_mumuH_ecm240")
     #datasets += FCCee_spring2021_IDEA.getDatasets(filt="p8_ee_Zmumu_ecm91")
@@ -382,23 +392,28 @@ if __name__ == "__main__":
     
     if args.flavor == "mumu": 
         
-        datasets += FCCee_spring2021_IDEA.getDatasets(filt="wzp6_ee_mumuH_ecm240") # nominal
+        datasets += FCCee_preproduction_IDEA.getDatasets(filt="wzp6_ee_mumuH_ecm240") # nominal
         
         #datasets += FCCee_preproduction_IDEA.getDatasets(filt="wzp6_ee_mumuH_ecm240_prefall") # muon iso fix
         #datasets += FCCee_preproduction_IDEA.getDatasets(filt="wz3p6_ee_mumuH_ecm240_prefall")
         ####datasets += FCCee_preproduction_IDEA.getDatasets(filt="wz3p6_ee_mumuH_ecm240_winter") # muon reso fix
         #datasets += FCCee_preproduction_IDEA.getDatasets(filt="wz3p6_ee_mumuH_ecm240_winter_v2") # electron fix
         #datasets += FCCee_preproduction_IDEA.getDatasets(filt="wzp6_ee_mumuH_ecm240")
-        datasets = FCCee_preproduction_IDEA.getDatasets(filt="muon_gun")
+        #datasets = FCCee_preproduction_IDEA.getDatasets(filt="muon_gun")
+        #datasets += FCCee_preproduction_IDEA.getDatasets(filt="muon_gun_smear2x")
+        
+        datasets += FCCee_preproduction_IDEA.getDatasets(filt="p8_ee_ZZ_Zll_ecm240")
+        
     
     if args.flavor == "ee":
         #
         datasets += FCCee_preproduction_IDEA.getDatasets(filt="wzp6_ee_eeH_ecm240") 
+        datasets += FCCee_preproduction_IDEA.getDatasets(filt="wzp6_ee_eeH_ecm240_v1") 
         #datasets += FCCee_preproduction_IDEA.getDatasets(filt="wzp6_ee_eeH_ecm240_winter_v2") # 2x reso
     
-    
-    
-    
+        #datasets = FCCee_preproduction_IDEA.getDatasets(filt="electron_gun")
+        
+        datasets += FCCee_preproduction_IDEA.getDatasets(filt="p8_ee_ZZ_Zll_ecm240")
 
     result = functions.build_and_run(datasets, build_graph, "tmp/validation_%s.root" % args.flavor, maxFiles=args.maxFiles)
     
