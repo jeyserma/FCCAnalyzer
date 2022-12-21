@@ -17,6 +17,10 @@ def build_and_run(datadict, build_function, outfile, maxFiles=-1, norm=False, lu
     datasets = []
 
     for val in datadict:
+    
+        if not os.path.isdir(val['datadir']):
+            print(f"WARNING: directory {val['datadir']} does not exist, skipping dataset {val['name']}")
+            continue
 
         dataset = Dataset(val)
         datasets.append(dataset)
@@ -28,7 +32,7 @@ def build_and_run(datadict, build_function, outfile, maxFiles=-1, norm=False, lu
             nFiles += 1
             if maxFiles > 0 and nFiles >= maxFiles: break
         nEvents = chain.GetEntries()
-        print(f"Import {dataset.name} with {nFiles} files and {nEvents} events")
+        print(f"Import {dataset.name} with {nFiles} files and {nEvents} events from directory {dataset.datadir}")
     
         # black magic why this needs to be protected from gc
         chains.append(chain)
@@ -82,5 +86,46 @@ def build_and_run(datadict, build_function, outfile, maxFiles=-1, norm=False, lu
     print("write results:", time.time() - time_done)
     print("total time:", time.time() - time_built)
     
+    print("Output written to %s" % outfile)
 
    
+def set_threads(args):
+
+    ROOT.EnableImplicitMT()
+    if args.nThreads: 
+        ROOT.DisableImplicitMT()
+        ROOT.EnableImplicitMT(int(args.nThreads))
+    print("Run over %d threads" % ROOT.GetThreadPoolSize())
+    
+    
+def get_hostname():
+
+    import socket
+    return socket.gethostname()
+    
+    
+def get_basedir(sel=None):
+
+    basedirs = {}
+    basedirs['mit'] = "/data/submit/cms/store/fccee/"
+    basedirs['cmswmass2'] = "/data/shared/jaeyserm/fccee/"
+    basedirs['fcc_eos'] = "/eos/experiment/fcc/ee/generation/DelphesEvents/"
+    
+    if sel: return basedirs[sel]
+    else:
+        hostname = get_hostname()
+        if "mit.edu" in hostname: return basedirs['mit']
+        if "cmswmass2" in hostname: return basedirs['cmswmass2']
+        if "lxplus" in hostname: return basedirs['fcc_eos']
+    return None
+    
+    
+def filter_datasets(datasets, filt=None):
+
+    if isinstance(filt, str): return [dataset for dataset in datasets if fnmatch.fnmatch(dataset['name'], filt)]
+    elif isinstance(filt, list): 
+        ret = []
+        for dataset in datasets:
+            if dataset['name'] in filt: ret.append(dataset)
+        return ret
+    else: return datasets

@@ -9,11 +9,8 @@ parser.add_argument("--maxFiles", type=int, help="Max number of files (per datas
 parser.add_argument("--flavor", type=str, help="Flavor (mumu or ee)", default="mumu")
 args = parser.parse_args()
 
-ROOT.EnableImplicitMT()
-if args.nThreads: 
-    ROOT.DisableImplicitMT()
-    ROOT.EnableImplicitMT(int(args.nThreads))
-print(ROOT.GetThreadPoolSize())
+functions.set_threads(args)
+
 
 # define histograms
 bins_p_mu = (20000, 0, 200) # 10 MeV bins
@@ -510,7 +507,10 @@ if __name__ == "__main__":
 
     # import spring2021 IDEA samples
     #import FCCee_spring2021_IDEA
+    
+    baseDir = functions.get_basedir() # get base directory of samples, depends on the cluster hostname (mit, cern, ...)
     import FCCee_preproduction_IDEA
+    datasets_preproduction_IDEA = FCCee_preproduction_IDEA.get_datasets(baseDir=baseDir) # list of all datasets
 
     
     if args.flavor == "mumu": 
@@ -522,9 +522,7 @@ if __name__ == "__main__":
         
         select = signal + signal_mass + bkgs
         select = ["wzp6_ee_mumuH_ecm240"]
-        datasets += FCCee_preproduction_IDEA.getDatasets(select=select)
-          
-
+         
     
     if args.flavor == "ee":
     
@@ -534,11 +532,10 @@ if __name__ == "__main__":
         
         select = signal + signal_mass + bkgs
         select = ["wzp6_ee_eeH_ecm240"]
-        datasets += FCCee_preproduction_IDEA.getDatasets(select=select)
         
         
         
 
-
+    datasets += functions.filter_datasets(datasets_preproduction_IDEA, select)
     result = functions.build_and_run(datasets, build_graph, "tmp/output_mass_xsec_%s.root" % args.flavor, maxFiles=args.maxFiles, norm=True, lumi=5000000)
     

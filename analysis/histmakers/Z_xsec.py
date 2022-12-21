@@ -10,11 +10,7 @@ parser.add_argument("--flavor", type=str, choices=["ee", "mumu", "qq"], help="Fl
 parser.add_argument("--jetAlgo", type=str, choices=["kt", "valencia", "genkt"], default="genkt", help="Jet clustering algorithm")
 args = parser.parse_args()
 
-ROOT.EnableImplicitMT()
-if args.nThreads: 
-    ROOT.DisableImplicitMT()
-    ROOT.EnableImplicitMT(int(args.nThreads))
-print(ROOT.GetThreadPoolSize())
+functions.set_threads(args)
 
 # define histograms
 bins_p_mu = (20000, 0, 200) # 10 MeV bins
@@ -225,28 +221,21 @@ def build_graph_qq(df, dataset):
 
 if __name__ == "__main__":
 
-    datasets = []
+    baseDir = functions.get_basedir() # get base directory of samples, depends on the cluster hostname (mit, cern, ...)
     import FCCee_spring2021_ecm91_IDEA
-    baseDir_MIT = "/data/submit/cms/store/fccee"
-    baseDir_CERN = "/data/shared/jaeyserm/fccee/" # /eos/experiment/fcc/ee/generation/DelphesEvents/
-    
-   
-    
+    datasets_spring2021_ecm91 = FCCee_spring2021_ecm91_IDEA.get_datasets(baseDir=baseDir) # list of all datasets
+    datasets = [] # list of datasets to be run over
+
     if args.flavor == "mumu": 
-        samples = ["p8_ee_Zmumu_ecm91", "p8_ee_Ztautau_ecm91"]
-        datasets += FCCee_spring2021_ecm91_IDEA.getDatasets(select=samples, baseDir=baseDir_CERN)
-        
+        datasets += functions.filter_datasets(datasets_spring2021_ecm91, ["p8_ee_Zmumu_ecm91", "p8_ee_Ztautau_ecm91"])
         result = functions.build_and_run(datasets, build_graph_ll, "tmp/output_z_xsec_mumu.root", maxFiles=args.maxFiles, norm=True, lumi=150000000)
 
     if args.flavor == "ee":
-    
-        samples = ["p8_ee_Zee_ecm91", "p8_ee_Ztautau_ecm91"]
-        datasets += FCCee_spring2021_ecm91_IDEA.getDatasets(select=samples, baseDir=baseDir_CERN)
+        datasets += functions.filter_datasets(datasets_spring2021_ecm91, ["p8_ee_Zee_ecm91", "p8_ee_Ztautau_ecm91"])
         result = functions.build_and_run(datasets, build_graph_ll, "tmp/output_z_xsec_ee.root", maxFiles=args.maxFiles, norm=True, lumi=150000000)
  
     if args.flavor == "qq":
-        samples = ["p8_ee_Zuds_ecm91", "p8_ee_Zcc_ecm91", "p8_ee_Zbb_ecm91"]
-        datasets += FCCee_spring2021_ecm91_IDEA.getDatasets(select=samples, baseDir=baseDir_CERN)
+        datasets += functions.filter_datasets(datasets_spring2021_ecm91, ["p8_ee_Zuds_ecm91", "p8_ee_Zcc_ecm91", "p8_ee_Zbb_ecm91"])
         result = functions.build_and_run(datasets, build_graph_qq, "tmp/output_z_xsec_qq.root", maxFiles=args.maxFiles, norm=True, lumi=150000000)
 
     

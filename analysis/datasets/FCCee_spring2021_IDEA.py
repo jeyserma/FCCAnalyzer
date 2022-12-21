@@ -1,14 +1,11 @@
 
-import ROOT # switch to hex colors
-import copy
-import fnmatch
-
 # http://fcc-physics-events.web.cern.ch/fcc-physics-events/FCCee/spring2021/Delphesevents_IDEA.php
 
-def getDatasets(filt=None, select=[], baseDir = ""):
+def get_datasets(baseDir = ""):
 
     datasets = []
-    baseDir = "/eos/experiment/fcc/ee/generation/DelphesEvents/spring2021/IDEA/"
+    subDir = "/spring2021/IDEA/"
+    baseDir = "%s/%s" % (baseDir, subDir)
 
     ## signal samples
     datasets.append({
@@ -213,12 +210,4 @@ def getDatasets(filt=None, select=[], baseDir = ""):
         "xsec"      : 0.836
     })
 
-
-
-    if filt != None: return [dataset for dataset in datasets if fnmatch.fnmatch(dataset['name'], filt)]
-    elif len(select) > 0: 
-        ret = []
-        for dataset in datasets:
-            if dataset['name'] in select: ret.append(dataset)
-        return ret
-    else: return datasets
+    return datasets

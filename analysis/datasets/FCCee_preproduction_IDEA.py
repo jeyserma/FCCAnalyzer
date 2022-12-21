@@ -1,11 +1,5 @@
 
-import ROOT # switch to hex colors
-import copy
-import fnmatch
-
-# http://fcc-physics-events.web.cern.ch/fcc-physics-events/FCCee/spring2021/Delphesevents_IDEA.php
-
-def getDatasets(filt=None, select=[], baseDir = ""):
+def get_datasets(baseDir = ""):
 
     datasets = []
     baseDir = "/eos/experiment/fcc/ee/generation/DelphesEvents/pre_fall2022_training/IDEA/"
@@ -160,6 +154,24 @@ def getDatasets(filt=None, select=[], baseDir = ""):
         "datadir"   : "%s/wzp6_ee_eeH_ecm240" % winter_v1,
         "xsec"      : 0.0071611
     })
+    
+    datasets.append({
+        "name"      : "wzp6_ee_eeH_ecm240_v2",
+        "datadir"   : "%s/wzp6_ee_eeH_ecm240" % winter_v2,
+        "xsec"      : 0.0071611
+    })
+    
+    datasets.append({
+        "name"      : "wzp6_ee_eeH_ecm240_v3",
+        "datadir"   : "/eos/experiment/fcc/ee/generation/DelphesStandalone/Edm4Hep/pre_winter2023_tests_v3//wzp6_ee_eeH_ecm240",
+        "xsec"      : 0.0071611
+    })
+
+    datasets.append({
+        "name"      : "wzp6_ee_eeH_ecm240_v4",
+        "datadir"   : "/eos/experiment/fcc/ee/generation/DelphesStandalone/Edm4Hep/pre_winter2023_tests_v4/wzp6_ee_eeH_ecm240",
+        "xsec"      : 0.0071611
+    })
 
 
 
@@ -245,14 +257,4 @@ def getDatasets(filt=None, select=[], baseDir = ""):
     })
     
     
-    
-    
-
-
-    if filt != None: return [dataset for dataset in datasets if fnmatch.fnmatch(dataset['name'], filt)]
-    elif len(select) > 0: 
-        ret = []
-        for dataset in datasets:
-            if dataset['name'] in select: ret.append(dataset)
-        return ret
-    else: return datasets
+    return datasets

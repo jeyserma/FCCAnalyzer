@@ -9,11 +9,7 @@ parser.add_argument("--maxFiles", type=int, help="Max number of files (per datas
 parser.add_argument("--flavor", type=str, help="Flavor (mumu or ee)", default="mumu")
 args = parser.parse_args()
 
-ROOT.EnableImplicitMT()
-if args.nThreads: 
-    ROOT.DisableImplicitMT()
-    ROOT.EnableImplicitMT(int(args.nThreads))
-print(ROOT.GetThreadPoolSize())
+functions.set_threads(args)
 
 # define histograms
 bins_p_mu = (20000, 0, 200) # 10 MeV bins
@@ -402,18 +398,21 @@ if __name__ == "__main__":
         #datasets = FCCee_preproduction_IDEA.getDatasets(filt="muon_gun")
         #datasets += FCCee_preproduction_IDEA.getDatasets(filt="muon_gun_smear2x")
         
-        datasets += FCCee_preproduction_IDEA.getDatasets(filt="p8_ee_ZZ_Zll_ecm240")
+        #datasets += FCCee_preproduction_IDEA.getDatasets(filt="p8_ee_ZZ_Zll_ecm240")
         
     
     if args.flavor == "ee":
         #
-        datasets += FCCee_preproduction_IDEA.getDatasets(filt="wzp6_ee_eeH_ecm240") 
-        datasets += FCCee_preproduction_IDEA.getDatasets(filt="wzp6_ee_eeH_ecm240_v1") 
+        #datasets += FCCee_preproduction_IDEA.getDatasets(filt="wzp6_ee_eeH_ecm240") 
+        datasets += FCCee_preproduction_IDEA.getDatasets(filt="wzp6_ee_eeH_ecm240_v1")
+        datasets += FCCee_preproduction_IDEA.getDatasets(filt="wzp6_ee_eeH_ecm240_v2") 
+        datasets += FCCee_preproduction_IDEA.getDatasets(filt="wzp6_ee_eeH_ecm240_v3") 
+        datasets += FCCee_preproduction_IDEA.getDatasets(filt="wzp6_ee_eeH_ecm240_v4") 
         #datasets += FCCee_preproduction_IDEA.getDatasets(filt="wzp6_ee_eeH_ecm240_winter_v2") # 2x reso
     
         #datasets = FCCee_preproduction_IDEA.getDatasets(filt="electron_gun")
         
-        datasets += FCCee_preproduction_IDEA.getDatasets(filt="p8_ee_ZZ_Zll_ecm240")
+        #datasets += FCCee_preproduction_IDEA.getDatasets(filt="p8_ee_ZZ_Zll_ecm240")
 
     result = functions.build_and_run(datasets, build_graph, "tmp/validation_%s.root" % args.flavor, maxFiles=args.maxFiles)
     

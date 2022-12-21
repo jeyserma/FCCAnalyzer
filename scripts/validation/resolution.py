@@ -474,17 +474,41 @@ if __name__ == "__main__":
     f1, p1, l1 = "tmp/validation_mumu.root", "wzp6_ee_mumuH_ecm240", "Winter 2023, muons"  # wzp6_ee_mumuH_ecm240 p8_ee_ZZ_Zll_ecm240
     f2, p2, l2 = "tmp/validation_ee.root", "wzp6_ee_eeH_ecm240_v1", "Winter 2023, electrons (v1)" # wzp6_ee_eeH_ecm240 p8_ee_ZZ_Zll_ecm240
     outDir = "/eos/user/j/jaeyserm/www/FCCee/ZH_mass_xsec/sampleComparison/winter2023_electronv1_muon_resolution/"
-    resolutionVsTheta(0.98, 1.02, 0, 0.03, "Resolution (p_{reco}/p_{gen})", "Events (normalized)")
+    #resolutionVsTheta(0.98, 1.02, 0, 0.03, "Resolution (p_{reco}/p_{gen})", "Events (normalized)")
     
     
     #let's say the factor is around 1.95, close to 2, but systematically lower than 2
     
-    #f1, p1, l1 = "tmp/validation_mumu.root", "muon_gun", "Muon"
-    #f2, p2, l2 = "tmp/validation_ee.root", "electron_gun", "Electron"
-    #outDir = "/eos/user/j/jaeyserm/www/FCCee/ZH_mass_xsec/sampleComparison/winter2023_gun/"
-    #resolution("muons_electrons", "muons_reso_cut0", 0.98, 1.02, 0, -1, "Resolution (p_{reco}/p_{gen})", "Events (normalized)", rebin=10)
+    '''
+    f1, p1, l1 = "tmp/validation_mumu.root", "muon_gun", "Muon"
+    f2, p2, l2 = "tmp/validation_ee.root", "electron_gun", "Electron"
+    outDir = "/eos/user/j/jaeyserm/www/FCCee/ZH_mass_xsec/sampleComparison/winter2023_gun/"
+    resolution("muons_electrons", "muons_reso_cut0", 0.98, 1.02, 0, -1, "Resolution (p_{reco}/p_{gen})", "Events (normalized)", rebin=10)
 
-    #f1, p1, l1 = "tmp/validation_mumu.root", "muon_gun_smear2x", "Muon (2x)"
-    #f2, p2, l2 = "tmp/validation_ee.root", "electron_gun", "Electron"
-    #outDir = "/eos/user/j/jaeyserm/www/FCCee/ZH_mass_xsec/sampleComparison/winter2023_gun/"
-    #resolution("muons2x_electrons", "muons_reso_cut0", 0.98, 1.02, 0, -1, "Resolution (p_{reco}/p_{gen})", "Events (normalized)", rebin=10)
+    f1, p1, l1 = "tmp/validation_mumu.root", "muon_gun_smear2x", "Muon (2x)"
+    f2, p2, l2 = "tmp/validation_ee.root", "electron_gun", "Electron"
+    outDir = "/eos/user/j/jaeyserm/www/FCCee/ZH_mass_xsec/sampleComparison/winter2023_gun/"
+    resolution("muons2x_electrons", "muons_reso_cut0", 0.98, 1.02, 0, -1, "Resolution (p_{reco}/p_{gen})", "Events (normalized)", rebin=10)
+    
+    '''
+    
+    f1, p1, l1 = "tmp/validation_mumu.root", "wzp6_ee_mumuH_ecm240", "Muons"
+    f2, p2, l2 = "tmp/validation_ee.root", "wzp6_ee_eeH_ecm240_v1", "Electrons (v1)"
+    outDir = "/eos/user/j/jaeyserm/www/FCCee/ZH_mass_xsec/sampleComparison/winter2023_electron_muon_res/"
+    resolution("mu_el_v1", "muons_reso_cut0", 0.98, 1.02, 0, -1, "Resolution (p_{reco}/p_{gen})", "Events (normalized)", rebin=10)
+
+    f1, p1, l1 = "tmp/validation_mumu.root", "wzp6_ee_mumuH_ecm240", "Muons"
+    f2, p2, l2 = "tmp/validation_ee.root", "wzp6_ee_eeH_ecm240_v2", "Electrons (v2)"
+    outDir = "/eos/user/j/jaeyserm/www/FCCee/ZH_mass_xsec/sampleComparison/winter2023_electron_muon_res/"
+    resolution("mu_el_v2", "muons_reso_cut0", 0.98, 1.02, 0, -1, "Resolution (p_{reco}/p_{gen})", "Events (normalized)", rebin=10)
+
+
+    f1, p1, l1 = "tmp/validation_mumu.root", "wzp6_ee_mumuH_ecm240", "Muons"
+    f2, p2, l2 = "tmp/validation_ee.root", "wzp6_ee_eeH_ecm240_v3", "Electrons (v3)"
+    outDir = "/eos/user/j/jaeyserm/www/FCCee/ZH_mass_xsec/sampleComparison/winter2023_electron_muon_res/"
+    resolution("mu_el_v3", "muons_reso_cut0", 0.98, 1.02, 0, -1, "Resolution (p_{reco}/p_{gen})", "Events (normalized)", rebin=10)
+
+    f1, p1, l1 = "tmp/validation_mumu.root", "wzp6_ee_mumuH_ecm240", "Muons"
+    f2, p2, l2 = "tmp/validation_ee.root", "wzp6_ee_eeH_ecm240_v4", "Electrons (v4)"
+    outDir = "/eos/user/j/jaeyserm/www/FCCee/ZH_mass_xsec/sampleComparison/winter2023_electron_muon_res/"
+    resolution("mu_el_v4", "muons_reso_cut0", 0.98, 1.02, 0, -1, "Resolution (p_{reco}/p_{gen})", "Events (normalized)", rebin=10)

@@ -619,9 +619,6 @@ ROOT::VecOps::RVec<edm4hep::ReconstructedParticleData> muon_not_from_higgs_decay
 }
 
 
-
-
-/*
 ROOT::VecOps::RVec<edm4hep::ReconstructedParticleData> selectPair(ROOT::VecOps::RVec<edm4hep::ReconstructedParticleData> pairs)   {
 
     ROOT::VecOps::RVec<edm4hep::ReconstructedParticleData> result;
