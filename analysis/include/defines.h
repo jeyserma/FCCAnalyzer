@@ -26,7 +26,7 @@ using Vec_ui = ROOT::VecOps::RVec<unsigned int>;
 using rp = edm4hep::ReconstructedParticleData;
 using Vec_rp = ROOT::VecOps::RVec<edm4hep::ReconstructedParticleData>;
 using Vec_mc = ROOT::VecOps::RVec<edm4hep::MCParticleData>;
-
+using Vec_tlv = ROOT::VecOps::RVec<TLorentzVector>;
     
  
 float sumScalar(Vec_f in){
