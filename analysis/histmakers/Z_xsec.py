@@ -228,7 +228,7 @@ if __name__ == "__main__":
 
     if args.flavor == "mumu": 
         datasets += functions.filter_datasets(datasets_spring2021_ecm91, ["p8_ee_Zmumu_ecm91", "p8_ee_Ztautau_ecm91"])
-        result = functions.build_and_run(datasets, build_graph_ll, "tmp/output_z_xsec_mumu.root", maxFiles=args.maxFiles, norm=True, lumi=150000000)
+        result = functions.build_and_run(datasets, build_graph_ll, "tmp/output_z_xsec_mumu.root", maxFiles=args.maxFiles) # , norm=True, lumi=150000000
 
     if args.flavor == "ee":
         datasets += functions.filter_datasets(datasets_spring2021_ecm91, ["p8_ee_Zee_ecm91", "p8_ee_Ztautau_ecm91"])

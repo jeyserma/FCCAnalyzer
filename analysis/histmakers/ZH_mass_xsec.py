@@ -522,7 +522,7 @@ if __name__ == "__main__":
         
         select = signal + signal_mass + bkgs
         select = ["wzp6_ee_mumuH_ecm240"]
-         
+        select = ["p8_ee_WW_mumu_ecm240", "p8_ee_WW_ecm240"]
     
     if args.flavor == "ee":
     

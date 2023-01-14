@@ -113,7 +113,7 @@ def makePlot():
 	
 if __name__ == "__main__":
 
-    flavor = "ee"
+    flavor = "mumu"
     fIn = ROOT.TFile("tmp/output_mass_xsec_%s.root" % flavor)
     outDir = "/eos/user/j/jaeyserm/www/FCCee/ZH_mass_xsec/plots_%s/" % flavor
     
@@ -125,7 +125,7 @@ if __name__ == "__main__":
     
         labels = ["All events", "#geq 1 #mu^{#pm} + ISO", "#geq 2 #mu^{#pm} + OS", "86 < m_{#mu^{+}#mu^{#minus}} < 96", "20 < p_{T}^{#mu^{+}#mu^{#minus}} < 70", "|cos#theta_{miss}| < 0.98", "120 < m_{rec} < 140"]
     
-        sigs = ["wzp6_ee_mumuH_ecm240"]
+        sigs = ["p8_ee_WW_mumu_ecm240"]
         sig_scale = 10
         sig_legend = "Z(#mu^{+}#mu^{#minus})H (10#times)"
     
@@ -134,9 +134,9 @@ if __name__ == "__main__":
         bkgs_colors = [ROOT.TColor.GetColor(248, 206, 104), ROOT.TColor.GetColor(222, 90, 106), ROOT.TColor.GetColor(100, 192, 232), ROOT.TColor.GetColor(155, 152, 204)] # from
         bgks_cfg = { 
             "WW"	    : ["p8_ee_WW_mumu_ecm240"],
-            "ZZ"	    : ["p8_ee_ZZ_Zll_ecm240"],
-            "Zgmumu"    : ["wzp6_ee_mumu_ecm240"],
-            "Zgtautau"  : ["wzp6_ee_tautau_ecm240"]
+            "ZZ"	    : ["p8_ee_WW_ecm240"],
+            "Zgmumu"    : ["p8_ee_WW_mumu_ecm240"],
+            "Zgtautau"  : ["p8_ee_WW_mumu_ecm240"]
             #"RARE"	: ["wzp6_egamma_eZ_Zmumu_ecm240", "wzp6_gammae_eZ_Zmumu_ecm240", "wzp6_gaga_mumu_60_ecm240", "wzp6_gaga_tautau_60_ecm240"],
         }
         
@@ -174,6 +174,7 @@ if __name__ == "__main__":
             #if j == 0: histProc.Scale(1./sig_scale)
             yield_, err = histProc.GetBinContent(i+1), histProc.GetBinError(i+1)
             row.append("%.2e %.2f" % (yield_, err))
+            print(histProc, yield_, err)
         rows.append(row)
         
         
