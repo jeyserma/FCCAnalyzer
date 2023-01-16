@@ -22,7 +22,6 @@ def findCrossing(xv, yv, left=True, flip=125, cross=1.):
         if dy < closestPoint: 
             closestPoint = dy
             idx = i
-        
     # find correct indices around crossing
     if left: 
         if yv[idx] > cross: idx_ = idx+1
@@ -136,9 +135,9 @@ def analyzeMass(runDir, outDir, xMin=-1, xMax=-1, yMin=0, yMax=2, label="label")
     tFile.write(str_out)
     tFile.close()
         
-def analyzeXsec(tag):
+def analyzeXsec(runDir, outDir, xMin=-1, xMax=-1, yMin=0, yMax=2, label="label"):
 
-    fIn = ROOT.TFile("%s/higgsCombine%s_xsec.MultiDimFit.mH125.root" % (runDir, tag), "READ")
+    fIn = ROOT.TFile("%s/higgsCombinexsec.MultiDimFit.mH125.root" % runDir, "READ")
     t = fIn.Get("limit")
     
     ref_xsec = 0.201868 # pb, for pythia
@@ -206,37 +205,39 @@ def analyzeXsec(tag):
     line.SetLineColor(ROOT.kBlack)
     line.SetLineWidth(2)
     line.Draw("SAME")
-    
-    leg = ROOT.TLegend(.20, 0.82, 0.90, .9)
+
+    leg = ROOT.TLegend(.20, 0.825, 0.90, .9)
     leg.SetBorderSize(0)
     leg.SetTextSize(0.035)
     leg.SetMargin(0.15)
     leg.SetBorderSize(1)
-    leg.AddEntry(g, "#sigma = %.5f #pm  %.5f" % (xsec, unc), "L")
+    leg.AddEntry(g, "%s, #delta(#sigma) = %.2f %%" % (label, unc*100.), "LP")
     leg.Draw()
               
     plotter.aux()
     canvas.Modify()
     canvas.Update()
     canvas.Draw()
-    canvas.SaveAs("%s/xsec_%s.png" % (outDir, tag))
-    canvas.SaveAs("%s/xsec_%s.pdf" % (outDir, tag))
+    canvas.SaveAs("%s/xsec.png" % outDir)
+    canvas.SaveAs("%s/xsec.pdf" % outDir)
     
     
     # write values to text file
     str_out = "%f %f %f %f\n" % (unc_m, unc_p, unc, xsec)
     for i in range(0, len(xv)): str_out += "%f %f\n" % (xv[i], yv[i])
-    tFile = open("%s/xsec_%s.txt" % (outDir, tag), "w")
+    tFile = open("%s/xsec.txt" % outDir, "w")
     tFile.write(str_out)
     tFile.close()
-    tFile = open("%s/xsec_%s.txt" % (runDir, tag), "w")
+    tFile = open("%s/xsec.txt" % runDir, "w")
     tFile.write(str_out)
     tFile.close()
 
-def calculateXsec(tag, combineOptions = "", rMin=0.95, rMax=1.05, npoints=50):
+    
+
+def doFit_xsec(runDir, rMin=0.98, rMax=1.02, npoints=50, combineOptions = ""):
 
     # scan for signal strength (= xsec)
-    cmd = "combine -M MultiDimFit -t -1 --setParameterRanges r=%f,%f --points=%d --algo=grid ws.root --expectSignal=1 -m 125 --X-rtd TMCSO_AdaptivePseudoAsimov -v 10 --X-rtd ADDNLL_CBNLL=0 -n %s_xsec %s" % (rMin, rMax, npoints, tag, combineOptions)
+    cmd = "combine -M MultiDimFit -t -1 --setParameterRanges r=%f,%f --points=%d --algo=grid ws.root --expectSignal=1 -m 125 --X-rtd TMCSO_AdaptivePseudoAsimov -v 10 --X-rtd ADDNLL_CBNLL=0 -n xsec %s" % (rMin, rMax, npoints, combineOptions)
     
     subprocess.call(cmd, shell=True, cwd=runDir)
      
@@ -525,17 +526,22 @@ if __name__ == "__main__":
     outDir = "/eos/user/j/jaeyserm/www/FCCee/ZH_mass_xsec/combine/"
     
     ############### MUON
-    if False:
+    if True:
         combineOptions = "--setParameters shapeBkg_bkg_bin1__norm=0,r=1.0"
         combineOptions = "--freezeParameters r,shapeBkg_bkg_bin1__norm --setParameters MH=125.00,shapeBkg_bkg_bin1__norm=0"
         combineOptions = "--freezeParameters r,shapeBkg_bkg_bin1__norm"
         combineOptions = "--freezeParameters r,shapeBkg_bkg_bin1__norm --setParameters MH=125.00,shapeBkg_bkg_bin1__norm=0"
-    
+        combineOptions = ""
+        
         tag, label = "mumu_cat0", "#mu^{#plus}#mu^{#minus}, inclusive"
         xMin, xMax = 124.99, 125.01
+        rMin, rMax = 0.98, 1.02
         #doFit_mass("%s/%s" % (combineDir, tag), mhMin=xMin, mhMax=xMax, npoints=50)
         #analyzeMass("%s/%s" % (combineDir, tag), "%s/%s/" % (outDir, tag), label=label, xMin=xMin, xMax=xMax)
-        doFitDiagnostics_mass("%s/%s" % (combineDir, tag), mhMin=xMin, mhMax=xMax, combineOptions=combineOptions)
+        doFit_xsec("%s/%s" % (combineDir, tag), rMin=rMin, rMax=rMax, npoints=50)
+        analyzeXsec("%s/%s" % (combineDir, tag), "%s/%s/" % (outDir, tag), label=label, xMin=rMin, xMax=rMax)
+        #doFitDiagnostics_mass("%s/%s" % (combineDir, tag), mhMin=xMin, mhMax=xMax, combineOptions=combineOptions)
+        
      
         tag, label = "mumu_cat1", "#mu^{#plus}#mu^{#minus}, central-central"
         xMin, xMax = 124.99, 125.01
@@ -595,7 +601,7 @@ if __name__ == "__main__":
         
     
     ############### MUON+ELECTRON
-    if True:
+    if False:
         tag, label = "mumu_ee_combined_inclusive", "#mu^{#plus}#mu^{#minus}+e^{#plus}e^{#minus}, inclusive"
         xMin, xMax = 124.99, 125.01
         combineCards("%s/%s" % (combineDir, tag), [combineDir+"/mumu_cat0/datacard.txt", combineDir+"/ee_cat0/datacard.txt"])

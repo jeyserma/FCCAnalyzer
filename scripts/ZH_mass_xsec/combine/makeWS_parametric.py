@@ -141,27 +141,27 @@ def doSignal(normYields = True):
             yMax_norm = 0.15
             mean = ROOT.RooRealVar("mean_%s" % mH_, '', 1.25090e+02, mH-1., mH+1.)
             #sigma = ROOT.RooRealVar("sigma_%s" % mH_, '', 4.08196e-01, 0, 1)
-            sigma = ROOT.RooRealVar("sigma_%s" % mH_, '', 0.405) # fixed
+            sigma = ROOT.RooRealVar("sigma_%s" % mH_, '', 0.4335) # fixed
             #alpha_1 = ROOT.RooRealVar("alpha_1_%s" % mH_, '', -2.00592e-01, -10, 0)
-            alpha_1 = ROOT.RooRealVar("alpha_1_%s" % mH_, '', -0.192)
+            alpha_1 = ROOT.RooRealVar("alpha_1_%s" % mH_, '', -0.2)
             #alpha_2 = ROOT.RooRealVar("alpha_2_%s" % mH_, '', 4.05919e+00, 0, 10)
-            alpha_2 = ROOT.RooRealVar("alpha_2_%s" % mH_, '', 3.485)
+            alpha_2 = ROOT.RooRealVar("alpha_2_%s" % mH_, '', 3.35)
             #n_1 = ROOT.RooRealVar("n_1_%s" % mH_, '', 2.48214e+00, -10, 10)
-            n_1 = ROOT.RooRealVar("n_1_%s" % mH_, '', 2.596)
+            n_1 = ROOT.RooRealVar("n_1_%s" % mH_, '', 2.577)
             #n_2 = ROOT.RooRealVar("n_2_%s" % mH_, '', 0.04, -10, 10)
-            n_2 = ROOT.RooRealVar("n_2_%s" % mH_, '', 0.72)
+            n_2 = ROOT.RooRealVar("n_2_%s" % mH_, '', 1.028)
 
             #mean_gt = ROOT.RooRealVar("mean_gt_%s" % mH_, '', 1.25338e+02, recoilMin, recoilMax)
-            mean_gt_offset = ROOT.RooRealVar("mean_gt_offset_%s" % mH_, '', 0.25)
+            mean_gt_offset = ROOT.RooRealVar("mean_gt_offset_%s" % mH_, '', 0.35)
             mean_gt = ROOT.RooFormulaVar("mean_gt_%s" % mH_, "@0+@1", ROOT.RooArgList(mean, mean_gt_offset))
             
             #sigma_gt = ROOT.RooRealVar("sigma_gt_%s" % mH_, '', 8.30603e-01, 0, 2)
-            sigma_gt = ROOT.RooRealVar("sigma_gt_%s" % mH_, '', 0.81) # fixed  
-            
+            sigma_gt = ROOT.RooRealVar("sigma_gt_%s" % mH_, '', 0.84) # fixed  
+           
             #cb_1 = ROOT.RooRealVar("cb_1_%s" % mH_, '', 0.5, 0, 1)
-            cb_1 = ROOT.RooRealVar("cb_1_%s" % mH_, '', 0.4898)
+            cb_1 = ROOT.RooRealVar("cb_1_%s" % mH_, '', 0.479)
             #cb_2 = ROOT.RooRealVar("cb_2_%s" % mH_, '', 0.4, 0, 1)
-            cb_2 = ROOT.RooRealVar("cb_2_%s" % mH_, '', 0.3824)
+            cb_2 = ROOT.RooRealVar("cb_2_%s" % mH_, '', 0.419)
             
             
         
@@ -1135,11 +1135,9 @@ def doBackgrounds():
     recoilmass = w_tmp.var("zll_recoil_m")
     hist_bkg = None
     
-    #procs = ["p8_ee_WW_mumu_ecm240", "p8_ee_ZZ_ecm240", "wzp6_egamma_eZ_Zmumu_ecm240", "wzp6_gammae_eZ_Zmumu_ecm240", "wzp6_gaga_mumu_60_ecm240", "wzp6_gaga_tautau_60_ecm240", "p8_ee_Zll_ecm240"]
-    #procs = ["p8_ee_WW_mumu_ecm240", "p8_ee_ZZ_Zll_ecm240"]
     
     if flavor == "mumu":
-        procs = ["p8_ee_WW_mumu_ecm240", "p8_ee_ZZ_Zll_ecm240", "wzp6_ee_mumu_ecm240", "wzp6_ee_tautau_ecm240"]
+        procs = ["p8_ee_WW_ecm240", "p8_ee_ZZ_ecm240", "wzp6_ee_mumu_ecm240", "wzp6_ee_tautau_ecm240", "wzp6_egamma_eZ_Zmumu_ecm240", "wzp6_gammae_eZ_Zmumu_ecm240", "wzp6_gaga_mumu_60_ecm240", "wzp6_gaga_tautau_60_ecm240", "wzp6_ee_nuenueZ_ecm240"]
         
     if flavor == "ee":
         procs = ["p8_ee_WW_ecm240", "p8_ee_ZZ_Zll_ecm240",  "wzp6_ee_ee_Mee_30_150_ecm240", "wzp6_ee_tautau_ecm240"]
@@ -2264,10 +2262,10 @@ def doISR():
  
 if __name__ == "__main__":
 
-    flavor = "ee"
+    flavor = "mumu"
     cat = 0
     label = "#mu^{#plus}#mu^{#minus}, category %d" % (cat) if flavor == "mumu" else "e^{#plus}e^{#minus}, category %d" % (cat)
-    fIn = ROOT.TFile("tmp/output_mass_xsec_%s_reco.root" % flavor)
+    fIn = ROOT.TFile("tmp/output_mass_xsec_%s.root" % flavor)
     outDir = "/eos/user/j/jaeyserm/www/FCCee/ZH_mass_xsec/combine_%s/init/cat%d/" % (flavor, cat)
     hName = "zll_recoil_m"
     
@@ -2297,7 +2295,6 @@ if __name__ == "__main__":
     
     doSignal()
     doBackgrounds()
-    
     doSyst = False
     if doSyst:
 
@@ -2427,7 +2424,7 @@ if __name__ == "__main__":
 
 
     # build the Combine workspace based on the datacard, save it to ws.root
-    cmd = "cp ../datacard.txt ."
+    cmd = "cp ../datacard_parametric.txt ."
     subprocess.call(cmd, shell=True, cwd=runDir)
     cmd = "text2workspace.py datacard.txt -o ws.root -v 10"
     subprocess.call(cmd, shell=True, cwd=runDir)

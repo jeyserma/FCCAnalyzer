@@ -492,6 +492,12 @@ if __name__ == "__main__":
     
     '''
     
+    f1, p1, l1 = "tmp/validation_mumu_prewinter.root", "wzp6_ee_mumuH_ecm240", "Muons pre-winter 2023"
+    f2, p2, l2 = "tmp/validation_mumu_winter.root", "wzp6_ee_mumuH_ecm240", "Muons winter 2023"
+    outDir = "/eos/user/j/jaeyserm/www/FCCee/ZH_mass_xsec/sampleComparison/prewinter_winter2023/"
+    resolution("mu_prewinter_winter", "muons_reso_cut0", 0.98, 1.02, 0, -1, "Resolution (p_{reco}/p_{gen})", "Events (normalized)", rebin=10)
+    quit()
+    
     f1, p1, l1 = "tmp/validation_mumu.root", "wzp6_ee_mumuH_ecm240", "Muons"
     f2, p2, l2 = "tmp/validation_ee.root", "wzp6_ee_eeH_ecm240_v1", "Electrons (v1)"
     outDir = "/eos/user/j/jaeyserm/www/FCCee/ZH_mass_xsec/sampleComparison/winter2023_electron_muon_res/"

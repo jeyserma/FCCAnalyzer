@@ -330,7 +330,7 @@ def build_graph(df, dataset):
     
     results.append(df.Histo1D(("cosThetaMiss_cut4", "", *bins_cosThetaMiss), "cosTheta_miss"))
     
-    df = df.Filter("cosTheta_miss < 5").Define("cut5", "5") # 0.98
+    df = df.Filter("cosTheta_miss < 0.98").Define("cut5", "5") # 0.98
     results.append(df.Histo1D(("cutFlow_cut5", "", *bins_count), "cut5"))
     if dataset.name in sigProcs: 
         results.append(df.Histo1D(("higgs_decay_cut5", "", *bins_count), "daughter_higgs_collapsed")) 
@@ -509,8 +509,8 @@ if __name__ == "__main__":
     #import FCCee_spring2021_IDEA
     
     baseDir = functions.get_basedir() # get base directory of samples, depends on the cluster hostname (mit, cern, ...)
-    import FCCee_preproduction_IDEA
-    datasets_preproduction_IDEA = FCCee_preproduction_IDEA.get_datasets(baseDir=baseDir) # list of all datasets
+    import FCCee_winter2023_IDEA_ecm240
+    datasets_preproduction_IDEA = FCCee_winter2023_IDEA_ecm240.get_datasets(baseDir=baseDir) # list of all datasets
 
     
     if args.flavor == "mumu": 
@@ -518,20 +518,23 @@ if __name__ == "__main__":
 
         signal = ["wzp6_ee_mumuH_ecm240"]
         signal_mass = ["wzp6_ee_mumuH_mH-higher-100MeV_ecm240", "wzp6_ee_mumuH_mH-higher-50MeV_ecm240", "wzp6_ee_mumuH_mH-lower-100MeV_ecm240", "wzp6_ee_mumuH_mH-lower-50MeV_ecm240"]
-        bkgs = ["p8_ee_WW_mumu_ecm240", "p8_ee_ZZ_Zll_ecm240", "wzp6_ee_mumu_ecm240", "wzp6_ee_tautau_ecm240", "p8_ee_Zll_ecm240"] # p8_ee_WW_ecm240 p8_ee_ZZ_ecm240
+        signal_syst = ["wzp6_ee_mumuH_BES-higher-1pc_ecm240", "wzp6_ee_mumuH_BES-lower-1pc_ecm240"]
+        bkgs = ["p8_ee_WW_ecm240", "p8_ee_ZZ_ecm240", "wzp6_ee_mumu_ecm240", "wzp6_ee_tautau_ecm240"]
+        bkgs_rare = ["wzp6_egamma_eZ_Zmumu_ecm240", "wzp6_gammae_eZ_Zmumu_ecm240", "wzp6_gaga_mumu_60_ecm240", "wzp6_gaga_tautau_60_ecm240", "wzp6_ee_nuenueZ_ecm240"]
         
-        select = signal + signal_mass + bkgs
-        select = ["wzp6_ee_mumuH_ecm240"]
-        select = ["p8_ee_WW_mumu_ecm240", "p8_ee_WW_ecm240"]
+        select = signal + signal_mass + bkgs + bkgs_rare + signal_syst
+        #select = ["p8_ee_WW_mumu_ecm240", "p8_ee_WW_ecm240"]
     
     if args.flavor == "ee":
     
         signal = ["wzp6_ee_eeH_ecm240"]
         signal_mass = ["wzp6_ee_eeH_mH-higher-100MeV_ecm240", "wzp6_ee_eeH_mH-higher-50MeV_ecm240", "wzp6_ee_eeH_mH-lower-100MeV_ecm240", "wzp6_ee_eeH_mH-lower-50MeV_ecm240"]
-        bkgs = ["p8_ee_WW_ecm240", "p8_ee_ZZ_Zll_ecm240", "wzp6_ee_ee_Mee_30_150_ecm240", "wzp6_ee_tautau_ecm240", "p8_ee_Zll_ecm240"] #  p8_ee_ZZ_ecm240
+        signal_syst = ["wzp6_ee_eeH_BES-higher-1pc_ecm240", "wzp6_ee_eeH_BES-lower-1pc_ecm240"]
+        bkgs = ["p8_ee_WW_ecm240", "p8_ee_ZZ_ecm240", "wzp6_ee_ee_Mee_30_150_ecm240", "wzp6_ee_tautau_ecm240"]
+        bkgs_rare = ["wzp6_egamma_eZ_Zee_ecm240", "wzp6_gammae_eZ_Zee_ecm240", "wzp6_gaga_ee_60_ecm240", "wzp6_gaga_tautau_60_ecm240", "wzp6_ee_nuenueZ_ecm240"]
         
-        select = signal + signal_mass + bkgs
-        select = ["wzp6_ee_eeH_ecm240"]
+        select = signal + signal_mass + bkgs + bkgs_rare + signal_syst
+        #select = ["wzp6_ee_eeH_ecm240"]
         
         
         

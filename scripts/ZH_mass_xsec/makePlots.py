@@ -864,7 +864,7 @@ def makePlot(hName, outName, xMin=0, xMax=100, yMin=1, yMax=1e5, xLabel="xlabel"
 	
 if __name__ == "__main__":
 
-    flavor = "ee"
+    flavor = "mumu"
     fIn = ROOT.TFile("tmp/output_mass_xsec_%s.root" % flavor)
     outDir = "/eos/user/j/jaeyserm/www/FCCee/ZH_mass_xsec/plots_%s/" % flavor
     
@@ -878,15 +878,14 @@ if __name__ == "__main__":
         sig_scale = 1
         sig_legend = "Z(#mu^{+}#mu^{#minus})H"
     
-        bkgs = ["WW", "ZZ", "Zgmumu", "Zgtautau"] # this is the order of the plot
-        bkgs_legends = ["W^{+}W^{#minus}", "ZZ", "Z/#gamma^{*} #rightarrow #mu^{+}#mu^{#minus}", "Z/#gamma^{*} #rightarrow #tau^{+}#tau^{#minus}"]
+        bkgs = ["WW", "ZZ", "Zg", "rare"] # this is the order of the plot
+        bkgs_legends = ["W^{+}W^{#minus}", "ZZ", "Z/#gamma^{*} #rightarrow #mu^{+}#mu^{#minus}, #tau^{+}#tau^{#minus}", "Rare (e(e)Z, #gamma#gamma #rightarrow #mu^{+}#mu^{#minus}, #tau^{+}#tau^{#minus})"]
         bkgs_colors = [ROOT.TColor.GetColor(248, 206, 104), ROOT.TColor.GetColor(222, 90, 106), ROOT.TColor.GetColor(100, 192, 232), ROOT.TColor.GetColor(155, 152, 204)] # from
         bgks_cfg = { 
-            "WW"	    : ["p8_ee_WW_mumu_ecm240"],
-            "ZZ"	    : ["p8_ee_ZZ_Zll_ecm240"],
-            "Zgmumu"    : ["wzp6_ee_mumu_ecm240"],
-            "Zgtautau"  : ["wzp6_ee_tautau_ecm240"]
-            #"RARE"	: ["wzp6_egamma_eZ_Zmumu_ecm240", "wzp6_gammae_eZ_Zmumu_ecm240", "wzp6_gaga_mumu_60_ecm240", "wzp6_gaga_tautau_60_ecm240"],
+            "WW"	    : ["p8_ee_WW_ecm240"],
+            "ZZ"	    : ["p8_ee_ZZ_ecm240"],
+            "Zg"        : ["wzp6_ee_mumu_ecm240", "wzp6_ee_tautau_ecm240"],
+            "rare"      : ["wzp6_egamma_eZ_Zmumu_ecm240", "wzp6_gammae_eZ_Zmumu_ecm240", "wzp6_gaga_mumu_60_ecm240", "wzp6_gaga_tautau_60_ecm240", "wzp6_ee_nuenueZ_ecm240"]
         }
         
     if flavor == "ee":
@@ -897,17 +896,17 @@ if __name__ == "__main__":
         sig_scale = 1
         sig_legend = "Z(e^{+}e^{#minus})H"
     
-        bkgs = ["WW", "ZZ", "Zgee", "Zgtautau"] # this is the order of the plot
-        bkgs_legends = ["W^{+}W^{#minus}", "ZZ", "Z/#gamma^{*} #rightarrow e^{+}e^{#minus}", "Z/#gamma^{*} #rightarrow #tau^{+}#tau^{#minus}"]
+        bkgs = ["WW", "ZZ", "Zg"] # this is the order of the plot
+        bkgs_legends = ["W^{+}W^{#minus}", "ZZ", "Z/#gamma^{*} #rightarrow e^{+}e^{#minus}, #tau^{+}#tau^{#minus}", "Rare (e(e)Z, #gamma#gamma #rightarrow e^{+}e^{#minus}, #tau^{+}#tau^{#minus})"]
+        
         bkgs_colors = [ROOT.TColor.GetColor(248, 206, 104), ROOT.TColor.GetColor(222, 90, 106), ROOT.TColor.GetColor(100, 192, 232), ROOT.TColor.GetColor(155, 152, 204)] # from
         bgks_cfg = { 
             "WW"	    : ["p8_ee_WW_ecm240"],
-            "ZZ"	    : ["p8_ee_ZZ_Zll_ecm240"],
-            "Zgee"      : ["wzp6_ee_ee_Mee_30_150_ecm240"],
-            "Zgtautau"  : ["wzp6_ee_tautau_ecm240"]
-            #"RARE"	: ["wzp6_egamma_eZ_Zmumu_ecm240", "wzp6_gammae_eZ_Zmumu_ecm240", "wzp6_gaga_mumu_60_ecm240", "wzp6_gaga_tautau_60_ecm240"],
+            "ZZ"	    : ["p8_ee_ZZ_ecm240"],
+            "Zg"        : ["wzp6_ee_ee_Mee_30_150_ecm240", "wzp6_ee_tautau_ecm240"],
+            "rare"      : []
         }
-    
+
     makePlot("zll_recoil_m", "zll_recoil_m", xMin=120, xMax=140, yMin=0, yMax=1.5e3, xLabel="m_{rec} (GeV)", yLabel="Events / 0.1 GeV", logY=False, rebin=100)
     makePlot("cosThetaMiss_cut4", "cosThetaMiss_cut4", xMin=0, xMax=1, yMin=0, yMax=5000, xLabel="|cos(#theta_{miss})|", yLabel="Events", logY=False, rebin=100)
     makePlot("photons_theta_cut6", "photons_theta_cut6", xMin=0, xMax=3.1415, yMin=0, yMax=2e3, xLabel="Photon #theta (rad)", yLabel="Events", logY=False, rebin=1)

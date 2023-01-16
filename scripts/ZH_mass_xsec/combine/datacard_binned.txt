@@ -1,0 +1,19 @@
+imax *
+jmax *
+kmax *
+---------------
+shapes sig      * datacard.root signal
+shapes bkg      * datacard.root background
+shapes data_obs * datacard.root data_obs
+---------------
+---------------
+#bin            bin1
+observation     -1
+------------------------------
+bin          bin1           bin1
+process      sig            bkg
+process      0              1
+rate         -1             -1
+--------------------------------
+bkg lnU      -              1.5
+bin1 autoMCStats 0 1 1

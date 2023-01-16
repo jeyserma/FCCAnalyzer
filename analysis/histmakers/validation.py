@@ -378,18 +378,20 @@ if __name__ == "__main__":
 
     # import spring2021 IDEA samples
     import FCCee_spring2021_IDEA
+    import FCCee_winter2023_IDEA_ecm240
     import FCCee_preproduction_IDEA
     
     #datasets = FCCee_spring2021_IDEA.getDatasets(filt="p8_ee_ZH_ecm240") # p8_ee_ZH_ecm240 
     #datasets += FCCee_spring2021_IDEA.getDatasets(filt="wzp6_ee_mumuH_ecm240")
     #datasets += FCCee_spring2021_IDEA.getDatasets(filt="p8_ee_Zmumu_ecm91")
     #datasets = FCCee_spring2021_IDEA.getDatasets(filt="wzp6_ee_mumuH_*ecm240")
-    
+    baseDir = functions.get_basedir() 
     
     if args.flavor == "mumu": 
         
-        datasets += FCCee_preproduction_IDEA.getDatasets(filt="wzp6_ee_mumuH_ecm240") # nominal
-        
+        #datasets_preproduction_IDEA = FCCee_preproduction_IDEA.get_datasets() # nominal
+        FCCee_winter2023_IDEA_ecm240 = FCCee_winter2023_IDEA_ecm240.get_datasets(baseDir=baseDir) # nominal
+        datasets += functions.filter_datasets(FCCee_winter2023_IDEA_ecm240, ["wzp6_ee_mumuH_ecm240"])
         #datasets += FCCee_preproduction_IDEA.getDatasets(filt="wzp6_ee_mumuH_ecm240_prefall") # muon iso fix
         #datasets += FCCee_preproduction_IDEA.getDatasets(filt="wz3p6_ee_mumuH_ecm240_prefall")
         ####datasets += FCCee_preproduction_IDEA.getDatasets(filt="wz3p6_ee_mumuH_ecm240_winter") # muon reso fix
