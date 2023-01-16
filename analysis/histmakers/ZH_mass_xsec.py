@@ -102,9 +102,8 @@ def build_graph(df, dataset):
     
     # cuts on leptons
     #df = df.Define("selected_muons", "FCCAnalyses::excluded_Higgs_decays(muons, MCRecoAssociations0, MCRecoAssociations1, ReconstructedParticles, Particle, Particle0, Particle1)") # was 10
-    df = df.Define("leps_sel_p", "FCCAnalyses::ReconstructedParticle::sel_p(20)(leps_all)")
-    df = df.Define("leps_sel_iso", "FCCAnalyses::sel_iso(99)(leps_sel_p, leps_all_iso)") # 0.25
-    df = df.Alias("leps", "leps_sel_iso") 
+    df = df.Define("leps", "FCCAnalyses::ReconstructedParticle::sel_p(20)(leps_all)")
+    
     
     df = df.Define("leps_p", "FCCAnalyses::ReconstructedParticle::get_p(leps)")
     df = df.Define("leps_theta", "FCCAnalyses::ReconstructedParticle::get_theta(leps)")
@@ -112,6 +111,7 @@ def build_graph(df, dataset):
     df = df.Define("leps_q", "FCCAnalyses::ReconstructedParticle::get_charge(leps)")
     df = df.Define("leps_no", "FCCAnalyses::ReconstructedParticle::get_n(leps)")
     df = df.Define("leps_iso", "FCCAnalyses::coneIsolation(0.01, 0.5)(leps, ReconstructedParticles)")
+    df = df.Define("leps_sel_iso", "FCCAnalyses::sel_iso(0.25)(leps, leps_iso)") # 0.25
     
     # prompt leptons: filter the leptons from prompt production
     #df = df.Define("prompt_muons", "FCCAnalyses::select_prompt_leptons(leps, MCRecoAssociations0, MCRecoAssociations1, ReconstructedParticles, Particle, Particle0, Particle1)")
@@ -329,6 +329,10 @@ def build_graph(df, dataset):
     
     
     results.append(df.Histo1D(("cosThetaMiss_cut4", "", *bins_cosThetaMiss), "cosTheta_miss"))
+    results.append(df.Histo1D(("photons_p_cut4", "", *bins_p_mu), "photons_p"))
+    results.append(df.Histo1D(("photons_theta_cut4", "", *bins_theta), "photons_theta"))
+    results.append(df.Histo1D(("photons_phi_cut4", "", *bins_phi), "photons_phi"))
+    results.append(df.Histo1D(("photons_no_cut4", "", *bins_count), "photons_no"))    
     
     df = df.Filter("cosTheta_miss < 0.98").Define("cut5", "5") # 0.98
     results.append(df.Histo1D(("cutFlow_cut5", "", *bins_count), "cut5"))
@@ -358,20 +362,30 @@ def build_graph(df, dataset):
     ### CUT 6: recoil cut
     #########  
     
+    
+    '''
+    # ISR photons
+    df = df.Define("forward_photon_no", "FCCAnalyses::has_forward_photon(0.25, photons)")
+    df = df.Filter("forward_photon_no == 0").Define("cut6", "6")
+    results.append(df.Histo1D(("cutFlow_cut6", "", *bins_count), "cut6"))
+    if dataset.name in sigProcs: 
+        results.append(df.Histo1D(("higgs_decay_cut6", "", *bins_count), "daughter_higgs_collapsed")) 
+        results.append(df.Histo1D(("zll_leps_from_higgs_cut6", "", *bins_count), "zll_leps_from_higgs"))
+    
+
+    '''    
     # final selection and histograms
     df = df.Filter("zll_recoil_m < 140 && zll_recoil_m > 120").Define("cut6", "6")
     results.append(df.Histo1D(("cutFlow_cut6", "", *bins_count), "cut6"))
     if dataset.name in sigProcs: 
         results.append(df.Histo1D(("higgs_decay_cut6", "", *bins_count), "daughter_higgs_collapsed")) 
         results.append(df.Histo1D(("zll_leps_from_higgs_cut6", "", *bins_count), "zll_leps_from_higgs"))
-    
-    # ISR photons
+        
     results.append(df.Histo1D(("photons_p_cut6", "", *bins_p_mu), "photons_p"))
     results.append(df.Histo1D(("photons_theta_cut6", "", *bins_theta), "photons_theta"))
     results.append(df.Histo1D(("photons_phi_cut6", "", *bins_phi), "photons_phi"))
     results.append(df.Histo1D(("photons_no_cut6", "", *bins_count), "photons_no"))
-    
-    
+        
     ########################
     # Final histograms
     ########################
