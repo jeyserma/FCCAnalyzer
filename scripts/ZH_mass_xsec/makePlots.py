@@ -762,7 +762,7 @@ def costhetamissing(sel):
 
 
 
-def makePlot(hName, outName, xMin=0, xMax=100, yMin=1, yMax=1e5, xLabel="xlabel", yLabel="Events", logX=False, logY=True, rebin=1, legPos=[0.5, 0.65, 0.9, 0.9]):
+def makePlot(hName, outName, xMin=0, xMax=100, yMin=1, yMax=1e5, xLabel="xlabel", yLabel="Events", logX=False, logY=True, rebin=1, legPos=[0.4, 0.65, 0.9, 0.9]):
 
 
     st = ROOT.THStack()
@@ -771,7 +771,8 @@ def makePlot(hName, outName, xMin=0, xMax=100, yMin=1, yMax=1e5, xLabel="xlabel"
     leg = ROOT.TLegend(legPos[0], legPos[1], legPos[2], legPos[3])
     leg.SetBorderSize(0)
     leg.SetFillStyle(0)
-    leg.SetTextSize(0.035)
+    leg.SetTextSize(0.03)
+    leg.SetMargin(0.2)
     
 
     h_sig = plotter.getProc(fIn, hName, sigs)
@@ -864,7 +865,7 @@ def makePlot(hName, outName, xMin=0, xMax=100, yMin=1, yMax=1e5, xLabel="xlabel"
 	
 if __name__ == "__main__":
 
-    flavor = "mumu"
+    flavor = "ee"
     fIn = ROOT.TFile("tmp/output_mass_xsec_%s.root" % flavor)
     outDir = "/eos/user/j/jaeyserm/www/FCCee/ZH_mass_xsec/plots_%s/" % flavor
     
@@ -896,7 +897,7 @@ if __name__ == "__main__":
         sig_scale = 1
         sig_legend = "Z(e^{+}e^{#minus})H"
     
-        bkgs = ["WW", "ZZ", "Zg"] # this is the order of the plot
+        bkgs = ["WW", "ZZ", "Zg", "rare"] # this is the order of the plot
         bkgs_legends = ["W^{+}W^{#minus}", "ZZ", "Z/#gamma^{*} #rightarrow e^{+}e^{#minus}, #tau^{+}#tau^{#minus}", "Rare (e(e)Z, #gamma#gamma #rightarrow e^{+}e^{#minus}, #tau^{+}#tau^{#minus})"]
         
         bkgs_colors = [ROOT.TColor.GetColor(248, 206, 104), ROOT.TColor.GetColor(222, 90, 106), ROOT.TColor.GetColor(100, 192, 232), ROOT.TColor.GetColor(155, 152, 204)] # from
@@ -904,35 +905,14 @@ if __name__ == "__main__":
             "WW"	    : ["p8_ee_WW_ecm240"],
             "ZZ"	    : ["p8_ee_ZZ_ecm240"],
             "Zg"        : ["wzp6_ee_ee_Mee_30_150_ecm240", "wzp6_ee_tautau_ecm240"],
-            "rare"      : []
+            "rare"      : ["wzp6_egamma_eZ_Zee_ecm240", "wzp6_gammae_eZ_Zee_ecm240", "wzp6_gaga_ee_60_ecm240", "wzp6_gaga_tautau_60_ecm240", "wzp6_ee_nuenueZ_ecm240"]
         }
 
     makePlot("zll_recoil_m", "zll_recoil_m", xMin=120, xMax=140, yMin=0, yMax=1.5e3, xLabel="m_{rec} (GeV)", yLabel="Events / 0.1 GeV", logY=False, rebin=100)
     makePlot("cosThetaMiss_cut4", "cosThetaMiss_cut4", xMin=0, xMax=1, yMin=0, yMax=5000, xLabel="|cos(#theta_{miss})|", yLabel="Events", logY=False, rebin=100)
     makePlot("photons_theta_cut6", "photons_theta_cut6", xMin=0, xMax=3.1415, yMin=0, yMax=2e3, xLabel="Photon #theta (rad)", yLabel="Events", logY=False, rebin=1)
-    makePlot("photons_phi_cut6", "photons_phi_cut6", xMin=-3.1415, xMax=3.1415, yMin=0, yMax=1e3, xLabel="Photon #phi (rad)", yLabel="Events", logY=False, rebin=1)
+    #makePlot("photons_phi_cut6", "photons_phi_cut6", xMin=-3.1415, xMax=3.1415, yMin=0, yMax=1e3, xLabel="Photon #phi (rad)", yLabel="Events", logY=False, rebin=1)
     makePlot("photons_p_cut6", "photons_p_cut6", xMin=0, xMax=20, yMin=0, yMax=1e3, xLabel="Photon p (GeV)", yLabel="Events", logY=False, rebin=10)
+    #makePlot("photons_theta_cut5", "photons_theta_cut5", xMin=0, xMax=3.1415, yMin=0, yMax=2e3, xLabel="Photon #theta (rad)", yLabel="Events", logY=False, rebin=1)
     
-    quit()
-    
-    results.append(df.Histo1D(("cutFlow_cut6", "", *bins_count), "cut6"))
-    results.append(df.Histo2D(("zll_m", "", *(bins_m_ll + bins_cat)), "zll_m", "zll_category"))
-    results.append(df.Histo2D(("zll_recoil_m", "", *(bins_recoil + bins_cat)), "zll_recoil_m", "zll_category"))
-    results.append(df.Histo2D(("zll_p", "", *(bins_p_ll + bins_cat)), "zll_p", "zll_category"))
-    results.append(df.Histo2D(("leps_p", "", *(bins_p_mu + bins_cat)), "leps_p", "zll_category"))
-    results.append(df.Histo2D(("cosThetaMiss", "", *(bins_cosThetaMiss + bins_cat)), "cosTheta_miss", "zll_category"))
-  
-    quit()
-    for sel in ["sel0", "sel1", "sel2", "sel3", "sel4", "sel5"]:
-    
-    
-        outDir = "%s/plots_%s/" % (outDir_, sel)
-        os.system("mkdir -p %s" % outDir)
-        os.system("cp %s/../index.php %s" % (outDir, outDir))
-
-        mll(sel)
-        ptll(sel)
-        costhetamissing(sel)
-        recoil_log(sel)
-        recoil_lin(sel)
-        recoil_lin_zoom(sel)
+   

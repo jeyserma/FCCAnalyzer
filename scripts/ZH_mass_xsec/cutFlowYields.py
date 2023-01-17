@@ -72,7 +72,7 @@ def makePlot():
         'logx'              : False,
         
         'xmin'              : 0,
-        'xmax'              : 7,
+        'xmax'              : len(cuts),
         'ymin'              : 1e4,
         'ymax'              : 1e10 ,
             
@@ -148,7 +148,7 @@ if __name__ == "__main__":
         sig_scale = 10
         sig_legend = "Z(e^{+}e^{#minus})H (10#times)"
     
-        bkgs = ["WW", "ZZ", "Zg"] # this is the order of the plot
+        bkgs = ["WW", "ZZ", "Zg", "rare"] # this is the order of the plot
         bkgs_legends = ["W^{+}W^{#minus}", "ZZ", "Z/#gamma^{*} #rightarrow e^{+}e^{#minus}, #tau^{+}#tau^{#minus}", "Rare (e(e)Z, #gamma#gamma #rightarrow e^{+}e^{#minus}, #tau^{+}#tau^{#minus})"]
         
         bkgs_colors = [ROOT.TColor.GetColor(248, 206, 104), ROOT.TColor.GetColor(222, 90, 106), ROOT.TColor.GetColor(100, 192, 232), ROOT.TColor.GetColor(155, 152, 204)] # from
@@ -156,7 +156,7 @@ if __name__ == "__main__":
             "WW"	    : ["p8_ee_WW_ecm240"],
             "ZZ"	    : ["p8_ee_ZZ_ecm240"],
             "Zg"        : ["wzp6_ee_ee_Mee_30_150_ecm240", "wzp6_ee_tautau_ecm240"],
-            "rare"      : []
+            "rare"      : ["wzp6_egamma_eZ_Zee_ecm240", "wzp6_gammae_eZ_Zee_ecm240", "wzp6_gaga_ee_60_ecm240", "wzp6_gaga_tautau_60_ecm240", "wzp6_ee_nuenueZ_ecm240"]
         }
     
     

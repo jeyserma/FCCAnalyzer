@@ -30,7 +30,7 @@ def makePlot(hName, xMin, xMax, yMin, yMax, xTitle, yTitle, rebin=1, logy=False,
     evc1 = m1.GetBinContent(1)
     evc2 = m2.GetBinContent(2)
     
-    print(evc1, evc2, m1.Integral(), m2.Integral())
+    print(evc1, evc2, h1.Integral(), h2.Integral())
     
     h1.Rebin(rebin)
     h2.Rebin(rebin)
@@ -229,12 +229,16 @@ if __name__ == "__main__":
     f2, p2, l2 = "tmp/validation_mumu.root", "p8_ee_ZZ_Zll_ecm240", "2023"
     outDir = "/eos/user/j/jaeyserm/www/FCCee/ZH_mass_xsec/sampleComparison/photon_2021_2023/"
     
+    f1, p1, l1 = "tmp/validation_mumu.root", "wzp6_ee_mumuH_ecm240", "Pre-winter, v2"
+    f2, p2, l2 = "tmp/validation_mumu.root", "wzp6_ee_mumuH_ecm240_winter", "Winter"
+    outDir = "/eos/user/j/jaeyserm/www/FCCee/ZH_mass_xsec/sampleComparison/winter_prewinter/"
+    
     makePlot("photons_p", 0, 10, 0, 0.15, "p (GeV)", "Events (normalized)", rebin=10) # 0.15
     makePlot("photons_no", 0, 10, 0, 0.2, "Multiplicity", "Events (normalized)", rebin=1) # 0.2
     makePlot("photons_phi", -5, 5, 0, 0.005, "#phi (rad)", "Events (normalized)", rebin=1)
     makePlot("photons_theta", 0, 3.14, 0, 0.015, "#theta (rad)", "Events (normalized)", rebin=1)
     
-    quit()
+    #quit()
     makePlot("muons_p_cut0", 0, 100, 0, 0.05, "p (GeV)", "Events (normalized)", rebin=100)
     makePlot("muons_p_gen_cut0", 0, 100, 0, 0.05, "p (GeV)", "Events (normalized)", rebin=100)
     makePlot("muons_no_cut0", 0, 8, 0, 1, "Multiplicity", "Events (normalized)", rebin=1)
@@ -244,7 +248,7 @@ if __name__ == "__main__":
     makePlot("muons_iso_cut0", 0, 1, 0.0001, 1, "Isolation", "Events (normalized)", rebin=2, logy=True)
     makeResolutionPlot("muons_reso_cut0", 0.98, 1.02, 0, 0.03, "Resolution (p_{reco}/p_{gen})", "Events (normalized)", rebin=10)
     
-    makePlot("deltaR_gen_leps", 0, 10, 0, 0.01, "#DeltaR(leptons)", "Events (normalized)", rebin=1) # 0.15
+    #makePlot("deltaR_gen_leps", 0, 10, 0, 0.01, "#DeltaR(leptons)", "Events (normalized)", rebin=1) # 0.15
     
     
     makePlot("photons_p", 0, 10, 0, 0.15, "p (GeV)", "Events (normalized)", rebin=10) # 0.15
@@ -285,8 +289,18 @@ if __name__ == "__main__":
     #makeResolutionPlot("selected_muons_central_reso_cut0", 0.98, 1.02, 0, 0.006, "Selected muon resolution, central (p reco / gen)", "Events (normalized)", rebin=2)
     #makeResolutionPlot("selected_muons_forward_reso_cut0", 0.98, 1.02, 0, 0.006, "Selected muon resolution, forward (p reco / gen)", "Events (normalized)", rebin=2)
     
+    
+
+    makePlot("photons_p_cut3", 0, 10, 0, 0.15, "p (GeV)", "Events (normalized)", rebin=10) # 0.15
+    makePlot("photons_no_cut3", 0, 10, 0, 0.2, "Multiplicity", "Events (normalized)", rebin=1) # 0.2
+    makePlot("photons_theta_cut3", 0, 3.14, 0, 0.015, "#theta (rad)", "Events (normalized)", rebin=1)    
+    
     makePlot("zed_leptonic_m_cut3", 60, 120, 0, 0.3, "m_{#mu^{#plus}, #mu^{#minus}} (Gev)", "Events (normalized)", rebin=1)
-    makePlot("zed_leptonic_recoil_m", 120, 140, 0, 0.1, "Recoil (GeV)", "Events (normalized)", rebin=100)
+    makePlot("zed_leptonic_recoil_m_cut3", 120, 140, 0, 0.1, "Recoil (GeV)", "Events (normalized)", rebin=100)
+    makePlot("zed_leptonic_p_cut3", 0, 100, 0, 0.1, "Recoil (GeV)", "Events (normalized)", rebin=1)
+    makePlot("zed_leptonic_recoil_m_cut4", 120, 140, 0, 0.1, "Recoil (GeV)", "Events (normalized)", rebin=100)
+    makePlot("zed_leptonic_recoil_m_cut5", 120, 140, 0, 0.1, "Recoil (GeV)", "Events (normalized)", rebin=100)
+    makePlot("zed_leptonic_recoil_m_cut6", 120, 140, 0, 0.1, "Recoil (GeV)", "Events (normalized)", rebin=100)
     makePlot("mll_gen_leps", 80, 110, 0, 0.35, "m_{l^{#plus}, l^{#minus}}, gen (Gev)", "Events (normalized)", rebin=1)
     makePlot("missingMass", 0, 150, 0, -1, "Missing mass (Gev)", "Events (normalized)", rebin=1)
 

@@ -135,13 +135,7 @@ def build_graph(df, dataset):
     # momentum resolution
     df = df.Define("leps_all_reso_p", "FCCAnalyses::leptonResolution_p(leps_all, MCRecoAssociations0, MCRecoAssociations1, ReconstructedParticles, Particle)")
     df = df.Define("leps_reso_p", "FCCAnalyses::leptonResolution_p(leps, MCRecoAssociations0, MCRecoAssociations1, ReconstructedParticles, Particle)")
-    
-    # build the Z resonance and recoil using MC information from the selected muons
-    #df = df.Define("zed_leptonic_MC", "FCCAnalyses::resonanceZBuilder2(91, true)(leps, MCRecoAssociations0, MCRecoAssociations1, ReconstructedParticles, Particle)")
-    #df = df.Define("zed_leptonic_m_MC", "FCCAnalyses::ReconstructedParticle::get_mass(zed_leptonic_MC)")
-    #df = df.Define("zed_leptonic_recoil_MC",  "FCCAnalyses::ReconstructedParticle::recoilBuilder(240)(zed_leptonic_MC)")
-    #df = df.Define("zed_leptonic_recoil_m_MC", "FCCAnalyses::ReconstructedParticle::get_mass(zed_leptonic_recoil_MC)")
-        
+       
     # gen analysis
     if dataset.name in sigProcs:
         df = df.Define("higgs_MC", "FCCAnalyses::gen_sel_pdgIDInt(25,false)(Particle)")
@@ -354,9 +348,6 @@ def build_graph(df, dataset):
     results.append(df.Histo1D(("photons_no_cut5", "", *bins_count), "photons_no"))        
     
     
-    #df = df.Filter("muons_theta[0] < 2.14 && muons_theta[0] > 1.0 && muons_theta[1] < 2.14 && muons_theta[1] > 1.0")
-    #df = df.Filter("muons_theta[0] < 2.0 && muons_theta[0] > 1.15")
-    #df = df.Filter("mll_gen_leps < 93 && mll_gen_leps > 88")
     
     #########
     ### CUT 6: recoil cut
@@ -371,9 +362,8 @@ def build_graph(df, dataset):
     if dataset.name in sigProcs: 
         results.append(df.Histo1D(("higgs_decay_cut6", "", *bins_count), "daughter_higgs_collapsed")) 
         results.append(df.Histo1D(("zll_leps_from_higgs_cut6", "", *bins_count), "zll_leps_from_higgs"))
+    '''   
     
-
-    '''    
     # final selection and histograms
     df = df.Filter("zll_recoil_m < 140 && zll_recoil_m > 120").Define("cut6", "6")
     results.append(df.Histo1D(("cutFlow_cut6", "", *bins_count), "cut6"))
@@ -397,119 +387,49 @@ def build_graph(df, dataset):
     results.append(df.Histo2D(("cosThetaMiss", "", *(bins_cosThetaMiss + bins_cat)), "cosTheta_miss", "zll_category"))
     
     
-    # MC based recoil
-    #results.append(df.Histo1D(("zed_leptonic_m_MC", "", *bins_m_ll), "zed_leptonic_m_MC"))
-    #results.append(df.Histo1D(("zed_leptonic_recoil_m_MC", "", *bins_recoil), "zed_leptonic_recoil_m_MC"))
-    
-    
-    
-    
 
     
-    #df = df.Define("massweights", "FCCAnalyses::breitWignerWeightsHiggs()")
-    #df = df.Define("massweights_indices", "FCCAnalyses::indices_(5)")
-    
-    #results.append(df.Histo2D(("zed_leptonic_recoil_m_massweights", "", *(bins_recoil + bins_massweights)), "zed_leptonic_recoil_m_", "massweights_indices", "massweights"))
-    
-    if dataset.name not in sigProcs:
-        return results, weightsum
-        
-        
-    
-    
-    
-    #bins_count = (50, 0, 50)
 
-    # systematics
-        
-    '''
+   
+    ########################
+    # Systematics
+    ########################
+
     # muon momentum scale
-    df = df.Define("muons_muscaleup", "momentum_scale(1e-5)(muons)")
-    df = df.Define("muons_muscaledw", "momentum_scale(-1e-5)(muons)")
-    df = df.Define("selected_muons_muscaleup", "FCCAnalyses::ReconstructedParticle::sel_pt(10.)(muons_muscaleup)")
-    df = df.Define("selected_muons_muscaledw", "FCCAnalyses::ReconstructedParticle::sel_pt(10.)(muons_muscaledw)")
-    df = df.Define("selected_muons_pt_muscaleup", "FCCAnalyses::ReconstructedParticle::get_pt(selected_muons_muscaleup)")
-    df = df.Define("selected_muons_pt_muscaledw", "FCCAnalyses::ReconstructedParticle::get_pt(selected_muons_muscaledw)")
-               
-    df = df.Define("zed_leptonic_muscaleup", "resonanceZBuilder2(91, false)(selected_muons_muscaleup, MCRecoAssociations0, MCRecoAssociations1, ReconstructedParticles, Particle)")
-    df = df.Define("zed_leptonic_m_muscaleup", "FCCAnalyses::ReconstructedParticle::get_mass(zed_leptonic_muscaleup)")
-    df = df.Define("zed_leptonic_no_muscaleup", "FCCAnalyses::ReconstructedParticle::get_n(zed_leptonic_muscaleup)")
-    df = df.Define("zed_leptonic_pt_muscaleup", "FCCAnalyses::ReconstructedParticle::get_pt(zed_leptonic_muscaleup)")
-    df = df.Define("zed_leptonic_charge_muscaleup", "FCCAnalyses::ReconstructedParticle::get_charge(zed_leptonic_muscaleup)")
-               
-    df = df.Define("zed_leptonic_muscaledw", "resonanceZBuilder2(91, false)(selected_muons_muscaledw, MCRecoAssociations0, MCRecoAssociations1, ReconstructedParticles, Particle)")
-    df = df.Define("zed_leptonic_m_muscaledw", "FCCAnalyses::ReconstructedParticle::get_mass(zed_leptonic_muscaledw)")
-    df = df.Define("zed_leptonic_no_muscaledw", "FCCAnalyses::ReconstructedParticle::get_n(zed_leptonic_muscaledw)")
-    df = df.Define("zed_leptonic_pt_muscaledw", "FCCAnalyses::ReconstructedParticle::get_pt(zed_leptonic_muscaledw)")
-    df = df.Define("zed_leptonic_charge_muscaledw", "FCCAnalyses::ReconstructedParticle::get_charge(zed_leptonic_muscaledw)")
-               
-    df = df.Define("zed_leptonic_recoil_muscaleup", "FCCAnalyses::ReconstructedParticle::recoilBuilder(240)(zed_leptonic_muscaleup)")
-    df = df.Define("zed_leptonic_recoil_muscaledw", "FCCAnalyses::ReconstructedParticle::recoilBuilder(240)(zed_leptonic_muscaledw)")
-    df = df.Define("zed_leptonic_recoil_m_muscaleup", "FCCAnalyses::ReconstructedParticle::get_mass(zed_leptonic_recoil_muscaleup)")
-    df = df.Define("zed_leptonic_recoil_m_muscaledw", "FCCAnalyses::ReconstructedParticle::get_mass(zed_leptonic_recoil_muscaledw)")
+    df = df.Define("leps_scaleup", "FCCAnalyses::lepton_momentum_scale(1e-5)(leps)")
+    df = df.Define("leps_scaledw", "FCCAnalyses::lepton_momentum_scale(-1e-5)(leps)")
+    
+    df = df.Define("zbuilder_result_scaleup", "FCCAnalyses::resonanceBuilder_mass_recoil(91.2, 125, 0.4, 240, false)(leps_scaleup, MCRecoAssociations0, MCRecoAssociations1, ReconstructedParticles, Particle, Particle0, Particle1)")
+    df = df.Define("zbuilder_result_scaledw", "FCCAnalyses::resonanceBuilder_mass_recoil(91.2, 125, 0.4, 240, false)(leps_scaledw, MCRecoAssociations0, MCRecoAssociations1, ReconstructedParticles, Particle, Particle0, Particle1)")
+    df = df.Define("zll_scaleup", "ROOT::VecOps::RVec<edm4hep::ReconstructedParticleData>{zbuilder_result_scaleup[0]}")
+    df = df.Define("zll_scaledw", "ROOT::VecOps::RVec<edm4hep::ReconstructedParticleData>{zbuilder_result_scaledw[0]}")
+    df = df.Define("zll_recoil_scaleup", "FCCAnalyses::ReconstructedParticle::recoilBuilder(240)(zll_scaleup)")
+    df = df.Define("zll_recoil_scaledw", "FCCAnalyses::ReconstructedParticle::recoilBuilder(240)(zll_scaledw)")
+    df = df.Define("zll_recoil_m_scaleup", "FCCAnalyses::ReconstructedParticle::get_mass(zll_recoil_scaleup)[0]")
+    df = df.Define("zll_recoil_m_scaledw", "FCCAnalyses::ReconstructedParticle::get_mass(zll_recoil_scaledw)[0]")
+    
+    results.append(df.Histo2D(("zll_recoil_m_scaleup", "", *(bins_recoil + bins_cat)), "zll_recoil_m_scaleup", "zll_category"))
+    results.append(df.Histo2D(("zll_recoil_m_scaledw", "", *(bins_recoil + bins_cat)), "zll_recoil_m_scaledw", "zll_category"))
+
         
         
     # sqrt uncertainty
-    df = df.Define("zed_leptonic_recoil_sqrtsup", "FCCAnalyses::ReconstructedParticle::recoilBuilder(240.002)(zed_leptonic)")
-    df = df.Define("zed_leptonic_recoil_sqrtsdw", "FCCAnalyses::ReconstructedParticle::recoilBuilder(239.998)(zed_leptonic)")
-    df = df.Define("zed_leptonic_recoil_m_sqrtsup", "FCCAnalyses::ReconstructedParticle::get_mass(zed_leptonic_recoil_sqrtsup)")
-    df = df.Define("zed_leptonic_recoil_m_sqrtsdw", "FCCAnalyses::ReconstructedParticle::get_mass(zed_leptonic_recoil_sqrtsdw)")
+    df = df.Define("zll_recoil_sqrtsup", "FCCAnalyses::ReconstructedParticle::recoilBuilder(240.002)(zll)")
+    df = df.Define("zll_recoil_sqrtsdw", "FCCAnalyses::ReconstructedParticle::recoilBuilder(239.998)(zll)")
+    df = df.Define("zll_recoil_m_sqrtsup", "FCCAnalyses::ReconstructedParticle::get_mass(zll_recoil_sqrtsup)[0]")
+    df = df.Define("zll_recoil_m_sqrtsdw", "FCCAnalyses::ReconstructedParticle::get_mass(zll_recoil_sqrtsdw)[0]")
+    
+    results.append(df.Histo2D(("zll_recoil_m_sqrtsup", "", *(bins_recoil + bins_cat)), "zll_recoil_m_sqrtsup", "zll_category"))
+    results.append(df.Histo2D(("zll_recoil_m_sqrtsdw", "", *(bins_recoil + bins_cat)), "zll_recoil_m_sqrtsdw", "zll_category"))
+    
                
                
 
-    # .Define("zed_leptonic_recoil_mc",  "FCCAnalyses::ReconstructedParticle::recoilBuilder(240)(zed_leptonic_mc)")
-    # .Define("zed_leptonic_recoil_m_mc","FCCAnalyses::ReconstructedParticle::get_mass(zed_leptonic_recoil_mc)")
-    #.Define("selected_muons_mc", "MC_to_reco(MCRecoAssociations0, MCRecoAssociations1, ReconstructedParticles, selected_muons, Particle)")
-    #.Define("muon_resolution", "get_resolution(MCRecoAssociations0, MCRecoAssociations1, ReconstructedParticles, selected_muons, Particle)")
-               
-               
-    #.Define("zed_leptonic_recoil_MC",  "FCCAnalyses::ReconstructedParticle::recoilBuilder(240)( zed_leptonic_MC )")
-    #.Define("zed_leptonic_recoil_MC_mass",   "FCCAnalyses::ReconstructedParticle::get_mass( zed_leptonic_recoil_MC )")
-    #.Define("zed_leptonic",         "APCHiggsTools::resonanceZBuilder(91)(selected_muons)")   
-    #
-               
-    #.Define("selected_muons_all", "FCCAnalyses::ReconstructedParticle::sel_pt(10.)(muons_all)")
-    # create branch with muon transverse momentum
-               
-    #.Define("selected_muons_pt_mc", "FCCAnalyses::ReconstructedParticle::get_pt(selected_muons_mc)")
-    # create branch with muon rapidity
-               
+              
 
-    # create branch with muon total momentum
-    #.Define("selected_muons_p",     "FCCAnalyses::ReconstructedParticle::get_p(selected_muons)")
-    #.Define("selected_muons_p_mc",     "FCCAnalyses::ReconstructedParticle::get_p(selected_muons_mc)")
-    #.Define("selected_muons_p_muscaleup",     "FCCAnalyses::ReconstructedParticle::get_p(selected_muons_muscaleup)")
-    #.Define("selected_muons_p_muscaledw",     "FCCAnalyses::ReconstructedParticle::get_p(selected_muons_muscaledw)")
-               
-               
-    #.Define("ISR_gamma_E", "ISR_gamma_E(selected_muons)")
-    #.Define("ISR_costhetas", "ISR_costhetas(selected_muons)")
-               
-               
-               
-               
-    #.Define("event_ht",     "FCCAnalyses::ReconstructedParticle::get_ht(muons, electrons, photons, jets, met)")
-    # create branch with muon energy 
-               
-    # find zed candidates from  di-muon resonances  , returns the best candidate, closest to the Z
-               
-               
-               
-    #.Define("zed_leptonic_mc",           "FCCAnalyses::ReconstructedParticle::resonanceBuilder(91)(selected_muons_mc)")
-               
-    #.Define("zed_leptonic_pair",    "FCCAnalyses::ReconstructedParticle::resonancePairBuilder(91)(selected_muons)")
     #.Define("acoplanarity",      "FCCAnalyses::ReconstructedParticle::acoplanarity(zed_leptonic_pair)")
     #.Define("acolinearity",      "FCCAnalyses::ReconstructedParticle::acolinearity(zed_leptonic_pair)")
-    # write branch with zed mass
                
-               
-    #.Define("zed_leptonic_m_mc",             "FCCAnalyses::ReconstructedParticle::get_mass(zed_leptonic_mc)")
-    # write branch with zed transverse momenta
-    #.Define("zed_leptonic_pt",      "FCCAnalyses::ReconstructedParticle::get_pt(zed_leptonic)")
-    #.Define("zed_leptonic_pt_mc",      "FCCAnalyses::ReconstructedParticle::get_pt(zed_leptonic_mc)")
-
-    '''
- 
     return results, weightsum
     
     

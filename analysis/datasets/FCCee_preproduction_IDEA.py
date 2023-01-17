@@ -94,6 +94,12 @@ def get_datasets(baseDir = ""):
     })
     
     datasets.append({
+        "name"      : "wzp6_ee_mumuH_ecm240_winter",
+        "datadir"   : "/eos/experiment/fcc/ee/generation/DelphesEvents/winter2023/IDEA//wzp6_ee_mumuH_ecm240/",
+        "xsec"      : 0.0067643
+    })
+    
+    datasets.append({
         "name"      : "wzp6_ee_mumuH_mH-higher-100MeV_ecm240",
         "datadir"   : "%s/wzp6_ee_mumuH_mH-higher-100MeV_ecm240" % winter_v2,
         "xsec"      : 0.0067393

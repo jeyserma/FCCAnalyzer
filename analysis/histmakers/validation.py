@@ -39,7 +39,7 @@ def build_graph(df, dataset):
 
     print("build graph", dataset.name)
     results = []
-    sigProcs = ["wzp6_ee_mumuH_ecm240", "p8_ee_ZH_ecm240", "wzp6_ee_mumuH_ecm240_prefall", "wz3p6_ee_mumuH_ecm240_prefall", "wz3p6_ee_mumuH_ecm240_winter", "wz3p6_ee_mumuH_ecm240_winter_v2", "wzp6_ee_eeH_ecm240_winter", "wzp6_ee_eeH_ecm240_winter_v2", "wz2p6_ee_mumuH_ecm240_winter_v2", "wzp6_ee_eeH_ecm240"]
+    sigProcs = ["wzp6_ee_mumuH_ecm240", "wzp6_ee_mumuH_ecm240_winter", "p8_ee_ZH_ecm240", "wzp6_ee_mumuH_ecm240_prefall", "wz3p6_ee_mumuH_ecm240_prefall", "wz3p6_ee_mumuH_ecm240_winter", "wz3p6_ee_mumuH_ecm240_winter_v2", "wzp6_ee_eeH_ecm240_winter", "wzp6_ee_eeH_ecm240_winter_v2", "wz2p6_ee_mumuH_ecm240_winter_v2", "wzp6_ee_eeH_ecm240"]
     
     df = df.Define("weight", "1.0")
     weightsum = df.Sum("weight")
@@ -206,7 +206,7 @@ def build_graph(df, dataset):
     #results.append(df.Histo1D(("mll_gen_leps", "", *bins_m_ll), "mll_gen_leps"))
     
     #results.append(df.Histo1D(("missingMass", "", *bins_m_ll), "missingMass"))
-    return results, weightsum
+    #return results, weightsum
     
     # forward/central resolution
     '''
@@ -268,32 +268,36 @@ def build_graph(df, dataset):
     #########    
     # build the Z resonance and recoil  resonanceZBuilderHiggsPairs
     #df = df.Define("zed_leptonic", "FCCAnalyses::resonanceZBuilder2(91, false)(selected_muons, MCRecoAssociations0, MCRecoAssociations1, ReconstructedParticles, Particle)")
-    df = df.Define("zed_leptonic", "FCCAnalyses::resonanceZBuilderHiggsPairs(91, false)(selected_muons, MCRecoAssociations0, MCRecoAssociations1, ReconstructedParticles, Particle, Particle0, Particle1)")
-    df = df.Define("zed_leptonic_m", "FCCAnalyses::ReconstructedParticle::get_mass(zed_leptonic)")
-    df = df.Define("zed_leptonic_no", "FCCAnalyses::ReconstructedParticle::get_n(zed_leptonic)")
-    df = df.Define("zed_leptonic_p", "FCCAnalyses::ReconstructedParticle::get_p(zed_leptonic)")
-    df = df.Define("zed_leptonic_charge", "FCCAnalyses::ReconstructedParticle::get_charge(zed_leptonic)")
-    df = df.Define("zed_leptonic_recoil",  "FCCAnalyses::ReconstructedParticle::recoilBuilder(240)(zed_leptonic)")
-    df = df.Define("zed_leptonic_recoil_m", "FCCAnalyses::ReconstructedParticle::get_mass(zed_leptonic_recoil)")
+    df = df.Define("zbuilder_result", "FCCAnalyses::resonanceBuilder_mass_recoil(91.2, 125, 0.4, 240, true)(selected_muons, MCRecoAssociations0, MCRecoAssociations1, ReconstructedParticles, Particle, Particle0, Particle1)")
+    df = df.Define("zed_leptonic", "ROOT::VecOps::RVec<edm4hep::ReconstructedParticleData>{zbuilder_result[0]}") # the Z
+    df = df.Define("zed_leps", "ROOT::VecOps::RVec<edm4hep::ReconstructedParticleData>{zbuilder_result[1],zbuilder_result[2]}") # the leptons
+    df = df.Define("zed_leptonic_m", "FCCAnalyses::ReconstructedParticle::get_mass(zed_leptonic)[0]")
+    df = df.Define("zed_leptonic_p", "FCCAnalyses::ReconstructedParticle::get_p(zed_leptonic)[0]")
+    df = df.Define("zed_leptonic_recoil", "FCCAnalyses::ReconstructedParticle::recoilBuilder(240)(zed_leptonic)")
+    df = df.Define("zed_leptonic_recoil_m", "FCCAnalyses::ReconstructedParticle::get_mass(zed_leptonic_recoil)[0]")
     
-    df = df.Define("zed_leptonic_m_", "zed_leptonic_m[0]")
-    df = df.Define("zed_leptonic_p_", "zed_leptonic_p[0]")
-    df = df.Define("zed_leptonic_recoil_m_", "zed_leptonic_recoil_m[0]")
+    df = df.Define("zed_leptonic_m_", "zed_leptonic_m")
+    df = df.Define("zed_leptonic_p_", "zed_leptonic_p")
+    df = df.Define("zed_leptonic_recoil_m_", "zed_leptonic_recoil_m")
     
-    df = df.Filter("zed_leptonic_m.size() >= 0") # was ==1
+    #df = df.Filter("zed_leptonic_m.size() > 0") # was ==1
     if dataset.name in sigProcs:
         results.append(df.Histo2D(("higgs_decay_zed_leptonic_m_cut3", "", *(bins_count + bins_m_ll)), "daughter_higgs_collapsed", "zed_leptonic_m_"))
         results.append(df.Histo2D(("higgs_decay_zed_leptonic_p_cut3", "", *(bins_count + bins_m_ll)), "daughter_higgs_collapsed", "zed_leptonic_p_"))
         results.append(df.Histo1D(("zed_leptonic_m_cut3", "", *bins_m_ll), "zed_leptonic_m_"))
         results.append(df.Histo1D(("zed_leptonic_recoil_m_cut3", "", *bins_recoil), "zed_leptonic_recoil_m"))
         results.append(df.Histo1D(("higgs_decay_cut3", "", *bins_count), "daughter_higgs_collapsed"))
+        results.append(df.Histo1D(("zed_leptonic_p_cut3", "", *bins_p_ll), "zed_leptonic_p_"))
+        
+        results.append(df.Histo1D(("photons_p_cut3", "", *bins_p_mu), "photons_p"))
+        results.append(df.Histo1D(("photons_theta_cut3", "", *bins_theta), "photons_theta"))
+        results.append(df.Histo1D(("photons_no_cut3", "", *bins_count), "photons_no"))        
     
     
     #########
     ### CUT 4
     #########  
-    df = df.Filter("zed_leptonic_no == 1")
-    df = df.Filter("zed_leptonic_m[0] > 86 &&  zed_leptonic_m[0] < 96")
+    df = df.Filter("zed_leptonic_m > 86 &&  zed_leptonic_m < 96")
     #df = df.Filter("zed_leptonic_m[0] > 73 &&  zed_leptonic_m[0] < 120")
     results.append(df.Histo1D(("zed_leptonic_m_cut4", "", *bins_m_ll), "zed_leptonic_m"))
     results.append(df.Histo1D(("zed_leptonic_recoil_m_cut4", "", *bins_recoil), "zed_leptonic_recoil_m"))
@@ -309,7 +313,7 @@ def build_graph(df, dataset):
     #########
     ### CUT 5
     #########  
-    df = df.Filter("zed_leptonic_p[0] > 20 && zed_leptonic_p[0] < 70")
+    df = df.Filter("zed_leptonic_p > 20 && zed_leptonic_p < 70")
     if dataset.name in sigProcs:
         results.append(df.Histo1D(("zed_leptonic_p_cut5", "", *bins_p_ll), "zed_leptonic_p"))
         results.append(df.Histo1D(("selected_muons_p_cut5", "", *bins_p_mu), "selected_muons_p"))
@@ -340,7 +344,7 @@ def build_graph(df, dataset):
     #df = df.Filter("mll_gen_leps < 93 && mll_gen_leps > 88")
     
     # final selection and histograms
-    df = df.Filter("zed_leptonic_recoil_m[0] < 140 && zed_leptonic_recoil_m[0] > 120")
+    df = df.Filter("zed_leptonic_recoil_m < 140 && zed_leptonic_recoil_m > 120")
     results.append(df.Histo1D(("zed_leptonic_m", "", *bins_m_ll), "zed_leptonic_m"))
     results.append(df.Histo1D(("zed_leptonic_recoil_m", "", *bins_recoil), "zed_leptonic_recoil_m"))
     results.append(df.Histo1D(("zed_leptonic_p", "", *bins_p_ll), "zed_leptonic_p"))
@@ -353,12 +357,7 @@ def build_graph(df, dataset):
     results.append(df.Histo1D(("zed_leptonic_m_MC", "", *bins_m_ll), "zed_leptonic_m_MC"))
     results.append(df.Histo1D(("zed_leptonic_recoil_m_MC", "", *bins_recoil), "zed_leptonic_recoil_m_MC"))
     
-    
-    df = df.Define("massweights", "FCCAnalyses::breitWignerWeightsHiggs()")
-    df = df.Define("massweights_indices", "FCCAnalyses::indices_(5)")
-    
-    results.append(df.Histo2D(("zed_leptonic_recoil_m_massweights", "", *(bins_recoil + bins_massweights)), "zed_leptonic_recoil_m_", "massweights_indices", "massweights"))
-    
+
     if dataset.name not in sigProcs:
         return results, weightsum
         
@@ -389,9 +388,8 @@ if __name__ == "__main__":
     
     if args.flavor == "mumu": 
         
-        #datasets_preproduction_IDEA = FCCee_preproduction_IDEA.get_datasets() # nominal
-        FCCee_winter2023_IDEA_ecm240 = FCCee_winter2023_IDEA_ecm240.get_datasets(baseDir=baseDir) # nominal
-        datasets += functions.filter_datasets(FCCee_winter2023_IDEA_ecm240, ["wzp6_ee_mumuH_ecm240"])
+        datasets_preproduction_IDEA = FCCee_preproduction_IDEA.get_datasets() # nominal
+        datasets += functions.filter_datasets(datasets_preproduction_IDEA, ["wzp6_ee_mumuH_ecm240", "wzp6_ee_mumuH_ecm240_winter"])
         #datasets += FCCee_preproduction_IDEA.getDatasets(filt="wzp6_ee_mumuH_ecm240_prefall") # muon iso fix
         #datasets += FCCee_preproduction_IDEA.getDatasets(filt="wz3p6_ee_mumuH_ecm240_prefall")
         ####datasets += FCCee_preproduction_IDEA.getDatasets(filt="wz3p6_ee_mumuH_ecm240_winter") # muon reso fix
@@ -416,5 +414,5 @@ if __name__ == "__main__":
         
         #datasets += FCCee_preproduction_IDEA.getDatasets(filt="p8_ee_ZZ_Zll_ecm240")
 
-    result = functions.build_and_run(datasets, build_graph, "tmp/validation_%s.root" % args.flavor, maxFiles=args.maxFiles)
+    result = functions.build_and_run(datasets, build_graph, "tmp/validation_%s.root" % args.flavor, maxFiles=args.maxFiles, norm=True, lumi=5000000)
     
