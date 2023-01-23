@@ -61,8 +61,16 @@ def build_and_run(datadict, build_function, outfile, maxFiles=-1, norm=False, lu
         fOut.mkdir(dataset.name)
         fOut.cd(dataset.name)
 
+        histsToWrite = {}
         for r in res:
             hist = r.GetValue()
+            hName = hist.GetName()
+            if hist.GetName() in histsToWrite: # merge histograms in case histogram exists
+                histsToWrite[hName].Add(hist)
+            else:
+                histsToWrite[hName] = hist
+        
+        for hist in histsToWrite.values():
             if norm:
                 hist.Scale(dataset.xsec*lumi/evtcount.GetValue())
             hist.Write()

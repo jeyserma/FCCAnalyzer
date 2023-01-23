@@ -63,6 +63,16 @@ float acoplanarity(Vec_rp in) {
     return acop;
 }
 
+// visible energy
+float visibleEnergy(Vec_rp in, float p_cutoff = 0.0) {
+    float e = 0;
+    for(auto &p : in) {
+        if (std::sqrt(p.momentum.x * p.momentum.x + p.momentum.y*p.momentum.y) < p_cutoff) continue;
+        e += p.energy;
+    }
+    return e;
+}
+
 // returns missing energy vector, based on reco particles
 Vec_rp missingEnergy(float ecm, Vec_rp in, float p_cutoff = 0.0) {
     float px = 0, py = 0, pz = 0, e = 0;

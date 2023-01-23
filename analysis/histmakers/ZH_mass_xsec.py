@@ -205,12 +205,14 @@ def build_graph(df, dataset):
     
     df = df.Define("cut0", "0")
     results.append(df.Histo1D(("cutFlow_cut0", "", *bins_count), "cut0"))
+    results.append(df.Histo1D(("cutFlow", "", *bins_count), "cut0"))
 
     #########
     ### CUT 1: at least a lepton with at least 1 isolated one
     #########
     df = df.Filter("leps_no >= 1 && leps_sel_iso.size() > 0").Define("cut1", "1")
     results.append(df.Histo1D(("cutFlow_cut1", "", *bins_count), "cut1"))
+    results.append(df.Histo1D(("cutFlow", "", *bins_count), "cut1"))
     if dataset.name in sigProcs: 
         results.append(df.Histo1D(("higgs_decay_cut1", "", *bins_count), "daughter_higgs_collapsed"))
         
@@ -223,6 +225,7 @@ def build_graph(df, dataset):
     #########
     df = df.Filter("leps_no >= 2 && abs(Sum(leps_q)) < leps_q.size()").Define("cut2", "2")
     results.append(df.Histo1D(("cutFlow_cut2", "", *bins_count), "cut2"))
+    results.append(df.Histo1D(("cutFlow", "", *bins_count), "cut2"))
     
     #df = df.Filter("leps_no == 2")
 
@@ -456,7 +459,7 @@ if __name__ == "__main__":
         bkgs = ["p8_ee_WW_ecm240", "p8_ee_ZZ_ecm240", "wzp6_ee_mumu_ecm240", "wzp6_ee_tautau_ecm240"]
         bkgs_rare = ["wzp6_egamma_eZ_Zmumu_ecm240", "wzp6_gammae_eZ_Zmumu_ecm240", "wzp6_gaga_mumu_60_ecm240", "wzp6_gaga_tautau_60_ecm240", "wzp6_ee_nuenueZ_ecm240"]
         
-        select = signal + signal_mass + bkgs + bkgs_rare + signal_syst
+        select = signal # + signal_mass + bkgs + bkgs_rare + signal_syst
         #select = ["p8_ee_WW_mumu_ecm240", "p8_ee_WW_ecm240"]
     
     if args.flavor == "ee":
