@@ -2287,9 +2287,9 @@ def doISR():
 if __name__ == "__main__":
 
     flavor = "ee"
-    cat = 0
+    cat = 3
     label = "#mu^{#plus}#mu^{#minus}, category %d" % (cat) if flavor == "mumu" else "e^{#plus}e^{#minus}, category %d" % (cat)
-    fIn = ROOT.TFile("tmp/output_mass_xsec_%s.root" % flavor)
+    fIn = ROOT.TFile("tmp/output_ZH_mass_%s.root" % flavor)
     outDir = "/eos/user/j/jaeyserm/www/FCCee/ZH_mass_xsec/combine/%s_cat%d/" % (flavor, cat)
     hName = "zll_recoil_m"
     

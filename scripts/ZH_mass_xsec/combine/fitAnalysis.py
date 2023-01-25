@@ -523,7 +523,7 @@ if __name__ == "__main__":
 
     combineDir = "combine/run"
     outDir = "/eos/user/j/jaeyserm/www/FCCee/ZH_mass_xsec/combine/"
-    doSyst=False
+    doSyst=True
     
     suffix=""
     if not doSyst:
@@ -613,7 +613,7 @@ if __name__ == "__main__":
     if True:
         combineOptions = ""
         if not doSyst:
-            combineOptions = "--freezeParameters BES,ISR,SQRTS,LEPSCALE_MU,LEPSCALE_EL,bkg_norm --setParameters bkg_norm=0"
+            combineOptions = "--freezeParameters BES,ISR,SQRTS,LEPSCALE_MU,LEPSCALE_EL" # ,bkg_norm --setParameters bkg_norm=0
     
         tag, label = "mumu_ee_combined_inclusive", "#mu^{#plus}#mu^{#minus}+e^{#plus}e^{#minus}, inclusive"
         mhMin, mhMax = 124.99, 125.01

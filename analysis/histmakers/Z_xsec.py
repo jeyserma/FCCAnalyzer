@@ -64,7 +64,7 @@ def build_graph_ll(df, dataset):
     
     # cuts on leptons
     #df = df.Define("selected_muons", "FCCAnalyses::excluded_Higgs_decays(muons, MCRecoAssociations0, MCRecoAssociations1, ReconstructedParticles, Particle, Particle0, Particle1)") # was 10
-    df = df.Define("leps_sel_p", "FCCAnalyses::ReconstructedParticle::sel_p(20)(leps_all)")
+    df = df.Define("leps_sel_p", "FCCAnalyses::ReconstructedParticle::sel_p(1)(leps_all)")
     df = df.Alias("leps", "leps_sel_p") 
     
     df = df.Define("leps_p", "FCCAnalyses::ReconstructedParticle::get_p(leps)")
@@ -134,7 +134,7 @@ def build_graph_ll(df, dataset):
     #########
     ### CUT 4 :cut on Z mass
     #########
-    df = df.Filter("zll_m[0] > 73 && zll_m[0] < 109").Define("cut4", "4")
+    df = df.Filter("(zll_m[0] > 73 && zll_m[0] < 109) || true").Define("cut4", "4")
     results.append(df.Histo1D(("cutFlow_cut4", "", *bins_count), "cut4"))
     
     
@@ -228,6 +228,7 @@ if __name__ == "__main__":
 
     if args.flavor == "mumu": 
         datasets += functions.filter_datasets(datasets_spring2021_ecm91, ["p8_ee_Zmumu_ecm91", "p8_ee_Ztautau_ecm91"])
+        datasets = functions.filter_datasets(datasets_spring2021_ecm91, ["wzp6_gaga_mumu_5_ecm91p2"])
         result = functions.build_and_run(datasets, build_graph_ll, "tmp/output_z_xsec_mumu.root", maxFiles=args.maxFiles) # , norm=True, lumi=150000000
 
     if args.flavor == "ee":

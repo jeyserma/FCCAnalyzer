@@ -1,12 +1,13 @@
 
-import analysis, functions
+import analysis, functions, helpers
 import ROOT
 import argparse
 
 parser = argparse.ArgumentParser()
 parser.add_argument("--nThreads", type=int, help="number of threads", default=None)
 parser.add_argument("--maxFiles", type=int, help="Max number of files (per dataset)", default=-1)
-parser.add_argument("--flavor", type=str, help="Flavor (mumu or ee)", default="mumu")
+parser.add_argument("--flavor", type=str, help="Flavor (mumu or ee)", choices=["mumu", "ee"], default="mumu")
+parser.add_argument("--type", type=str, help="Run type (mass or xsec)", choices=["mass", "xsec"], default="mass")
 args = parser.parse_args()
 
 functions.set_threads(args)
@@ -39,7 +40,6 @@ def build_graph(df, dataset):
 
     print("build graph", dataset.name)
     results = []
-    sigProcs = ["wzp6_ee_mumuH_ecm240", "p8_ee_ZH_ecm240", "wzp6_ee_mumuH_ecm240_prefall", "wz3p6_ee_mumuH_ecm240_prefall", "wz3p6_ee_mumuH_ecm240_winter", "wz3p6_ee_mumuH_ecm240_winter_v2", "wzp6_ee_eeH_ecm240_winter", "wzp6_ee_eeH_ecm240_winter_v2", "wz2p6_ee_mumuH_ecm240_winter_v2"]
     sigProcs = ["wzp6_ee_mumuH_ecm240", "wzp6_ee_eeH_ecm240"]
     
     df = df.Define("weight", "1.0")
@@ -57,6 +57,7 @@ def build_graph(df, dataset):
     else:
         df = df.Alias("Lepton0", "Electron#0.index")
      
+    df = helpers.defineCutFlowVars(df) # make the cutX=X variables
     
     # prompt gen muons
     # in Whizard, the mumuH process does not directly involve Z processes, hence they are not present in the gen particles
@@ -203,14 +204,12 @@ def build_graph(df, dataset):
     
     
     
-    df = df.Define("cut0", "0")
-    results.append(df.Histo1D(("cutFlow_cut0", "", *bins_count), "cut0"))
     results.append(df.Histo1D(("cutFlow", "", *bins_count), "cut0"))
 
     #########
     ### CUT 1: at least a lepton with at least 1 isolated one
     #########
-    df = df.Filter("leps_no >= 1 && leps_sel_iso.size() > 0").Define("cut1", "1")
+    df = df.Filter("leps_no >= 1 && leps_sel_iso.size() > 0")
     results.append(df.Histo1D(("cutFlow_cut1", "", *bins_count), "cut1"))
     results.append(df.Histo1D(("cutFlow", "", *bins_count), "cut1"))
     if dataset.name in sigProcs: 
@@ -223,8 +222,7 @@ def build_graph(df, dataset):
     #########
     ### CUT 2 :at least 2 OS leptons, and build the resonance
     #########
-    df = df.Filter("leps_no >= 2 && abs(Sum(leps_q)) < leps_q.size()").Define("cut2", "2")
-    results.append(df.Histo1D(("cutFlow_cut2", "", *bins_count), "cut2"))
+    df = df.Filter("leps_no >= 2 && abs(Sum(leps_q)) < leps_q.size()")
     results.append(df.Histo1D(("cutFlow", "", *bins_count), "cut2"))
     
     #df = df.Filter("leps_no == 2")
@@ -285,8 +283,8 @@ def build_graph(df, dataset):
     #########
     ### CUT 3: Z mass window
     #########  
-    df = df.Filter("zll_m > 86 && zll_m < 96").Define("cut3", "3")
-    results.append(df.Histo1D(("cutFlow_cut3", "", *bins_count), "cut3"))
+    df = df.Filter("zll_m > 86 && zll_m < 96")
+    results.append(df.Histo1D(("cutFlow", "", *bins_count), "cut3"))
     #df = df.Filter("zed_leptonic_m[0] > 73 &&  zed_leptonic_m[0] < 120")
     #results.append(df.Histo1D(("zll_m_cut3", "", *bins_m_ll), "zll_m"))
     #results.append(df.Histo1D(("zll_recoil_m_cut3", "", *bins_recoil), "zll_recoil_m"))
@@ -303,8 +301,8 @@ def build_graph(df, dataset):
     #########
     ### CUT 4: Z momentum
     #########  
-    df = df.Filter("zll_p > 20 && zll_p < 70").Define("cut4", "4")
-    results.append(df.Histo1D(("cutFlow_cut4", "", *bins_count), "cut4"))
+    df = df.Filter("zll_p > 20 && zll_p < 70")
+    results.append(df.Histo1D(("cutFlow", "", *bins_count), "cut4"))
     if dataset.name in sigProcs:
         results.append(df.Histo1D(("higgs_decay_cut4", "", *bins_count), "daughter_higgs_collapsed")) 
         results.append(df.Histo1D(("zll_leps_from_higgs_cut4", "", *bins_count), "zll_leps_from_higgs"))
@@ -331,8 +329,9 @@ def build_graph(df, dataset):
     results.append(df.Histo1D(("photons_phi_cut4", "", *bins_phi), "photons_phi"))
     results.append(df.Histo1D(("photons_no_cut4", "", *bins_count), "photons_no"))    
     
-    df = df.Filter("cosTheta_miss < 0.98").Define("cut5", "5") # 0.98
-    results.append(df.Histo1D(("cutFlow_cut5", "", *bins_count), "cut5"))
+    if args.type == "mass":
+        df = df.Filter("cosTheta_miss < 0.98")
+    results.append(df.Histo1D(("cutFlow", "", *bins_count), "cut5"))
     if dataset.name in sigProcs: 
         results.append(df.Histo1D(("higgs_decay_cut5", "", *bins_count), "daughter_higgs_collapsed")) 
         results.append(df.Histo1D(("zll_leps_from_higgs_cut5", "", *bins_count), "zll_leps_from_higgs"))
@@ -368,8 +367,8 @@ def build_graph(df, dataset):
     '''   
     
     # final selection and histograms
-    df = df.Filter("zll_recoil_m < 140 && zll_recoil_m > 120").Define("cut6", "6")
-    results.append(df.Histo1D(("cutFlow_cut6", "", *bins_count), "cut6"))
+    df = df.Filter("zll_recoil_m < 140 && zll_recoil_m > 120")
+    results.append(df.Histo1D(("cutFlow", "", *bins_count), "cut6"))
     if dataset.name in sigProcs: 
         results.append(df.Histo1D(("higgs_decay_cut6", "", *bins_count), "daughter_higgs_collapsed")) 
         results.append(df.Histo1D(("zll_leps_from_higgs_cut6", "", *bins_count), "zll_leps_from_higgs"))
@@ -442,24 +441,20 @@ if __name__ == "__main__":
 
     datasets = []
 
-    # import spring2021 IDEA samples
-    #import FCCee_spring2021_IDEA
-    
     baseDir = functions.get_basedir() # get base directory of samples, depends on the cluster hostname (mit, cern, ...)
     import FCCee_winter2023_IDEA_ecm240
     datasets_preproduction_IDEA = FCCee_winter2023_IDEA_ecm240.get_datasets(baseDir=baseDir) # list of all datasets
 
     
     if args.flavor == "mumu": 
-        
 
         signal = ["wzp6_ee_mumuH_ecm240"]
         signal_mass = ["wzp6_ee_mumuH_mH-higher-100MeV_ecm240", "wzp6_ee_mumuH_mH-higher-50MeV_ecm240", "wzp6_ee_mumuH_mH-lower-100MeV_ecm240", "wzp6_ee_mumuH_mH-lower-50MeV_ecm240"]
         signal_syst = ["wzp6_ee_mumuH_BES-higher-1pc_ecm240", "wzp6_ee_mumuH_BES-lower-1pc_ecm240"]
         bkgs = ["p8_ee_WW_ecm240", "p8_ee_ZZ_ecm240", "wzp6_ee_mumu_ecm240", "wzp6_ee_tautau_ecm240"]
         bkgs_rare = ["wzp6_egamma_eZ_Zmumu_ecm240", "wzp6_gammae_eZ_Zmumu_ecm240", "wzp6_gaga_mumu_60_ecm240", "wzp6_gaga_tautau_60_ecm240", "wzp6_ee_nuenueZ_ecm240"]
-        
-        select = signal # + signal_mass + bkgs + bkgs_rare + signal_syst
+   
+        select = signal + signal_mass + bkgs + bkgs_rare + signal_syst
         #select = ["p8_ee_WW_mumu_ecm240", "p8_ee_WW_ecm240"]
     
     if args.flavor == "ee":
@@ -477,5 +472,5 @@ if __name__ == "__main__":
         
 
     datasets += functions.filter_datasets(datasets_preproduction_IDEA, select)
-    result = functions.build_and_run(datasets, build_graph, "tmp/output_mass_xsec_%s.root" % args.flavor, maxFiles=args.maxFiles, norm=True, lumi=5000000)
+    result = functions.build_and_run(datasets, build_graph, "tmp/output_ZH_%s_%s.root" % (args.type, args.flavor), maxFiles=args.maxFiles, norm=True, lumi=5000000)
     
