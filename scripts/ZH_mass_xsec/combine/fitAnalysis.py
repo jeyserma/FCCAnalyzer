@@ -523,7 +523,7 @@ if __name__ == "__main__":
 
     combineDir = "combine/run"
     outDir = "/eos/user/j/jaeyserm/www/FCCee/ZH_mass_xsec/combine/"
-    doSyst=True
+    doSyst=False
     
     suffix=""
     if not doSyst:
@@ -610,7 +610,7 @@ if __name__ == "__main__":
         
     
     ############### MUON+ELECTRON
-    if True:
+    if False:
         combineOptions = ""
         if not doSyst:
             combineOptions = "--freezeParameters BES,ISR,SQRTS,LEPSCALE_MU,LEPSCALE_EL" # ,bkg_norm --setParameters bkg_norm=0
@@ -635,7 +635,8 @@ if __name__ == "__main__":
         
         plotMultiple(["%s/mumu_cat0/"%outDir, "%s/mumu_combined/"%outDir, "%s/ee_cat0/"%outDir, "%s/ee_combined/"%outDir], ["#mu^{#plus}#mu^{#minus}, inclusive", "#mu^{#plus}#mu^{#minus}, categorized", "e^{#plus}e^{#minus}, inclusive", "e^{#plus}e^{#minus}, categorized"], "%s/mumu_ee_inclusive_categorized"%outDir, xMin=124.99, xMax=125.01)
         
-        
+   
+    
         
     combineDir = "combine/run_mc"
     outDir = "/eos/user/j/jaeyserm/www/FCCee/ZH_mass_xsec/combine_mc/"
@@ -659,3 +660,18 @@ if __name__ == "__main__":
         doFitDiagnostics_mass("%s/%s" % (combineDir, tag), mhMin=xMin, mhMax=xMax, combineOptions=combineOptions)
         #doFit_mass("%s/%s" % (combineDir, tag), mhMin=xMin, mhMax=xMax, npoints=50, combineOptions=combineOptions)
         #analyzeMass("%s/%s" % (combineDir, tag), "%s/%s/" % (outDir, tag), label=label, xMin=xMin, xMax=xMax)
+        
+      
+
+    ############### MUON
+    combineDir = "combine/run_xsec_bdt"
+    outDir = "/eos/user/j/jaeyserm/www/FCCee/ZH_mass_xsec/combine/xsec_bdt/"
+    if True:
+    
+        combineOptions = ""
+
+        tag, label = "mumu_cat0", "#mu^{#plus}#mu^{#minus}, inclusive"
+        rMin, rMax = 0.98, 1.02
+        doFit_xsec("%s/%s" % (combineDir, tag), rMin=rMin, rMax=rMax, npoints=50, combineOptions=combineOptions)
+        analyzeXsec("%s/%s" % (combineDir, tag), "%s/%s/" % (outDir, tag), label=label, xMin=rMin, xMax=rMax)
+        
