@@ -523,7 +523,7 @@ if __name__ == "__main__":
 
     combineDir = "combine/run"
     outDir = "/eos/user/j/jaeyserm/www/FCCee/ZH_mass_xsec/combine/"
-    doSyst=False
+    doSyst=True
     
     suffix=""
     if not doSyst:
@@ -610,16 +610,18 @@ if __name__ == "__main__":
         
     
     ############### MUON+ELECTRON
-    if False:
+    if True:
         combineOptions = ""
         if not doSyst:
             combineOptions = "--freezeParameters BES,ISR,SQRTS,LEPSCALE_MU,LEPSCALE_EL" # ,bkg_norm --setParameters bkg_norm=0
+            
+        #combineOptions = "--freezeParameters BES,ISR,SQRTS,LEPSCALE_MU" # ,bkg_norm --setParameters bkg_norm=0
     
-        tag, label = "mumu_ee_combined_inclusive", "#mu^{#plus}#mu^{#minus}+e^{#plus}e^{#minus}, inclusive"
-        mhMin, mhMax = 124.99, 125.01
-        combineCards("%s/%s" % (combineDir, tag), [combineDir+"/mumu_cat0/datacard_parametric.txt", combineDir+"/ee_cat0/datacard_parametric.txt"])
-        doFit_mass("%s/%s" % (combineDir, tag), mhMin=mhMin, mhMax=mhMax, npoints=50, combineOptions=combineOptions)
-        analyzeMass("%s/%s" % (combineDir, tag), "%s/%s/" % (outDir, tag), label=label, xMin=mhMin, xMax=mhMax)
+        #tag, label = "mumu_ee_combined_inclusive", "#mu^{#plus}#mu^{#minus}+e^{#plus}e^{#minus}, inclusive"
+        #mhMin, mhMax = 124.99, 125.01
+        #combineCards("%s/%s" % (combineDir, tag), [combineDir+"/mumu_cat0/datacard_parametric.txt", combineDir+"/ee_cat0/datacard_parametric.txt"])
+        #doFit_mass("%s/%s" % (combineDir, tag), mhMin=mhMin, mhMax=mhMax, npoints=50, combineOptions=combineOptions)
+        #analyzeMass("%s/%s" % (combineDir, tag), "%s/%s/" % (outDir, tag), label=label, xMin=mhMin, xMax=mhMax)
         
         tag, label = "mumu_ee_combined_categorized", "#mu^{#plus}#mu^{#minus}+e^{#plus}e^{#minus}, categorized"
         mhMin, mhMax = 124.99, 125.01
@@ -666,7 +668,7 @@ if __name__ == "__main__":
     ############### MUON
     combineDir = "combine/run_xsec_bdt"
     outDir = "/eos/user/j/jaeyserm/www/FCCee/ZH_mass_xsec/combine/xsec_bdt/"
-    if True:
+    if False:
     
         combineOptions = ""
 

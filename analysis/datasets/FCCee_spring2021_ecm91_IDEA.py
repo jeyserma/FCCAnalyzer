@@ -51,4 +51,16 @@ def get_datasets(baseDir = ""):
         "xsec"      : 5.3393669E+02
     })
     
+    datasets.append({
+        "name"      : "wzp6_ee_mumu_ecm91p2",
+        "datadir"   : "/eos/cms/store/user/jaeyserm/fccee/DelphesEvents/winter2023/IDEA//wzp6_ee_mumu_ecm91p2/",
+        "xsec"      : 1462.09
+    })
+    
+    datasets.append({
+        "name"      : "wzp6_ee_qq_ecm91p2",
+        "datadir"   : "/eos/cms/store/user/jaeyserm/fccee/DelphesEvents/winter2023/IDEA//wzp6_ee_qq_ecm91p2/",
+        "xsec"      : 1462.09
+    })
+    
     return datasets

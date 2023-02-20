@@ -69,6 +69,10 @@ def build_graph_ll(df, dataset):
     df = df.Define("m_inv", "(leps_tlv[0]+leps_tlv[1]).M()")
     df = df.Filter("m_inv >= 50")
     
+    df = df.Define("leps_gen_tlv", "FCCAnalyses::makeLorentzVectors_gen(leps_all, MCRecoAssociations0, MCRecoAssociations1, ReconstructedParticles, Particle)")
+    df = df.Define("lep0_p", "leps_gen_tlv[0].P()")
+    
+    results.append(df.Histo1D(("leps_all_gen_p", "", *bins_p_mu), "lep0_p"))
     
     df = df.Define("missingEnergy_vec", "FCCAnalyses::missingEnergy(91., ReconstructedParticles)")
     df = df.Define("missingEnergy", "missingEnergy_vec[0].energy")
@@ -111,6 +115,7 @@ def build_graph_ll(df, dataset):
 if __name__ == "__main__":
 
     baseDir = functions.get_basedir() # get base directory of samples, depends on the cluster hostname (mit, cern, ...)
+    baseDir = "/eos/experiment/fcc/ee/generation/DelphesEvents/"
     import FCCee_spring2021_ecm91_IDEA
     datasets_spring2021_ecm91 = FCCee_spring2021_ecm91_IDEA.get_datasets(baseDir=baseDir) # list of all datasets
     datasets = [] # list of datasets to be run over
