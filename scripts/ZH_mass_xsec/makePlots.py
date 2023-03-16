@@ -182,4 +182,7 @@ if __name__ == "__main__":
     makePlot("zll_recoil_m", "zll_recoil_m", xMin=120, xMax=140, yMin=0, yMax=1.5e3, xLabel="m_{rec} (GeV)", yLabel="Events / 0.1 GeV", logY=False, rebin=1)
     makePlot("zll_p", "zll_p", xMin=20, xMax=60, yMin=1, yMax=1e6, xLabel="p_{Z} (GeV)", yLabel="Events", logY=True, rebin=1)
     
-       
+    makePlot("acoplanarity_cut6", "acoplanarity_cut6", xMin=0, xMax=3.5, yMin=1, yMax=1e6, xLabel="Acoplanarity (rad)", yLabel="Events", logY=True, rebin=1)
+    makePlot("acolinearity_cut6", "acolinearity_cut6", xMin=0, xMax=3.5, yMin=1, yMax=1e6, xLabel="Acolinearity (rad)", yLabel="Events", logY=True, rebin=1)
+    makePlot("zll_p_cut6", "zll_p_cut6", xMin=20, xMax=60, yMin=1, yMax=1e6, xLabel="p_{Z} (GeV)", yLabel="Events", logY=True, rebin=10) 
+    makePlot("leps_p_cut6", "leps_p_cut6", xMin=0, xMax=100, yMin=10, yMax=1e7, xLabel="Leptons p (GeV)", yLabel="Events", logY=True, rebin=10)    

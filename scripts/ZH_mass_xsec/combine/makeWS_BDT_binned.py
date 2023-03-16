@@ -28,12 +28,12 @@ def doSignal():
         'logy'              : False,
         'logx'              : False,
     
-        'xmin'              : 120,
-        'xmax'              : 140,
+        'xmin'              : 120 if not "Score" in hName else 0,
+        'xmax'              : 140 if not "Score" in hName else 1,
         'ymin'              : 0,
         'ymax'              : 3000,
         
-        'xtitle'            : "Recoil mass (GeV)",
+        'xtitle'            : "Recoil mass (GeV)" if not "Score" in hName else "BDT Score",
         'ytitle'            : "Events / 0.2 GeV",
         
         'topRight'          : "ZH, #sqrt{s} = 240 GeV, 5 ab^{#minus1}", 
@@ -68,6 +68,8 @@ def doSignal():
             continue
         # do plotting
         plotter.cfg = cfg
+        
+        cfg['ymax'] = 1.3*hist_zh.GetMaximum()
         
         canvas, padT, padB = plotter.canvasRatio()
         dummyT, dummyB = plotter.dummyRatio()
@@ -127,7 +129,10 @@ def doBackgrounds():
     global h_obs
 
     if flavor == "mumu":
-        procs = ["p8_ee_WW_mumu_ecm240", "p8_ee_ZZ_ecm240", "wzp6_ee_mumu_ecm240", "wzp6_egamma_eZ_Zmumu_ecm240", "wzp6_gammae_eZ_Zmumu_ecm240"]
+        procs = ["p8_ee_WW_ecm240", "p8_ee_ZZ_ecm240", "wzp6_ee_mumu_ecm240", "wzp6_egamma_eZ_Zmumu_ecm240", "wzp6_gammae_eZ_Zmumu_ecm240", "wzp6_gaga_tautau_60_ecm240", "wzp6_gaga_mumu_60_ecm240", "wzp6_ee_tautau_ecm240", "wzp6_ee_nuenueZ_ecm240"]
+        
+    if flavor == "ee":
+        procs = ["p8_ee_WW_ecm240", "p8_ee_ZZ_ecm240", "wzp6_ee_ee_Mee_30_150_ecm240", "wzp6_gammae_eZ_Zee_ecm240", "wzp6_egamma_eZ_Zee_ecm240", "wzp6_gaga_tautau_60_ecm240", "wzp6_gaga_ee_60_ecm240", "wzp6_ee_tautau_ecm240", "wzp6_ee_nuenueZ_ecm240"]
         
 
 
@@ -159,12 +164,12 @@ def doBackgrounds():
         'logy'              : False,
         'logx'              : False,
     
-        'xmin'              : 120,
-        'xmax'              : 140,
+        'xmin'              : 120 if not "Score" in hName else 0,
+        'xmax'              : 140 if not "Score" in hName else 1,
         'ymin'              : 0,
-        'ymax'              : 10000,
+        'ymax'              : 1.3*hist_bkg.GetMaximum(),
         
-        'xtitle'            : "Recoil mass (GeV)",
+        'xtitle'            : "Recoil mass (GeV)" if not "Score" in hName else "BDT Score",
         'ytitle'            : "Events / 0.1 GeV",
         
         'topRight'          : "BKGS, #sqrt{s} = 240 GeV, 5 ab^{#minus1}", 
@@ -227,17 +232,45 @@ def doBackgrounds():
 if __name__ == "__main__":
 
     flavor = "mumu"
-    label = "#mu^{#plus}#mu^{#minus}"
-    baseFileName = "/eos/user/l/lia/FCCee/NewWorkFlow/BDT_analysis_samples/final/{sampleName}_sel0_MRecoil_Mll_73_120_pll_05_histo.root"
+    mva = True
+    
+    #baseFileName = "/eos/user/l/lia/FCCee/NewWorkFlow/BDT_analysis_samples/final/{sampleName}_sel0_MRecoil_Mll_73_120_pll_05_histo.root"
+    if flavor == "mumu":
+        if mva:
+            baseFileName = "/eos/user/l/lia/FCCee/Winter2023/mumu/BDT_analysis_samples/final/{sampleName}_sel_Baseline_no_costhetamiss_MVA02_histo.root"
+            baseFileName = "/eos/user/l/lia/FCCee/Winter2023/mumu/BDT_analysis_samples/final/{sampleName}_sel_Baseline_no_costhetamiss_histo.root"
+        else:
+            baseFileName = "/eos/user/l/lia/FCCee/Winter2023/mumu/BDT_analysis_samples/final/{sampleName}_sel_Baseline_histo.root"
+            baseFileName = "/eos/user/l/lia/FCCee/Winter2023/mumu/BDT_analysis_samples/final/{sampleName}_sel_Baseline_no_costhetamiss_histo.root"
+        label = "#mu^{#plus}#mu^{#minus}"
+    elif flavor == "ee":
+        if mva:
+            baseFileName = "/eos/user/l/lia/FCCee/Winter2023/ee/BDT_analysis_samples/final/{sampleName}_sel_Baseline_no_costhetamiss_MVA03_histo.root"
+            baseFileName = "/eos/user/l/lia/FCCee/Winter2023/ee/BDT_analysis_samples/final/{sampleName}_sel_Baseline_no_costhetamiss_histo.root"
+        else:
+            baseFileName = "/eos/user/l/lia/FCCee/Winter2023/ee/BDT_analysis_samples/final/{sampleName}_sel_Baseline_histo.root"
+            baseFileName = "/eos/user/l/lia/FCCee/Winter2023/ee/BDT_analysis_samples/final/{sampleName}_sel_Baseline_no_costhetamiss_histo.root"
+        label = "e^{#plus}e^{#minus}"
+                        
     hName = "leptonic_recoil_m_zoom2"
-    outDir = "/eos/user/j/jaeyserm/www/FCCee/ZH_mass_xsec/combine_binned_BDT/init/"
+    hName = "BDT_Score"
+    if mva:
+        runDir = "combine/run_binned_BDT_{flavor}/".format(flavor=flavor)
+        outDir = "/eos/user/j/jaeyserm/www/FCCee/ZH_mass_xsec/combine_binned_BDT/{flavor}/".format(flavor=flavor)
+        
+        runDir = "combine/run_binned_BDTScore_{flavor}/".format(flavor=flavor)
+        outDir = "/eos/user/j/jaeyserm/www/FCCee/ZH_mass_xsec/combine_binned_BDTScore/{flavor}/".format(flavor=flavor)
+    else:
+        runDir = "combine/run_binned_baseline_{flavor}/".format(flavor=flavor)
+        outDir = "/eos/user/j/jaeyserm/www/FCCee/ZH_mass_xsec/combine_binned_baseline/{flavor}/".format(flavor=flavor)
+        
+        runDir = "combine/run_binned_baseline_no_costhetamiss_{flavor}/".format(flavor=flavor)
+        outDir = "/eos/user/j/jaeyserm/www/FCCee/ZH_mass_xsec/combine_binned_baseline_no_costhetamiss/{flavor}/".format(flavor=flavor)
+    if not os.path.exists(outDir): os.makedirs(outDir)
+    if not os.path.exists(runDir): os.makedirs(runDir)
     lumi = 5000000
     
-
-    runDir = "combine/run_binned_BDT/"
-    if not os.path.exists(runDir): os.makedirs(runDir)
-
-    rebin = 1 # the recoil histograms are binned at 1 MeV
+    rebin = 5 # the recoil histograms are binned at 1 MeV
     recoilMin = 120
     recoilMax = 140
     h_obs = None # should hold the data_obs = sum of signal and backgrounds
@@ -254,8 +287,13 @@ if __name__ == "__main__":
     h_obs.Write()
     fOut.Close()
 
-    # build the Combine workspace based on the datacard, save it to ws.root
+    # build the Combine workspace based on the datacard, save it to ws.root    
     cmd = "cp scripts/ZH_mass_xsec/combine/datacard_binned.txt %s/" % runDir
     subprocess.call(cmd, shell=True)
+    
+    
+    cmd = "sed -i 's/bkg/bkg_{flavor}/g' datacard_binned.txt".format(flavor=flavor)
+    subprocess.call(cmd, shell=True, cwd=runDir)
+    
     cmd = "text2workspace.py datacard_binned.txt -o ws.root -v 10"
     subprocess.call(cmd, shell=True, cwd=runDir)

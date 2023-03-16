@@ -23,6 +23,7 @@ bins_cosThetaMiss = (10000, 0, 1)
 bins_theta = (500, -5, 5)
 bins_eta = (600, -3, 3)
 bins_phi = (500, -5, 5)
+bins_aco = (200, 0, 4)
 
 bins_count = (50, 0, 50)
 bins_pdgid = (60, -30, 30)
@@ -377,6 +378,14 @@ def build_graph(df, dataset):
     results.append(df.Histo1D(("photons_theta_cut6", "", *bins_theta), "photons_theta"))
     results.append(df.Histo1D(("photons_phi_cut6", "", *bins_phi), "photons_phi"))
     results.append(df.Histo1D(("photons_no_cut6", "", *bins_count), "photons_no"))
+    
+    df = df.Define("acoplanarity", "FCCAnalyses::acoplanarity(leps)")
+    df = df.Define("acolinearity", "FCCAnalyses::acolinearity(leps)")
+    results.append(df.Histo1D(("acoplanarity_cut6", "", *bins_aco), "acoplanarity"))
+    results.append(df.Histo1D(("acolinearity_cut6", "", *bins_aco), "acolinearity"))
+    results.append(df.Histo1D(("leps_p_cut6", "", *bins_p_mu), "leps_p"))
+    results.append(df.Histo1D(("zll_p_cut6", "", *bins_p_mu), "zll_p"))
+    
         
     ########################
     # Final histograms
@@ -429,8 +438,7 @@ def build_graph(df, dataset):
 
               
 
-    #.Define("acoplanarity",      "FCCAnalyses::ReconstructedParticle::acoplanarity(zed_leptonic_pair)")
-    #.Define("acolinearity",      "FCCAnalyses::ReconstructedParticle::acolinearity(zed_leptonic_pair)")
+    
                
     return results, weightsum
     

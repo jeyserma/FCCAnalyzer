@@ -24,6 +24,9 @@ bins_charge = (10, -5, 5)
 
 bins_cos = (100, -1, 1)
 
+bins_thrustval = (2000, 0, 2)
+bins_thrustcomp = (2000, -100, 100)
+
 def build_graph_ll(df, dataset):
 
     print("build graph", dataset.name)
@@ -38,6 +41,30 @@ def build_graph_ll(df, dataset):
     df = df.Alias("MCRecoAssociations0", "MCRecoAssociations#0.index")
     df = df.Alias("MCRecoAssociations1", "MCRecoAssociations#1.index")
     df = df.Alias("Lepton0", "Muon#0.index")
+    
+    df = df.Define("RP_px", "FCCAnalyses::ReconstructedParticle::get_px(ReconstructedParticles)")
+    df = df.Define("RP_py", "FCCAnalyses::ReconstructedParticle::get_py(ReconstructedParticles)")
+    df = df.Define("RP_pz", "FCCAnalyses::ReconstructedParticle::get_pz(ReconstructedParticles)")
+    df = df.Define("RP_e",  "FCCAnalyses::ReconstructedParticle::get_e(ReconstructedParticles)")
+    df = df.Define("RP_m",  "FCCAnalyses::ReconstructedParticle::get_mass(ReconstructedParticles)")
+    df = df.Define("RP_q",  "FCCAnalyses::ReconstructedParticle::get_charge(ReconstructedParticles)")
+    
+    df = df.Define('EVT_thrust',     'FCCAnalyses::Algorithms::minimize_thrust("Minuit2","Migrad")(RP_px, RP_py, RP_pz)')
+    df = df.Define('EVT_thrust_x',   "EVT_thrust.at(1)")
+    df = df.Define('EVT_thrust_y',   "EVT_thrust.at(3)")
+    df = df.Define('EVT_thrust_z',   "EVT_thrust.at(5)")
+    df = df.Define('EVT_thrust_r',   "sqrt(EVT_thrust_x*EVT_thrust_x+EVT_thrust_y*EVT_thrust_y+EVT_thrust_z*EVT_thrust_z)")
+    df = df.Define('EVT_thrust_val', "EVT_thrust.at(0)")
+    df = df.Define('EVT_cos_thrustangle', 'EVT_thrust_z/EVT_thrust_r')
+    df = df.Define('EVT_cos_thrustangle_abs', 'abs(EVT_cos_thrustangle)')
+    
+    results.append(df.Histo1D(("EVT_thrust_val", "", *bins_thrustval), "EVT_thrust_val"))
+    results.append(df.Histo1D(("EVT_cos_thrustangle", "", *bins_cos), "EVT_cos_thrustangle"))
+    results.append(df.Histo1D(("EVT_cos_thrustangle_abs", "", *bins_cos), "EVT_cos_thrustangle_abs"))
+    results.append(df.Histo1D(("EVT_thrust_x", "", *bins_thrustcomp), "EVT_thrust_x"))
+    results.append(df.Histo1D(("EVT_thrust_y", "", *bins_thrustcomp), "EVT_thrust_y"))
+    results.append(df.Histo1D(("EVT_thrust_z", "", *bins_thrustcomp), "EVT_thrust_z"))
+    results.append(df.Histo1D(("EVT_thrust_r", "", *bins_thrustcomp), "EVT_thrust_r"))
 
     # gen muons
     df = df.Define("gen_muons", "FCCAnalyses::get_gen_pdg(Particle, 13)") # muon pdg index=13
@@ -52,6 +79,9 @@ def build_graph_ll(df, dataset):
     results.append(df.Histo1D(("gen_muons_no", "", *bins_count), "gen_muons_no"))
     
     results.append(df.Histo1D(("evts_initial", "", *bins_count), "weight"))
+    
+    
+
     
     
     # get the leptons leptons

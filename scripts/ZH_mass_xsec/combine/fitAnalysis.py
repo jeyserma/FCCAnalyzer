@@ -339,7 +339,86 @@ def plotMultiple(tags, labels, fOut, xMin=-1, xMax=-1, yMin=0, yMax=2):
     canvas.Draw()
     canvas.SaveAs("%s%s.png" % (fOut, suffix))
     canvas.SaveAs("%s%s.pdf" % (fOut, suffix))
+ 
+
+def plotMultiple_xsec(tags, labels, fOut, xMin=-1, xMax=-1, yMin=0, yMax=2):
+
+    best_xsec, unc_xsec, g_xsec = [], [], []
+    for tag in tags:
     
+        xv, yv = [], []
+        fIn = open("%s/xsec.txt" % (tag), "r")
+        for i,line in enumerate(fIn.readlines()):
+
+            line = line.rstrip()
+            if i == 0: 
+                best_xsec.append(float(line.split(" ")[3]))
+                unc_xsec.append(float(line.split(" ")[2]))
+            else:
+                xv.append(float(line.split(" ")[0]))
+                yv.append(float(line.split(" ")[1]))
+    
+        g = ROOT.TGraph(len(xv), array.array('d', xv), array.array('d', yv))    
+        g_xsec.append(g)
+
+    cfg = {
+
+        'logy'              : False,
+        'logx'              : False,
+        
+        'xmin'              : xMin,
+        'xmax'              : xMax,
+        'ymin'              : yMin,
+        'ymax'              : yMax,
+            
+        'xtitle'            : "#sigma(ZH#rightarrowl^{#plus}l^{#minus})/#sigma_{ref}",
+        'ytitle'            : "-2#DeltaNLL",
+            
+        'topRight'          : "#sqrt{s} = 240 GeV, 5 ab^{#minus1}", 
+        'topLeft'           : "#bf{FCC-ee} #scale[0.7]{#it{Simulation}}",
+        }
+        
+    plotter.cfg = cfg
+        
+    canvas = plotter.canvas()
+    canvas.SetGrid()
+    dummy = plotter.dummy()
+        
+    dummy.GetXaxis().SetNdivisions(507)  
+    dummy.Draw("HIST")
+    
+    totEntries = len(g_xsec)
+    leg = ROOT.TLegend(.20, 0.9-totEntries*0.05, 0.90, .9)
+    leg.SetBorderSize(0)
+    #leg.SetFillStyle(0) 
+    leg.SetTextSize(0.03)
+    leg.SetMargin(0.15)
+    leg.SetBorderSize(1)
+    
+    colors = [ROOT.kBlack, ROOT.kRed, ROOT.kBlue, ROOT.kGreen+1]
+    for i,g in enumerate(g_xsec):
+    
+        g.SetMarkerStyle(20)
+        g.SetMarkerColor(colors[i])
+        g.SetMarkerSize(1)
+        g.SetLineColor(colors[i])
+        g.SetLineWidth(4)
+        g.Draw("SAME L")
+        leg.AddEntry(g, "%s #delta(#sigma) = %.2f %%" % (labels[i], unc_xsec[i]*100.), "L")
+    
+    leg.Draw()
+    line = ROOT.TLine(float(cfg['xmin']), 1, float(cfg['xmax']), 1)
+    line.SetLineColor(ROOT.kBlack)
+    line.SetLineWidth(2)
+    line.Draw("SAME")
+
+    plotter.aux()
+    canvas.Modify()
+    canvas.Update()
+    canvas.Draw()
+    canvas.SaveAs("%s.png" % (fOut))
+    canvas.SaveAs("%s.pdf" % (fOut))
+  
     
 def breakDown():
 
@@ -610,7 +689,7 @@ if __name__ == "__main__":
         
     
     ############### MUON+ELECTRON
-    if True:
+    if False:
         combineOptions = ""
         if not doSyst:
             combineOptions = "--freezeParameters BES,ISR,SQRTS,LEPSCALE_MU,LEPSCALE_EL" # ,bkg_norm --setParameters bkg_norm=0
@@ -665,15 +744,41 @@ if __name__ == "__main__":
         
       
 
-    ############### MUON
-    combineDir = "combine/run_xsec_bdt"
-    outDir = "/eos/user/j/jaeyserm/www/FCCee/ZH_mass_xsec/combine/xsec_bdt/"
-    if False:
+    ############### BDT
     
-        combineOptions = ""
-
-        tag, label = "mumu_cat0", "#mu^{#plus}#mu^{#minus}, inclusive"
+    if True:
+    
+        tag = "BDTScore" # BDT baseline baseline_no_costhetamiss BDTScore
+        #rMin, rMax = 0.96, 1.04
         rMin, rMax = 0.98, 1.02
-        doFit_xsec("%s/%s" % (combineDir, tag), rMin=rMin, rMax=rMax, npoints=50, combineOptions=combineOptions)
-        analyzeXsec("%s/%s" % (combineDir, tag), "%s/%s/" % (outDir, tag), label=label, xMin=rMin, xMax=rMax)
+        
+        combineOptions = "--setParameters bkg_mumu_norm=0.1,bkg_ee_norm=0.001"
+        combineOptions = ""
+        
+        combineDir = "combine/run_binned_{tag}_mumu/".format(tag=tag)
+        outDir = "/eos/user/j/jaeyserm/www/FCCee/ZH_mass_xsec/combine_binned_{tag}/mumu/".format(tag=tag)
+        label = "#mu^{#plus}#mu^{#minus}"
+        doFit_xsec(combineDir, rMin=rMin, rMax=rMax, npoints=50, combineOptions=combineOptions)
+        analyzeXsec(combineDir, outDir, label=label, xMin=rMin, xMax=rMax)
+        
+        
+        combineDir = "combine/run_binned_{tag}_ee/".format(tag=tag)
+        outDir = "/eos/user/j/jaeyserm/www/FCCee/ZH_mass_xsec/combine_binned_{tag}/ee/".format(tag=tag)
+        label = "e^{#plus}e^{#minus}"
+        doFit_xsec(combineDir, rMin=rMin, rMax=rMax, npoints=50, combineOptions=combineOptions)
+        analyzeXsec(combineDir, outDir, label=label, xMin=rMin, xMax=rMax)
+        
+        
+        combineDir = "combine/run_binned_{tag}_combined/".format(tag=tag)
+        outDir = "/eos/user/j/jaeyserm/www/FCCee/ZH_mass_xsec/combine_binned_{tag}/combined/".format(tag=tag)
+        combineCards(combineDir, ["combine/run_binned_{tag}_mumu/datacard_binned.txt".format(tag=tag), "combine/run_binned_{tag}_ee/datacard_binned.txt".format(tag=tag)])
+        doFit_xsec(combineDir, rMin=rMin, rMax=rMax, npoints=50, combineOptions=combineOptions)
+        analyzeXsec(combineDir, outDir, label=label, xMin=rMin, xMax=rMax)
+        
+        plotMultiple_xsec(["combine/run_binned_{tag}_mumu/".format(tag=tag), "combine/run_binned_{tag}_ee/".format(tag=tag), "combine/run_binned_{tag}_combined/".format(tag=tag)], ["#mu^{#plus}#mu^{#minus}", "e^{#plus}e^{#minus}", "#mu^{#plus}#mu^{#minus}+e^{#plus}e^{#minus}"], "%s/summary"%outDir, xMin=rMin, xMax=rMax)
+        
+        
+        #rMin, rMax = 0.98, 1.02
+        #outDir = "/eos/user/j/jaeyserm/www/FCCee/ZH_mass_xsec/combine_binned_BDT/"
+        #plotMultiple_xsec(["combine/run_binned_BDT_combined/", "combine/run_binned_baseline_combined/", "combine/run_binned_baseline_no_costhetamiss_combined/"], ["BDT", "Baseline (with cos(#theta_{miss}))", "Baseline (without cos(#theta_{miss}))"], "%s/summary"%outDir, xMin=rMin, xMax=rMax)
         

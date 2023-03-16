@@ -18,7 +18,7 @@ def build_and_run(datadict, build_function, outfile, maxFiles=-1, norm=False, lu
 
     for val in datadict:
     
-        if not os.path.isdir(val['datadir']):
+        if not os.path.exists(val['datadir']):
             print(f"WARNING: directory {val['datadir']} does not exist, skipping dataset {val['name']}")
             continue
 

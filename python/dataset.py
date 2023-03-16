@@ -13,7 +13,7 @@ class Dataset:
 
     def findROOTFiles(self, basedir, regex = ""):
         
-        if ".root" in basedir: return basedir
+        if ".root" in basedir: return [basedir]
         
         if regex != "":
         
