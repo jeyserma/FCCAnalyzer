@@ -115,7 +115,7 @@ def get_hostname():
 def get_basedir(sel=None):
 
     basedirs = {}
-    basedirs['mit'] = "/data/submit/cms/store/fccee/"
+    basedirs['mit'] = "/data/submit/cms/store/fccee"
     basedirs['cmswmass2'] = "/data/shared/jaeyserm/fccee/"
     basedirs['fcc_eos'] = "/eos/experiment/fcc/ee/generation/DelphesEvents/"
     
