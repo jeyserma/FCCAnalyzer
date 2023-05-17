@@ -5,6 +5,153 @@
 
 namespace FCCAnalyses {
     
+Vec_tlv jetsToTlv(Vec_f px, Vec_f py, Vec_f pz, Vec_f e) {
+
+    Vec_tlv ret;
+    for(int i=0; i<4; i++) {
+        TLorentzVector tlv;
+        tlv.SetPxPyPzE(px[i], py[i], pz[i], e[i]);
+        ret.push_back(tlv);
+    }
+    return ret;
+
+}    
+    
+Vec_tlv energyReconstructFourJet(Vec_f px, Vec_f py, Vec_f pz, Vec_f e) {
+    
+    
+    //cout << "***************" << endl;
+    
+    //cout << px.size() << endl;
+    
+    float p0 = std::sqrt(px[0]*px[0] + py[0]*py[0] + pz[0]*pz[0]);
+    float p1 = std::sqrt(px[1]*px[1] + py[1]*py[1] + pz[1]*pz[1]);
+    float p2 = std::sqrt(px[2]*px[2] + py[2]*py[2] + pz[2]*pz[2]);
+    float p3 = std::sqrt(px[3]*px[3] + py[3]*py[3] + pz[3]*pz[3]);
+
+    TMatrixD mtrx(4, 4);
+    mtrx(0, 0) = 1;
+    mtrx(0, 1) = 1;
+    mtrx(0, 2) = 1;
+    mtrx(0, 3) = 1;
+
+    mtrx(1, 0) = px[0]/e[0];
+    mtrx(1, 1) = px[1]/e[1];
+    mtrx(1, 2) = px[2]/e[2];
+    mtrx(1, 3) = px[3]/e[3];
+    
+    mtrx(2, 0) = py[0]/e[0];
+    mtrx(2, 1) = py[1]/e[1];
+    mtrx(2, 2) = py[2]/e[2];
+    mtrx(2, 3) = py[3]/e[3];
+    
+    mtrx(3, 0) = pz[0]/e[0];
+    mtrx(3, 1) = pz[1]/e[1];
+    mtrx(3, 2) = pz[2]/e[2];
+    mtrx(3, 3) = pz[3]/e[3];
+    
+    TMatrixD inv = mtrx.Invert();
+    
+    
+    TVectorD vec(4);
+    vec(0) = 240;
+    vec(1) = 0;
+    vec(2) = 0;
+    vec(3) = 0;
+    
+    TVectorD res = inv*vec;
+    
+    bool isValid = true;
+    
+    if(res[0]<0 or res[1]<0 or res[2]<0 or res[3]<0 or res[0]>240 or res[1]>240 or res[2]>240 or res[3]>240) {
+        isValid = false;
+    }
+    if(!isValid) {
+        cout << "***************" << endl;
+        cout << px[0] << " " << py[0] << " " << pz[0] << " " << p0 << " " << e[0] << " " << res[0] << endl;
+        cout << px[1] << " " << py[1] << " " << pz[1] << " " << p1 << " " << e[1] << " " << res[1] << endl;
+        cout << px[2] << " " << py[2] << " " << pz[2] << " " << p2 << " " << e[2] << " " << res[2] << endl;
+        cout << px[3] << " " << py[3] << " " << pz[3] << " " << p3 << " " << e[3] << " " << res[3] << endl;
+    }
+    
+    
+    Vec_tlv ret;
+    float chi2 = 0;
+    for(int i=0; i<4; i++) {
+        TLorentzVector tlv;
+        if(isValid)
+            tlv.SetPxPyPzE(px[i]*res[i]/e[i], py[i]*res[i]/e[i], pz[i]*res[i]/e[i], res[i]);
+        else
+            tlv.SetPxPyPzE(px[i], py[i], pz[i], e[i]);
+        ret.push_back(tlv);
+        
+        if(res[i] > 0) {
+            float uncert = 0.5*std::sqrt(e[i]) + 0.05*e[i];
+            float delta = (e[i]-res[i])/uncert;
+            chi2 += delta*delta;
+        }
+        else {
+            chi2 += 1000.;
+        }
+    }
+    
+    // add chi2 as dummy to the list of Lorentz vectors
+    TLorentzVector chi2_;
+    chi2_.SetPxPyPzE(0, 0, 0, chi2);
+    ret.push_back(chi2_);
+    
+    
+    return ret;
+}
+
+  
+// make Lorentz vectors for a given collections
+TLorentzVector sum4Vectors(Vec_mc in) {
+	
+	TLorentzVector ret;
+	for (auto & p: in) {
+		TLorentzVector tlv;
+		tlv.SetXYZM(p.momentum.x, p.momentum.y, p.momentum.z, p.mass);
+        ret += tlv;
+	}
+	return ret;
+}
+  
+// make Lorentz vectors for a given collections
+Vec_tlv makeLorentzVectors(Vec_rp in) {
+	
+	Vec_tlv result;
+	for (auto & p: in) {
+		TLorentzVector tlv;
+		tlv.SetXYZM(p.momentum.x, p.momentum.y, p.momentum.z, p.mass);
+		result.push_back(tlv);
+	}
+	return result;
+}
+
+// computes longitudinal and transversal energy balance of all particles
+Vec_f energy_imbalance(Vec_rp in) {
+    
+    float e_tot = 0;
+    float e_trans = 0;
+    float e_long = 0;
+    for(auto &p : in) {
+        float mag = std::sqrt(p.momentum.x*p.momentum.x + p.momentum.y*p.momentum.y + p.momentum.z*p.momentum.z);
+        float cost = p.momentum.z / mag;
+        float sint =  std::sqrt(p.momentum.x*p.momentum.x + p.momentum.y*p.momentum.y) / mag;
+        if(p.momentum.y < 0) sint *= -1.0;
+        e_tot += p.energy;
+        e_long += cost*p.energy;
+        e_trans += sint*p.energy;
+    }
+    Vec_f result;
+    result.push_back(e_tot);
+    result.push_back(std::abs(e_trans));
+    result.push_back(std::abs(e_long));
+    return result;
+}
+
+    
 // maps theta [pi/2, pi] to [0, pi/2]
 Vec_f theta_abs(Vec_f in) {
     
@@ -32,9 +179,18 @@ float deltaR(Vec_rp in) {
     return std::sqrt(std::pow(tlv1.Eta()-tlv2.Eta(), 2) + std::pow(tlv1.Phi()-tlv2.Phi(), 2));
 }
 
+// crossing angle between particles in XZ plane
+float crossingAngle(Vec_mc in) {
+    if(in.size() != 2) return -999;
+    
+    float t1 = std::atan2(in[0].momentum.x, in[0].momentum.z);
+    float t2 = std::atan2(in[1].momentum.x, in[1].momentum.z);
+    return std::abs(t1-t2);
+}
+
 // acolinearity between two reco particles
 float acolinearity(Vec_rp in) {
-    if(in.size() != 2) return -1;
+    if(in.size() < 2) return -999;
 
     TLorentzVector p1;
     p1.SetXYZM(in[0].momentum.x, in[0].momentum.y, in[0].momentum.z, in[0].mass);
@@ -42,13 +198,14 @@ float acolinearity(Vec_rp in) {
     TLorentzVector p2;
     p2.SetXYZM(in[1].momentum.x, in[1].momentum.y, in[1].momentum.z, in[1].mass);
 
-    float acol = abs(p1.Theta() - p2.Theta());
-    return acol;
+    TVector3 v1 = p1.Vect();
+    TVector3 v2 = p2.Vect();
+    return std::acos(v1.Dot(v2)/(v1.Mag()*v2.Mag())*(-1.));
 }
 
 // acoplanarity between two reco particles
 float acoplanarity(Vec_rp in) {
-    if(in.size() != 2) return -1;
+    if(in.size() < 2) return -999;
 
     TLorentzVector p1;
     p1.SetXYZM(in[0].momentum.x, in[0].momentum.y, in[0].momentum.z, in[0].mass);
@@ -161,6 +318,54 @@ ROOT::VecOps::RVec<float> leptonResolution_p(ROOT::VecOps::RVec<edm4hep::Reconst
             mc_.SetXYZM(mc.at(mc_index).momentum.x, mc.at(mc_index).momentum.y, mc.at(mc_index).momentum.z, mc.at(mc_index).mass);
             result.push_back(reco_.P()/mc_.P());
             //if(mc_.P() > 20) result.push_back(reco_.P()/mc_.P());
+		}
+    } 
+    return result;
+}
+
+
+ROOT::VecOps::RVec<float> leptonResolution_theta(ROOT::VecOps::RVec<edm4hep::ReconstructedParticleData> muons, ROOT::VecOps::RVec<int> recind,
+                                ROOT::VecOps::RVec<int> mcind,
+                                ROOT::VecOps::RVec<edm4hep::ReconstructedParticleData> reco,
+                                ROOT::VecOps::RVec<edm4hep::MCParticleData> mc){
+    
+    ROOT::VecOps::RVec<float> result;
+    result.reserve(muons.size());
+    
+    for(int i = 0; i < muons.size(); ++i) {
+
+        TLorentzVector reco_;
+        reco_.SetXYZM(muons[i].momentum.x, muons[i].momentum.y, muons[i].momentum.z, muons[i].mass);
+        int track_index = muons[i].tracks_begin;
+        int mc_index = FCCAnalyses::ReconstructedParticle2MC::getTrack2MC_index(track_index, recind, mcind, reco);
+        if(mc_index >= 0 && mc_index < (int)mc.size()) {
+            TLorentzVector mc_;
+            mc_.SetXYZM(mc.at(mc_index).momentum.x, mc.at(mc_index).momentum.y, mc.at(mc_index).momentum.z, mc.at(mc_index).mass);
+            result.push_back(reco_.Theta()/mc_.Theta());
+		}
+    } 
+    return result;
+}
+
+
+ROOT::VecOps::RVec<float> leptonResolution_phi(ROOT::VecOps::RVec<edm4hep::ReconstructedParticleData> muons, ROOT::VecOps::RVec<int> recind,
+                                ROOT::VecOps::RVec<int> mcind,
+                                ROOT::VecOps::RVec<edm4hep::ReconstructedParticleData> reco,
+                                ROOT::VecOps::RVec<edm4hep::MCParticleData> mc){
+    
+    ROOT::VecOps::RVec<float> result;
+    result.reserve(muons.size());
+    
+    for(int i = 0; i < muons.size(); ++i) {
+
+        TLorentzVector reco_;
+        reco_.SetXYZM(muons[i].momentum.x, muons[i].momentum.y, muons[i].momentum.z, muons[i].mass);
+        int track_index = muons[i].tracks_begin;
+        int mc_index = FCCAnalyses::ReconstructedParticle2MC::getTrack2MC_index(track_index, recind, mcind, reco);
+        if(mc_index >= 0 && mc_index < (int)mc.size()) {
+            TLorentzVector mc_;
+            mc_.SetXYZM(mc.at(mc_index).momentum.x, mc.at(mc_index).momentum.y, mc.at(mc_index).momentum.z, mc.at(mc_index).mass);
+            result.push_back(reco_.Phi()/mc_.Phi());
 		}
     } 
     return result;

@@ -6,7 +6,7 @@ import argparse
 parser = argparse.ArgumentParser()
 parser.add_argument("--nThreads", type=int, help="number of threads", default=None)
 parser.add_argument("--maxFiles", type=int, help="Max number of files (per dataset)", default=-1)
-parser.add_argument("--jetAlgo", type=str, choices=["kt", "valencia", "genkt"], default="genkt", help="Jet clustering algorithm")
+parser.add_argument("--jetAlgo", type=str, choices=["kt", "valencia", "genkt"], default="kt", help="Jet clustering algorithm")
 args = parser.parse_args()
 
 ROOT.EnableImplicitMT()
@@ -17,15 +17,15 @@ print(ROOT.GetThreadPoolSize())
 
 # define histogram bins
 bins_count = (50, 0, 50)
-jet_E = (100, 0, 100)
+jet_E = (250, 0, 250)
 dijet_m = (200, 0, 200)
 visEnergy = (200, 0, 200)
+chi2 = (2000, 0, 200)
 
 def build_graph(df, dataset):
 
     print("build graph", dataset.name)
     results = []
-    sigProcs = ["wzp6_ee_mumuH_ecm240", "p8_ee_ZH_ecm240"]
     
     df = df.Define("weight", "1.0")
     weightsum = df.Sum("weight")
@@ -40,19 +40,19 @@ def build_graph(df, dataset):
 
     #df = df.Define("pseudo_jets", "FCCAnalyses::JetClusteringUtils::set_pseudoJets_xyzm(RP_px, RP_py, RP_pz, RP_m)")
     df = df.Define("pseudo_jets", "FCCAnalyses::JetClusteringUtils::set_pseudoJets(RP_px, RP_py, RP_pz, RP_e)")
-    
-    
+        
     
     # more info: https://indico.cern.ch/event/1173562/contributions/4929025/attachments/2470068/4237859/2022-06-FCC-jets.pdf
     # https://github.com/HEP-FCC/FCCAnalyses/blob/master/addons/FastJet/src/JetClustering.cc
     if args.jetAlgo == "kt":
-        df = df.Define("clustered_jets", "JetClustering::clustering_ee_kt(2, 2, 0, 10)(pseudo_jets)")
+        df = df.Define("clustered_jets", "JetClustering::clustering_ee_kt(2, 4, 1, 0)(pseudo_jets)")
     elif args.jetAlgo == "valencia":
         df = df.Define("clustered_jets", "JetClustering::clustering_valencia(0.5, 1, 2, 0, 0, 1., 1.)(pseudo_jets)")
     elif args.jetAlgo == "genkt":
         df = df.Define("clustered_jets", "JetClustering::clustering_ee_genkt(1.5, 0, 0, 0, 0, -1)(pseudo_jets)")
           
 
+    
     
     
     df = df.Define("jets", "FCCAnalyses::JetClusteringUtils::get_pseudoJets(clustered_jets)")
@@ -62,6 +62,35 @@ def build_graph(df, dataset):
     df = df.Define("jets_py", "FCCAnalyses::JetClusteringUtils::get_py(jets)")
     df = df.Define("jets_pz", "FCCAnalyses::JetClusteringUtils::get_pz(jets)")
     df = df.Define("jets_m", "FCCAnalyses::JetClusteringUtils::get_m(jets)")
+    
+    df = df.Define("jets_tlv_corr", "FCCAnalyses::energyReconstructFourJet(jets_px, jets_py, jets_pz, jets_e)")
+    df = df.Define("jet0_e_corr", "jets_tlv_corr[0].E()")
+    df = df.Define("jet1_e_corr", "jets_tlv_corr[1].E()")
+    df = df.Define("jet2_e_corr", "jets_tlv_corr[2].E()")
+    df = df.Define("jet3_e_corr", "jets_tlv_corr[3].E()")
+    df = df.Define("chi2", "jets_tlv_corr[4].E()")
+    df = df.Define("jet_sum_e_corr", "jet0_e_corr+jet1_e_corr+jet2_e_corr+jet3_e_corr")
+    
+    
+    df = df.Define("jets_tlv", "FCCAnalyses::jetsToTlv(jets_px, jets_py, jets_pz, jets_e)")
+    df = df.Define("jet0_e", "jets_tlv[0].E()")
+    df = df.Define("jet1_e", "jets_tlv[1].E()")
+    df = df.Define("jet2_e", "jets_tlv[2].E()")
+    df = df.Define("jet3_e", "jets_tlv[3].E()")
+    df = df.Define("jet_sum_e", "jet0_e+jet1_e+jet2_e+jet3_e")
+    
+    results.append(df.Histo1D(("chi2", "", *chi2), "chi2"))
+    results.append(df.Histo1D(("jet0_e_corr", "", *jet_E), "jet0_e_corr"))
+    results.append(df.Histo1D(("jet1_e_corr", "", *jet_E), "jet1_e_corr"))
+    results.append(df.Histo1D(("jet2_e_corr", "", *jet_E), "jet2_e_corr"))
+    results.append(df.Histo1D(("jet3_e_corr", "", *jet_E), "jet3_e_corr"))
+    results.append(df.Histo1D(("jet_sum_e_corr", "", *jet_E), "jet_sum_e_corr"))
+    
+    results.append(df.Histo1D(("jet0_e", "", *jet_E), "jet0_e"))
+    results.append(df.Histo1D(("jet1_e", "", *jet_E), "jet1_e"))
+    results.append(df.Histo1D(("jet2_e", "", *jet_E), "jet2_e"))
+    results.append(df.Histo1D(("jet3_e", "", *jet_E), "jet3_e"))
+    results.append(df.Histo1D(("jet_sum_e", "", *jet_E), "jet_sum_e"))
         
     df = df.Define("njets", "jets_e.size()")
     results.append(df.Histo1D(("njets", "", *bins_count), "njets"))
@@ -87,10 +116,10 @@ def build_graph(df, dataset):
 
 
 if __name__ == "__main__":
-
-    import FCCee_pre_fall2022_training_IDEA
-    datasets = FCCee_pre_fall2022_training_IDEA.getDatasets(filt="p8_ee_ZH_Znunu_Hgg_ecm240")
     
+    wzp6_ee_bbH_Hbb_ecm240 = {"name": "wzp6_ee_bbH_Hbb_ecm240", "datadir": "/eos/experiment/fcc/ee/generation/DelphesEvents/winter2023/IDEA/wzp6_ee_bbH_Hbb_ecm240/",  "xsec": 1}
+    
+    datasets = [wzp6_ee_bbH_Hbb_ecm240]
 
     result = functions.build_and_run(datasets, build_graph, "output_hadr.root", maxFiles=args.maxFiles)
     
