@@ -1,4 +1,3 @@
-
 import analysis, functions
 import ROOT
 import argparse
@@ -6,6 +5,8 @@ import argparse
 parser = argparse.ArgumentParser()
 parser.add_argument("--nThreads", type=int, help="number of threads", default=None)
 parser.add_argument("--maxFiles", type=int, help="Max number of files (per dataset)", default=-1)
+parser.add_argument("--name", type=str, help="Name of process", default='wzp6_ee_mumu_ecm91p2')
+parser.add_argument("--dataset", type=str, help="Name of dataset", default='winter2023/IDEA/wzp6_ee_mumu_ecm91p2')
 args = parser.parse_args()
 
 functions.set_threads(args)
@@ -35,13 +36,11 @@ def build_graph_ll(df, dataset):
     df = df.Define("weight", "1.0")
     weightsum = df.Sum("weight")
     
-    
     df = df.Alias("Particle0", "Particle#0.index")
     df = df.Alias("Particle1", "Particle#1.index")
     df = df.Alias("MCRecoAssociations0", "MCRecoAssociations#0.index")
     df = df.Alias("MCRecoAssociations1", "MCRecoAssociations#1.index")
     df = df.Alias("Lepton0", "Muon#0.index")
-    
     
     # gen muons
     df = df.Define("gen_muons", "FCCAnalyses::get_gen_pdg(Particle, 13)") # muon pdg index=13
@@ -56,10 +55,6 @@ def build_graph_ll(df, dataset):
     results.append(df.Histo1D(("gen_muons_no", "", *bins_count), "gen_muons_no"))
     
     results.append(df.Histo1D(("evts_initial", "", *bins_count), "weight"))
-    
-    
-
-    
     
     # get the leptons leptons
     df = df.Define("leps_all", "FCCAnalyses::ReconstructedParticle::get(Lepton0, ReconstructedParticles)")
@@ -85,7 +80,7 @@ def build_graph_ll(df, dataset):
     df = df.Define("missingEnergy", "missingEnergy_vec[0].energy")
 
     df = df.Define("visibleEnergy", "FCCAnalyses::visibleEnergy(ReconstructedParticles)")
-    
+  
     
     results.append(df.Histo1D(("leps_all_p", "", *bins_p_mu), "leps_all_p"))
     results.append(df.Histo1D(("leps_all_theta", "", *bins_theta), "leps_all_theta"))
@@ -108,24 +103,17 @@ def build_graph_ll(df, dataset):
     results.append(df.Histo1D(("cos_theta_plus", "", *bins_cos), "cos_theta_plus"))
     results.append(df.Histo1D(("cos_theta_minus", "", *bins_cos), "cos_theta_minus"))
     
-    
     results.append(df.Histo1D(("cosThetac", "", *bins_cos), "cosThetac"))
-    
     
     results.append(df.Histo1D(("evts_final", "", *bins_count), "weight"))
     return results, weightsum
-    
- 
-    
-   
 
 if __name__ == "__main__":
 
     baseDir = functions.get_basedir()
+ 
+    dataset = {"name": f"{args.name}", "datadir": f"{baseDir}/{args.dataset}", "xsec": 1}
+    print(dataset)
 
-    wzp6_mumu = {"name": "wzp6_mumu", "datadir": f"{baseDir}/winter2023/IDEA/wzp6_ee_mumu_ecm92p0",  "xsec": 1}
-
-    datasets = [wzp6_mumu]
-    result = functions.build_and_run(datasets, build_graph_ll, "tmp/output_Zpole.root", maxFiles=args.maxFiles)
-
-    
+    datasets = [dataset]
+    result = functions.build_and_run(datasets, build_graph_ll, f"tmp/Zpole_{args.name}.root", maxFiles=args.maxFiles)

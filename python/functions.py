@@ -117,7 +117,7 @@ def get_hostname():
 def get_basedir(sel=None):
 
     basedirs = {}
-    basedirs['mit'] = "/data/submit/cms/store/fccee/"
+    basedirs['mit'] = "/data/submit/cms/store/fccee"
     basedirs['cmswmass2'] = "/data/shared/jaeyserm/fccee/"
     basedirs['fcc_eos'] = "/eos/experiment/fcc/ee/generation/DelphesEvents/"
     
@@ -139,6 +139,7 @@ def filter_datasets(datasets, filt=None):
             if dataset['name'] in filt: ret.append(dataset)
         return ret
     else: return datasets
+
     
 def findROOTFiles(basedir, regex = ""):
         
@@ -158,3 +159,4 @@ def findROOTFiles(basedir, regex = ""):
             if regex == "" or fnmatch.fnmatch(filePath, regex): files.append(filePath)
                 
     return files
+
