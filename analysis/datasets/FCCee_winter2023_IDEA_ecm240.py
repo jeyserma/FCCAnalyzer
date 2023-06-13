@@ -116,7 +116,62 @@ def get_datasets(baseDir = ""):
     })
     
     
-   
+    # Hmumu samples
+    datasets.append({
+        "name"      : "wzp6_ee_nunuH_Hmumu_ecm240",
+        "datadir"   : "%s/wzp6_ee_nunuH_Hmumu_ecm240" % baseDir,
+        "xsec"      : 1.005e-05
+    })
+    
+    datasets.append({
+        "name"      : "wzp6_ee_eeH_Hmumu_ecm240",
+        "datadir"   : "%s/wzp6_ee_eeH_Hmumu_ecm240" % baseDir,
+        "xsec"      : 1.558e-06
+    })
+    
+    datasets.append({
+        "name"      : "wzp6_ee_tautauH_Hmumu_ecm240",
+        "datadir"   : "%s/wzp6_ee_tautauH_Hmumu_ecm240" % baseDir,
+        "xsec"      : 1.469e-06
+    })
+    
+    datasets.append({
+        "name"      : "wzp6_ee_ccH_Hmumu_ecm240",
+        "datadir"   : "%s/wzp6_ee_ccH_Hmumu_ecm240" % baseDir,
+        "xsec"      : 5.079e-06
+    })
+    
+    datasets.append({
+        "name"      : "wzp6_ee_bbH_Hmumu_ecm240",
+        "datadir"   : "%s/wzp6_ee_bbH_Hmumu_ecm240" % baseDir,
+        "xsec"      : 6.521e-06
+    })
+    
+    datasets.append({
+        "name"      : "wzp6_ee_qqH_Hmumu_ecm240",
+        "datadir"   : "%s/wzp6_ee_qqH_Hmumu_ecm240" % baseDir,
+        "xsec"      : 1.161e-05
+    })
+    
+    datasets.append({
+        "name"      : "wzp6_ee_ssH_Hmumu_ecm240",
+        "datadir"   : "%s/wzp6_ee_ssH_Hmumu_ecm240" % baseDir,
+        "xsec"      : 6.519e-06
+    })
+    
+    datasets.append({
+        "name"      : "wzp6_ee_mumuH_Hmumu_ecm240",
+        "datadir"   : "%s/wzp6_ee_mumuH_Hmumu_ecm240" % baseDir,
+        "xsec"      : 1.472e-06
+    })
+    
+    
+    
+    
+    
+    
+    
+    
 
     ## diboson backgrounds
     datasets.append({

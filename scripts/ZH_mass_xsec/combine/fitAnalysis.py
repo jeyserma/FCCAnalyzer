@@ -83,7 +83,7 @@ def analyzeMass(runDir, outDir, xMin=-1, xMax=-1, yMin=0, yMax=2, label="label")
         'xtitle'            : "m_{h} (GeV)",
         'ytitle'            : "-2#DeltaNLL",
             
-        'topRight'          : "#sqrt{s} = 240 GeV, 5 ab^{#minus1}", 
+        'topRight'          : "#sqrt{s} = 240 GeV, 10 ab^{#minus1}", 
         'topLeft'           : "#bf{FCC-ee} #scale[0.7]{#it{Internal}}",
         }
         
@@ -180,7 +180,7 @@ def analyzeXsec(runDir, outDir, xMin=-1, xMax=-1, yMin=0, yMax=2, label="label")
         'xtitle'            : "#sigma(ZH, Z#rightarrow#mu#mu)/#sigma_{ref}",
         'ytitle'            : "-2#DeltaNLL",
             
-        'topRight'          : "#sqrt{s} = 240 GeV, 5 ab^{#minus1}", 
+        'topRight'          : "#sqrt{s} = 240 GeV, 10 ab^{#minus1}", 
         'topLeft'           : "#bf{FCCee} #scale[0.7]{#it{Internal}}",
     }
         
@@ -243,29 +243,33 @@ def doFit_xsec(runDir, rMin=0.98, rMax=1.02, npoints=50, combineOptions = ""):
 def doFit_mass(runDir, mhMin=124.99, mhMax=125.01, npoints=50, combineOptions = ""):
 
     # scan for signal mass
-    cmd = "combine -M MultiDimFit -t -1 --setParameterRanges MH=%f,%f --points=%d --algo=grid ws.root --expectSignal=1 -m 125 --redefineSignalPOIs MH --X-rtd TMCSO_AdaptivePseudoAsimov -v 10 --X-rtd ADDNLL_CBNLL=0 -n mass %s" % (mhMin, mhMax, npoints, combineOptions)
+    exe = "%s/HiggsAnalysis/CombinedLimit/build/bin/combine" % os.environ['WDIR']
+    cmd = "%s -M MultiDimFit -t -1 --setParameterRanges MH=%f,%f --points=%d --algo=grid ws.root --expectSignal=1 -m 125 --redefineSignalPOIs MH --X-rtd TMCSO_AdaptivePseudoAsimov -v 10 --X-rtd ADDNLL_CBNLL=0 -n mass %s" % (exe, mhMin, mhMax, npoints, combineOptions)
     
     subprocess.call(cmd, shell=True, cwd=runDir)
     
 def doFitDiagnostics_mass(runDir, mhMin=124.99, mhMax=125.01, combineOptions = ""):
 
     # scan for signal mass
-    cmd = "combine -M FitDiagnostics -t -1 --setParameterRanges MH=%f,%f ws.root --expectSignal=1 -m 125 --redefineSignalPOIs MH --X-rtd TMCSO_AdaptivePseudoAsimov -v 10 --X-rtd ADDNLL_CBNLL=0 -n mass %s" % (mhMin, mhMax, combineOptions)
+    exe = "%s/HiggsAnalysis/CombinedLimit/build/bin/combine" % os.environ['WDIR']
+    cmd = "%s -M FitDiagnostics -t -1 --setParameterRanges MH=%f,%f ws.root --expectSignal=1 -m 125 --redefineSignalPOIs MH --X-rtd TMCSO_AdaptivePseudoAsimov -v 10 --X-rtd ADDNLL_CBNLL=0 -n mass %s" % (exe, mhMin, mhMax, combineOptions)
     
     # ,shapeBkg_bkg_bin1__norm
     subprocess.call(cmd, shell=True, cwd=runDir)
     
-def plotMultiple(tags, labels, fOut, xMin=-1, xMax=-1, yMin=0, yMax=2):
+def plotMultiple(tags, labels, fOut, xMin=-1, xMax=-1, yMin=0, yMax=2, legLabel="", forceStat=[]):
 
+    global suffix
     best_mass, best_xsec = [], []
     unc_mass, unc_xsec = [], []
     g_mass, g_xsec = [], []
+    if len(forceStat) == 0:
+        forceStat = [False]*len(tags)
 
-    
-    for tag in tags:
+    for i, tag in enumerate(tags):
     
         xv, yv = [], []
-        fIn = open("%s/mass%s.txt" % (tag, suffix), "r")
+        fIn = open("%s/mass%s.txt" % (tag, suffix+"_stat" if forceStat[i] else suffix), "r")
         for i,line in enumerate(fIn.readlines()):
 
             line = line.rstrip()
@@ -295,7 +299,7 @@ def plotMultiple(tags, labels, fOut, xMin=-1, xMax=-1, yMin=0, yMax=2):
         'xtitle'            : "m_{h} (GeV)",
         'ytitle'            : "-2#DeltaNLL",
             
-        'topRight'          : "#sqrt{s} = 240 GeV, 5 ab^{#minus1}", 
+        'topRight'          : "#sqrt{s} = 240 GeV, 10 ab^{#minus1}", 
         'topLeft'           : "#bf{FCC-ee} #scale[0.7]{#it{Simulation}}",
         }
         
@@ -308,13 +312,15 @@ def plotMultiple(tags, labels, fOut, xMin=-1, xMax=-1, yMin=0, yMax=2):
     dummy.GetXaxis().SetNdivisions(507)  
     dummy.Draw("HIST")
     
-    totEntries = len(g_mass)
-    leg = ROOT.TLegend(.20, 0.9-totEntries*0.05, 0.90, .9)
+    n = len(g_mass) + (0 if legLabel=="" else 1)
+    leg = ROOT.TLegend(.20, 0.9-n*0.05, 0.90, .9)
     leg.SetBorderSize(0)
     #leg.SetFillStyle(0) 
     leg.SetTextSize(0.03)
     leg.SetMargin(0.15)
     leg.SetBorderSize(1)
+    if legLabel != "":
+        leg.SetHeader(legLabel)
     
     colors = [ROOT.kBlack, ROOT.kRed, ROOT.kBlue, ROOT.kGreen+1]
     for i,g in enumerate(g_mass):
@@ -374,7 +380,7 @@ def plotMultiple_xsec(tags, labels, fOut, xMin=-1, xMax=-1, yMin=0, yMax=2):
         'xtitle'            : "#sigma(ZH#rightarrowl^{#plus}l^{#minus})/#sigma_{ref}",
         'ytitle'            : "-2#DeltaNLL",
             
-        'topRight'          : "#sqrt{s} = 240 GeV, 5 ab^{#minus1}", 
+        'topRight'          : "#sqrt{s} = 240 GeV, 10 ab^{#minus1}", 
         'topLeft'           : "#bf{FCC-ee} #scale[0.7]{#it{Simulation}}",
         }
         
@@ -420,12 +426,12 @@ def plotMultiple_xsec(tags, labels, fOut, xMin=-1, xMax=-1, yMin=0, yMax=2):
     canvas.SaveAs("%s.pdf" % (fOut))
   
     
-def breakDown():
+def breakDown(fitCfg):
 
-    def getUnc(tag, type_):
+    def getUnc(fitCfg, tag, type_):
 
         xv, yv = [], []
-        fIn = open("%s/%s_%s.txt" % (runDir, type_, tag), "r")
+        fIn = open("%s/%s/%s%s.txt" % (outDir, fitCfg, type_, tag), "r")
         for i,line in enumerate(fIn.readlines()):
 
             line = line.rstrip()
@@ -438,7 +444,7 @@ def breakDown():
         if type_ == "xsec": unc*= 100. # convert to %
         return best, unc
 
-
+    '''
     ############# xsec
     canvas = ROOT.TCanvas("c", "c", 800, 800)
     canvas.SetTopMargin(0.08)
@@ -497,7 +503,7 @@ def breakDown():
     latex.SetTextColor(1)
     latex.SetTextFont(42)
     latex.SetTextAlign(30) # 0 special vertical aligment with subscripts
-    latex.DrawLatex(0.95, 0.925, "#sqrt{s} = 240 GeV, 5 ab^{#minus1}")
+    latex.DrawLatex(0.95, 0.925, "#sqrt{s} = 240 GeV, 10 ab^{#minus1}")
 
     latex.SetTextAlign(13)
     latex.SetTextFont(42)
@@ -508,7 +514,7 @@ def breakDown():
     canvas.SaveAs("%s/xsec_breakDown.png" % outDir)
     canvas.SaveAs("%s/xsec_breakDown.pdf" % outDir)    
     del canvas, g_pulls, h_pulls
-
+    '''
   
     ############# mass
     canvas = ROOT.TCanvas("c", "c", 800, 800)
@@ -521,13 +527,13 @@ def breakDown():
     canvas.SetTickx(1)
 
 
-    xMin, xMax = -5, 5
+    xMin, xMax = -2.5, 2.5
     xTitle = "#sigma_{syst.}(m_{h}) (MeV)"
 
-    ref = "IDEA_STAT"
-    best_ref, unc_ref = getUnc(ref, "mass")
-    params = ["IDEA_ISR", "IDEA_BES", "IDEA_SQRTS", "IDEA_MUSCALE", "IDEA_ISR_BES_SQRTS_MUSCALE"]
-    labels = ["ISR (conservative)", "BES 1%", "#sqrt{s} #pm 2 MeV", "Muon scale (~10^{-5})", "#splitline{Syst. combined}{(BES 1%)}"]
+    ref = ""
+    best_ref, unc_ref = getUnc(fitCfg, "", "mass")
+    params = ["_BES", "_SQRTS", "_LEPSCALE_MU", "_LEPSCALE_EL", "_stat"]
+    labels = ["BES 1%", "#sqrt{s} #pm 2 MeV", "Muon scale (~10^{-5})", "El. scale (~10^{-5})", "Syst. combined"]
     
     n_params = len(params)
     h_pulls = ROOT.TH2F("pulls", "pulls", 6, xMin, xMax, n_params, 0, n_params)
@@ -537,11 +543,12 @@ def breakDown():
     for p in xrange(n_params):
 
         i -= 1
-        best, unc = getUnc(params[p], "mass")
-        unc = math.sqrt(unc**2 - unc_ref**2)
+        best, unc = getUnc(fitCfg, params[p], "mass")
+        print(unc, unc_ref)
+        unc = math.sqrt(unc_ref**2 - unc**2)
         g_pulls.SetPoint(i, 0, float(i) + 0.5)
         g_pulls.SetPointError(i, unc, unc, 0., 0.)
-        h_pulls.GetYaxis().SetBinLabel(i + 1, labels[p])
+        h_pulls.GetYaxis().SetBinLabel(i + 1, "#splitline{%s}{(%.2f MeV)}" % (labels[p], unc))
        
 
 
@@ -568,7 +575,7 @@ def breakDown():
     latex.SetTextColor(1)
     latex.SetTextFont(42)
     latex.SetTextAlign(30) # 0 special vertical aligment with subscripts
-    latex.DrawLatex(0.95, 0.925, "#sqrt{s} = 240 GeV, 5 ab^{#minus1}")
+    latex.DrawLatex(0.95, 0.925, "#sqrt{s} = 240 GeV, 10 ab^{#minus1}")
 
     latex.SetTextAlign(13)
     latex.SetTextFont(42)
@@ -576,8 +583,8 @@ def breakDown():
     latex.DrawLatex(0.25, 0.96, "#bf{FCCee} #scale[0.7]{#it{Simulation}}")
 
         
-    canvas.SaveAs("%s/mass_breakDown.png" % outDir)
-    canvas.SaveAs("%s/mass_breakDown.pdf" % outDir)   
+    canvas.SaveAs("%s/%s/mass_breakdown.png" % (outDir, fitCfg))
+    canvas.SaveAs("%s/%s/mass_breakdown.pdf" % (outDir, fitCfg))
     del canvas, g_pulls, h_pulls
     
 
@@ -600,23 +607,60 @@ def combineCards(runDir, input_=[]):
   
 if __name__ == "__main__":
 
-    combineDir = "combine/run"
-    outDir = "/eos/user/j/jaeyserm/www/FCCee/ZH_mass_xsec/combine/"
-    doSyst=True
-    
+    mode = "IDEA_MC"
+    combineDir = "combine/run/%s" % mode
+    outDir = "/eos/user/j/jaeyserm/www/FCCee/ZH_mass/combine/%s/" % mode
+
+    combineOptions = ""
+    freezeParameters = []
+    setParameters = []
     suffix=""
+    
+    doSyst=True
     if not doSyst:
         suffix = "_stat"
+        freezeParameters.extend(["BES", "ISR", "SQRTS", "LEPSCALE_MU", "LEPSCALE_EL"])
+            
+        
+    freezeBkg = False
+    if freezeBkg:
+        suffix = "_freezeBkg%s"%suffix
+        freezeParameters.extend(["bkg_norm"])
+        
+    noBkg = False
+    if noBkg:
+        suffix = "_noBkg%s"%suffix
+        freezeParameters.extend(["bkg_norm"])
+        setParameters.extend(["bkg_norm=0"])
+        
+    ## systematic variations, freeze them
+    #suffix+="_BES"
+    #freezeParameters.extend(["BES"])
+    #suffix+="_SQRTS"
+    #freezeParameters.extend(["SQRTS"])
+    #suffix+="_LEPSCALE_MU"
+    #freezeParameters.extend(["LEPSCALE_MU"])
+    suffix+="_LEPSCALE_EL"
+    freezeParameters.extend(["LEPSCALE_EL"])
     
+    #breakDown("mumu_ee_combined_categorized")
+    #quit()
+
+    ### SUMMARY PLOTS
+    #outDir__ = "/eos/user/j/jaeyserm/www/FCCee/ZH_mass/combine/"
+    #plotMultiple(["%s/IDEA/mumu_combined/"%outDir__, "%s/IDEA_MC/mumu_combined/"%outDir__, "%s/IDEA_3T/mumu_combined/"%outDir__, "%s/CLD/mumu_combined/"%outDir__], ["IDEA", "IDEA perfect resolution", "IDEA 3T", "IDEA CLD silicon tracker"], "%s/IDEA_IDEAL_2T_3T_CLD_mumu"%outDir__, xMin=124.99, xMax=125.01, legLabel="Muon final state Z(#mu^{#plus}#mu^{#minus})H (stat. + syst.)")
+    #plotMultiple(["%s/IDEA/mumu_ee_combined_categorized/"%outDir__, "%s/IDEA/mumu_ee_combined_categorized/"%outDir__], ["Statistical", "Statistical+systematic"], "%s/IDEA_stat_syst"%outDir__, xMin=124.995, xMax=125.005, legLabel="Combined muon and electron final states", forceStat=[True, False])
+    #quit()
+        
+    ##################################
+    if len(freezeParameters) > 0:
+        combineOptions += " --freezeParameters " + ",".join(freezeParameters)
+    if len(setParameters) > 0:
+        combineOptions += " --setParameters " + ",".join(setParameters)
+    
+
     ############### MUON
-    if False:
-        combineOptions = "--setParameters shapeBkg_bkg_bin1__norm=0,r=1.0"
-        #combineOptions = "--freezeParameters r,shapeBkg_bkg_bin1__norm --setParameters MH=125.00,shapeBkg_bkg_bin1__norm=0"
-        combineOptions = "--freezeParameters bkg_norm --setParameters bkg_norm=0"
-        #combineOptions = "--freezeParameters r,shapeBkg_bkg_bin1__norm --setParameters MH=125.00,shapeBkg_bkg_bin1__norm=0"
-        combineOptions = ""
-        if not doSyst:
-            combineOptions = "--freezeParameters BES,ISR,SQRTS,LEPSCALE_MU"
+    if True:
         
         tag, label = "mumu_cat0", "#mu^{#plus}#mu^{#minus}, inclusive"
         mhMin, mhMax = 124.99, 125.01
@@ -626,8 +670,7 @@ if __name__ == "__main__":
         #doFit_xsec("%s/%s" % (combineDir, tag), rMin=rMin, rMax=rMax, npoints=50, combineOptions=combineOptions)
         #analyzeXsec("%s/%s" % (combineDir, tag), "%s/%s/" % (outDir, tag), label=label, xMin=rMin, xMax=rMax)
         #doFitDiagnostics_mass("%s/%s" % (combineDir, tag), mhMin=mhMin, mhMax=mhMax, combineOptions=combineOptions)
-        
-     
+  
         tag, label = "mumu_cat1", "#mu^{#plus}#mu^{#minus}, central-central"
         mhMin, mhMax = 124.99, 125.01
         doFit_mass("%s/%s" % (combineDir, tag), mhMin=mhMin, mhMax=mhMax, npoints=50, combineOptions=combineOptions)
@@ -648,17 +691,11 @@ if __name__ == "__main__":
         combineCards("%s/%s" % (combineDir, tag), [combineDir+"/mumu_cat1/datacard_parametric.txt", combineDir+"/mumu_cat2/datacard_parametric.txt", combineDir+"/mumu_cat3/datacard_parametric.txt"])
         doFit_mass("%s/%s" % (combineDir, tag), mhMin=mhMin, mhMax=mhMax, npoints=50, combineOptions=combineOptions)
         analyzeMass("%s/%s" % (combineDir, tag), "%s/%s/" % (outDir, tag), label=label, xMin=mhMin, xMax=mhMax)
-        
 
-    
+    #quit()
     ############### ELECTRON
-    if False:
-    
-        combineOptions = "--freezeParameters r --setParameters ,r=1.067"
-        combineOptions = ""
-        if not doSyst:
-            combineOptions = "--freezeParameters BES,ISR,SQRTS,LEPSCALE_EL"
-    
+    if True:
+   
         tag, label = "ee_cat0", "e^{#plus}e^{#minus}, inclusive"
         mhMin, mhMax = 124.98, 125.02
         rMin, rMax = 0.98, 1.02
@@ -673,34 +710,31 @@ if __name__ == "__main__":
        
         tag, label = "ee_cat2", "e^{#plus}e^{#minus}, central-forward"
         mhMin, mhMax = 124.98, 125.02
+        #mhMin, mhMax = 124.95, 125.05 # 2E
         doFit_mass("%s/%s" % (combineDir, tag), mhMin=mhMin, mhMax=mhMax, npoints=50, combineOptions=combineOptions)
         analyzeMass("%s/%s" % (combineDir, tag), "%s/%s/" % (outDir, tag), label=label, xMin=mhMin, xMax=mhMax)
         
         tag, label = "ee_cat3", "e^{#plus}e^{#minus}, forward-forward"
-        mhMin, mhMax = 124.95, 125.05
+        mhMin, mhMax = 124.9, 125.1
         doFit_mass("%s/%s" % (combineDir, tag), mhMin=mhMin, mhMax=mhMax, npoints=50, combineOptions=combineOptions)
         analyzeMass("%s/%s" % (combineDir, tag), "%s/%s/" % (outDir, tag), label=label, xMin=mhMin, xMax=mhMax)
         
         tag, label = "ee_combined", "e^{#plus}e^{#minus}, combined"
         mhMin, mhMax = 124.99, 125.01
+        #mhMin, mhMax = 124.98, 125.02 # 2E
         combineCards("%s/%s" % (combineDir, tag), [combineDir+"/ee_cat1/datacard_parametric.txt", combineDir+"/ee_cat2/datacard_parametric.txt", combineDir+"/ee_cat3/datacard_parametric.txt"])
         doFit_mass("%s/%s" % (combineDir, tag), mhMin=mhMin, mhMax=mhMax, npoints=50, combineOptions=combineOptions)
         analyzeMass("%s/%s" % (combineDir, tag), "%s/%s/" % (outDir, tag), label=label, xMin=mhMin, xMax=mhMax)
         
-    
+
     ############### MUON+ELECTRON
-    if False:
-        combineOptions = ""
-        if not doSyst:
-            combineOptions = "--freezeParameters BES,ISR,SQRTS,LEPSCALE_MU,LEPSCALE_EL" # ,bkg_norm --setParameters bkg_norm=0
-            
-        #combineOptions = "--freezeParameters BES,ISR,SQRTS,LEPSCALE_MU" # ,bkg_norm --setParameters bkg_norm=0
-    
-        #tag, label = "mumu_ee_combined_inclusive", "#mu^{#plus}#mu^{#minus}+e^{#plus}e^{#minus}, inclusive"
-        #mhMin, mhMax = 124.99, 125.01
-        #combineCards("%s/%s" % (combineDir, tag), [combineDir+"/mumu_cat0/datacard_parametric.txt", combineDir+"/ee_cat0/datacard_parametric.txt"])
-        #doFit_mass("%s/%s" % (combineDir, tag), mhMin=mhMin, mhMax=mhMax, npoints=50, combineOptions=combineOptions)
-        #analyzeMass("%s/%s" % (combineDir, tag), "%s/%s/" % (outDir, tag), label=label, xMin=mhMin, xMax=mhMax)
+    if True:
+
+        tag, label = "mumu_ee_combined_inclusive", "#mu^{#plus}#mu^{#minus}+e^{#plus}e^{#minus}, inclusive"
+        mhMin, mhMax = 124.99, 125.01
+        combineCards("%s/%s" % (combineDir, tag), [combineDir+"/mumu_cat0/datacard_parametric.txt", combineDir+"/ee_cat0/datacard_parametric.txt"])
+        doFit_mass("%s/%s" % (combineDir, tag), mhMin=mhMin, mhMax=mhMax, npoints=50, combineOptions=combineOptions)
+        analyzeMass("%s/%s" % (combineDir, tag), "%s/%s/" % (outDir, tag), label=label, xMin=mhMin, xMax=mhMax)
         
         tag, label = "mumu_ee_combined_categorized", "#mu^{#plus}#mu^{#minus}+e^{#plus}e^{#minus}, categorized"
         mhMin, mhMax = 124.99, 125.01
@@ -718,7 +752,7 @@ if __name__ == "__main__":
         
    
     
-        
+    quit()   
     combineDir = "combine/run_mc"
     outDir = "/eos/user/j/jaeyserm/www/FCCee/ZH_mass_xsec/combine_mc/"
     
@@ -728,7 +762,7 @@ if __name__ == "__main__":
         #combineOptions = "--setParameters MH=125.02"
         #combineOptions = "--setParameters MH=125.02,shapeBkg_bkg_bin1__norm=0,r=1.06"
         #combineOptions = "--setParameters shapeBkg_bkg_bin1__norm=0,r=1.06"
-        combineOptions = "--freezeParameters r,shapeBkg_bkg_bin1__norm --setParameters MH=125.00,shapeBkg_bkg_bin1__norm=0"
+        #combineOptions = "--freezeParameters r,shapeBkg_bkg_bin1__norm --setParameters MH=125.00,shapeBkg_bkg_bin1__norm=0"
     
         tag, label = "mumu_cat0", "#mu^{#plus}#mu^{#minus}, inclusive"
         xMin, xMax = 124.9, 125.1
@@ -746,7 +780,7 @@ if __name__ == "__main__":
 
     ############### BDT
     
-    if True:
+    if False:
     
         tag = "BDTScore" # BDT baseline baseline_no_costhetamiss BDTScore
         #rMin, rMax = 0.96, 1.04

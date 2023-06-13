@@ -16,16 +16,7 @@ namespace FCCAnalyses {
   
 
 
-Vec_tlv makeLorentzVectors(Vec_rp in) {
-	
-	Vec_tlv result;
-	for (auto & p: in) {
-		TLorentzVector tlv;
-		tlv.SetXYZM(p.momentum.x, p.momentum.y, p.momentum.z, p.mass);
-		result.push_back(tlv);
-	}
-	return result;
-}
+
 
 Vec_tlv makeLorentzVectors_gen(Vec_rp in, ROOT::VecOps::RVec<int> recind, ROOT::VecOps::RVec<int> mcind, ROOT::VecOps::RVec<edm4hep::ReconstructedParticleData> reco, ROOT::VecOps::RVec<edm4hep::MCParticleData> mc) {
 	

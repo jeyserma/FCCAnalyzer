@@ -80,7 +80,7 @@ def makePlot(hName, outName, xMin=0, xMax=100, yMin=1, yMax=1e5, xLabel="xlabel"
         'xtitle'            : xLabel,
         'ytitle'            : yLabel,
             
-        'topRight'          : "#sqrt{s} = 240 GeV, 5 ab^{#minus1}",
+        'topRight'          : "#sqrt{s} = 240 GeV, 10 ab^{#minus1}",
         'topLeft'           : "#bf{FCC-ee} #scale[0.7]{#it{Simulation}}",
 
     }
@@ -123,12 +123,39 @@ def makePlot(hName, outName, xMin=0, xMax=100, yMin=1, yMax=1e5, xLabel="xlabel"
     canvas.Close()
 
 
+
+def significance(hName):
+
+    h_sig = plotter.getProc(fIn, hName, sigs)
+    if "TH2" in h_sig.ClassName(): h_sig = h_sig.ProjectionX("h_sig")
+
+
+    h_bkg_tot = None
+    for i,bkg in enumerate(bkgs):
+		
+        hist = plotter.getProc(fIn, hName, bgks_cfg[bkg])
+        if "TH2" in hist.ClassName(): hist = hist.ProjectionX()
+        hist.SetName(bkg)
+        print(bkg, hist.Integral())
+        if h_bkg_tot == None:
+            h_bkg_tot = copy.deepcopy(hist)
+            h_bkg_tot.SetName("h_bkg_tot")
+        else: h_bkg_tot.Add(hist)
+       
+    b_low, b_high = h_sig.FindBin(124), h_sig.FindBin(128)
+       
+    y_sig = h_sig.Integral(b_low, b_high)
+    y_bkg = h_bkg_tot.Integral(b_low, b_high)
+    print(y_sig/y_bkg)
+    print(y_sig)
+    print(y_bkg)
+        
 	
 if __name__ == "__main__":
 
     flavor = args.flavor
-    fIn = ROOT.TFile("tmp/output_ZH_%s_%s.root" % (args.type, flavor))
-    outDir = "/eos/user/j/jaeyserm/www/FCCee/ZH_mass_xsec/plots_%s/" % flavor
+    fIn = ROOT.TFile(f"tmp/output_ZH_{args.type}_{flavor}.root")
+    outDir = f"/eos/user/j/jaeyserm/www/FCCee/ZH_{args.type}/plots_{flavor}/"
     
     
     
@@ -136,7 +163,7 @@ if __name__ == "__main__":
     
         labels = ["All events", "#geq 1 #mu^{#pm}", "#geq 2 #mu^{#pm}", "86 < m_{#mu^{+}#mu^{#minus}} < 96", "20 < p_{T}^{#mu^{+}#mu^{#minus}} < 70", "|cos#theta_{missing}| < 0.98", "120 < m_{rec} < 140"]
     
-        sigs = ["wzp6_ee_mumuH_ecm240"]
+        sigs = ["p_wzp6_ee_mumuH_ecm240"]
         sig_scale = 1
         sig_legend = "Z(#mu^{+}#mu^{#minus})H"
     
@@ -154,7 +181,7 @@ if __name__ == "__main__":
     
         labels = ["All events", "#geq 1 e^{#pm}", "#geq 2 e^{#pm}", "86 < m_{e^{+}e^{#minus}} < 96", "20 < p_{T}^{e^{+}e^{#minus}} < 70", "|cos#theta_{missing}| < 0.98", "120 < m_{rec} < 140"]
     
-        sigs = ["wzp6_ee_eeH_ecm240"]
+        sigs = ["p_wzp6_ee_eeH_ecm240"]
         sig_scale = 1
         sig_legend = "Z(e^{+}e^{#minus})H"
     
@@ -174,15 +201,29 @@ if __name__ == "__main__":
     
     
     # N-1 plots
+    
+    #makePlot("leps_all_p_cut0", "leps_all_p_cut0", xMin=0, xMax=100, yMin=10, yMax=1e7, xLabel="Leptons p (GeV)", yLabel="Events", logY=True, rebin=10)
+    
+    # N-1 plots
+    makePlot("zll_m_cut2", "zll_m_cut2", xMin=50, xMax=120, yMin=1e2, yMax=1e7, xLabel="m_{ll} (GeV)", yLabel="Events", logY=True, rebin=1)
+    makePlot("zll_p_cut3", "zll_p_cut3", xMin=0, xMax=100, yMin=1, yMax=1e7, xLabel="p_{ll} (GeV)", yLabel="Events", logY=True, rebin=2)
+    makePlot("zll_recoil_cut4", "zll_recoil_cut4", xMin=100, xMax=150, yMin=1, yMax=1e6, xLabel="m_{rec} (GeV)", yLabel="Events", logY=True, rebin=6)
+    makePlot("cosThetaMiss_cut5", "cosThetaMiss_cut5", xMin=0, xMax=1, yMin=1e2, yMax=1e6, xLabel="|cos(#theta_{miss})|", yLabel="Events", logY=True, rebin=100)
+    makePlot("zll_recoil", "zll_recoil", xMin=120, xMax=140, yMin=0, yMax=3000, xLabel="m_{rec} (GeV)", yLabel="Events", logY=False, rebin=10)
+    
+    quit()
+    makePlot("leps_p_cut7", "leps_p_cut7", xMin=0, xMax=100, yMin=10, yMax=1e7, xLabel="Leptons p (GeV)", yLabel="Events", logY=True, rebin=10)
+    
     makePlot("cosThetaMiss_cut4", "cosThetaMiss_cut4", xMin=0, xMax=1, yMin=1e2, yMax=1e6, xLabel="|cos(#theta_{miss})|", yLabel="Events", logY=True, rebin=100)
-    makePlot("leps_all_p_cut0", "leps_all_p_cut0", xMin=0, xMax=100, yMin=10, yMax=1e7, xLabel="Leptons p (GeV)", yLabel="Events", logY=True, rebin=10)
+    makePlot("acoplanarity_cut4", "acoplanarity_cut4", xMin=-3, xMax=3.5, yMin=1, yMax=1e6, xLabel="Acoplanarity (rad)", yLabel="Events", logY=True, rebin=1)
+    makePlot("acolinearity_cut4", "acolinearity_cut4", xMin=-3, xMax=1.5, yMin=1, yMax=1e6, xLabel="Acolinearity (rad)", yLabel="Events", logY=True, rebin=1)
     
-    # baseline plots
-    makePlot("zll_m", "zll_m", xMin=86, xMax=96, yMin=1e2, yMax=1e4, xLabel="m_{Z} (GeV)", yLabel="Events / 0.1 GeV", logY=True, rebin=1)
-    makePlot("zll_recoil_m", "zll_recoil_m", xMin=120, xMax=140, yMin=0, yMax=1.5e3, xLabel="m_{rec} (GeV)", yLabel="Events / 0.1 GeV", logY=False, rebin=1)
-    makePlot("zll_p", "zll_p", xMin=20, xMax=60, yMin=1, yMax=1e6, xLabel="p_{Z} (GeV)", yLabel="Events", logY=True, rebin=1)
+    makePlot("cosThetaMiss_cut5", "cosThetaMiss_cut5", xMin=0, xMax=1, yMin=1e2, yMax=1e6, xLabel="|cos(#theta_{miss})|", yLabel="Events", logY=True, rebin=100)
+    makePlot("acoplanarity_cut5", "acoplanarity_cut5", xMin=-3, xMax=3.5, yMin=1, yMax=1e6, xLabel="Acoplanarity (rad)", yLabel="Events", logY=True, rebin=1)
+    makePlot("acolinearity_cut5", "acolinearity_cut5", xMin=-3, xMax=1.5, yMin=1, yMax=1e6, xLabel="Acolinearity (rad)", yLabel="Events", logY=True, rebin=1)
     
-    makePlot("acoplanarity_cut6", "acoplanarity_cut6", xMin=0, xMax=3.5, yMin=1, yMax=1e6, xLabel="Acoplanarity (rad)", yLabel="Events", logY=True, rebin=1)
-    makePlot("acolinearity_cut6", "acolinearity_cut6", xMin=0, xMax=3.5, yMin=1, yMax=1e6, xLabel="Acolinearity (rad)", yLabel="Events", logY=True, rebin=1)
-    makePlot("zll_p_cut6", "zll_p_cut6", xMin=20, xMax=60, yMin=1, yMax=1e6, xLabel="p_{Z} (GeV)", yLabel="Events", logY=True, rebin=10) 
-    makePlot("leps_p_cut6", "leps_p_cut6", xMin=0, xMax=100, yMin=10, yMax=1e7, xLabel="Leptons p (GeV)", yLabel="Events", logY=True, rebin=10)    
+    makePlot("cosThetaMiss_cut6", "cosThetaMiss_cut6", xMin=0, xMax=1, yMin=1e2, yMax=1e6, xLabel="|cos(#theta_{miss})|", yLabel="Events", logY=True, rebin=100)
+    makePlot("acoplanarity_cut6", "acoplanarity_cut6", xMin=-3, xMax=3.5, yMin=1, yMax=1e6, xLabel="Acoplanarity (rad)", yLabel="Events", logY=True, rebin=1)
+    makePlot("acolinearity_cut6", "acolinearity_cut6", xMin=-3, xMax=1.5, yMin=1, yMax=1e6, xLabel="Acolinearity (rad)", yLabel="Events", logY=True, rebin=1)
+    
+    significance("zll_recoil_cut7")

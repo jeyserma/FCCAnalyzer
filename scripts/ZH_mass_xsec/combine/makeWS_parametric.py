@@ -42,16 +42,15 @@ def doSignal(normYields = True):
     
     mHs = [124.9, 124.95, 125.0, 125.05, 125.1]
     if flavor == "mumu":
-        procs = ["wzp6_ee_mumuH_mH-lower-100MeV_ecm240", "wzp6_ee_mumuH_mH-lower-50MeV_ecm240", "wzp6_ee_mumuH_ecm240", "wzp6_ee_mumuH_mH-higher-50MeV_ecm240", "wzp6_ee_mumuH_mH-higher-100MeV_ecm240"]
-
+        procs = ["p_wzp6_ee_mumuH_mH-lower-100MeV_ecm240", "p_wzp6_ee_mumuH_mH-lower-50MeV_ecm240", "p_wzp6_ee_mumuH_ecm240", "p_wzp6_ee_mumuH_mH-higher-50MeV_ecm240", "p_wzp6_ee_mumuH_mH-higher-100MeV_ecm240"]
     if flavor == "ee":
-        procs = ["wzp6_ee_eeH_mH-lower-100MeV_ecm240", "wzp6_ee_eeH_mH-lower-50MeV_ecm240", "wzp6_ee_eeH_ecm240", "wzp6_ee_eeH_mH-higher-50MeV_ecm240", "wzp6_ee_eeH_mH-higher-100MeV_ecm240"]
+        procs = ["p_wzp6_ee_eeH_mH-lower-100MeV_ecm240", "p_wzp6_ee_eeH_mH-lower-50MeV_ecm240", "p_wzp6_ee_eeH_ecm240", "p_wzp6_ee_eeH_mH-higher-50MeV_ecm240", "p_wzp6_ee_eeH_mH-higher-100MeV_ecm240"]
 
     recoilmass = w_tmp.var("zll_recoil_m")
     MH = w_tmp.var("MH")
     
-    param_yield, param_mh, param_mean, param_mean_gt, param_sigma, param_sigma_gt, param_alpha_1, param_alpha_2, param_n_1, param_n_2, param_cb_1, param_cb_2 = [], [], [], [], [], [], [], [], [], [], [], []
-    param_yield_err, param_mean_err, param_sigma_err, param_mean_gt_err, param_sigma_gt_err, param_alpha_1_err, param_alpha_2_err, param_n_1_err, param_n_2_err, param_cb_1_err, param_cb_2_err  = [], [], [], [], [], [], [], [], [], [], []
+    param_yield, param_mh, param_mean, param_mean_gt, param_mean_gt_offset, param_sigma, param_sigma_gt, param_alpha_1, param_alpha_2, param_n_1, param_n_2, param_cb_1, param_cb_2 = [], [], [], [], [], [], [], [], [], [], [], [], []
+    param_yield_err, param_mean_err, param_sigma_err, param_mean_gt_err, param_mean_gt_offset_err, param_sigma_gt_err, param_alpha_1_err, param_alpha_2_err, param_n_1_err, param_n_2_err, param_cb_1_err, param_cb_2_err  = [], [], [], [], [], [], [], [], [], [], [], []
 
     # recoil mass plot settings
     cfg = {
@@ -64,13 +63,13 @@ def doSignal(normYields = True):
         'ymin'              : 0,
         'ymax'              : 1500,
         
-        'xtitle'            : "Recoil mass (GeV)",
-        'ytitle'            : "Events / 0.2 GeV",
+        'xtitle'            : "m_{rec} (GeV)",
+        'ytitle'            : "Events",
         
-        'topRight'          : "ZH, #sqrt{s} = 240 GeV, 5 ab^{#minus1}", 
-        'topLeft'           : "#bf{FCC-ee} #scale[0.7]{#it{Internal}}",
+        'topRight'          : "ZH, #sqrt{s} = 240 GeV, 10 ab^{#minus1}", 
+        'topLeft'           : "#bf{FCC-ee} #scale[0.7]{#it{Simulation}}",
         
-        'ratiofraction'     : 0.25,
+        'ratiofraction'     : 0.3,
         'ytitleR'           : "Pull",
         'yminR'             : -3.5,
         'ymaxR'             : 3.5,
@@ -81,6 +80,15 @@ def doSignal(normYields = True):
     yield_norm = hist_norm.Integral()
    
     for i, proc in enumerate(procs):
+    
+        if mode == "IDEA_3T":
+            proc += "_3T"
+        if mode == "CLD":
+            proc += "_CLD"
+        if mode == "IDEA_noBES":
+            proc = proc.replace("_ecm240", "_noBES_ecm240")
+        if mode == "IDEA_2E" and flavor == "ee":
+            proc += "_E2"
         
         mH = mHs[i]
         mH_ = ("%.2f" % mH).replace(".", "p")
@@ -101,39 +109,8 @@ def doSignal(normYields = True):
         
         
         # IDEA
-        # sigma, sigma_gt, cb_2, alpha2, n2   alpha1, cb1, n1
-        if cat == 0 and flavor == 'mumu':
-            '''
-            ## MC
+        if cat == 0 and flavor == 'mumu' and (mode == 'IDEA' or mode == "IDEA_2E" or mode == "IDEA_BES6pct"):
             yMax = 2000
-            yMax_norm = 0.2
-            mean = ROOT.RooRealVar("mean_%s" % mH_, '', 125.1, mH-1., mH+1.)
-            #sigma = ROOT.RooRealVar("sigma_%s" % mH_, '', 0.3225, 0, 1)
-            sigma = ROOT.RooRealVar("sigma_%s" % mH_, '', 0.3225) # fixed
-            #alpha_1 = ROOT.RooRealVar("alpha_1_%s" % mH_, '', -0.18965, -10, 0)
-            alpha_1 = ROOT.RooRealVar("alpha_1_%s" % mH_, '', -0.1880)
-            #alpha_2 = ROOT.RooRealVar("alpha_2_%s" % mH_, '', 4.1, 0, 10)
-            alpha_2 = ROOT.RooRealVar("alpha_2_%s" % mH_, '', 4.137)
-            #n_1 = ROOT.RooRealVar("n_1_%s" % mH_, '', 2.217, -10, 10)
-            n_1 = ROOT.RooRealVar("n_1_%s" % mH_, '', 2.259)
-            #n_2 = ROOT.RooRealVar("n_2_%s" % mH_, '', 0.08, -10, 10)
-            n_2 = ROOT.RooRealVar("n_2_%s" % mH_, '', 0.08)
-
-            #mean_gt = ROOT.RooRealVar("mean_gt_%s" % mH_, '', 1.25338e+02, recoilMin, recoilMax)
-            mean_gt_offset = ROOT.RooRealVar("mean_gt_offset_%s" % mH_, '', 0.55)
-            mean_gt = ROOT.RooFormulaVar("mean_gt_%s" % mH_, "@0+@1", ROOT.RooArgList(mean, mean_gt_offset))
-            
-            #sigma_gt = ROOT.RooRealVar("sigma_gt_%s" % mH_, '', 0.495, 0, 2)
-            sigma_gt = ROOT.RooRealVar("sigma_gt_%s" % mH_, '', 0.5) # fixed  
-            
-            #cb_1 = ROOT.RooRealVar("cb_1_%s" % mH_, '', 0.5097 , 0, 1)
-            cb_1 = ROOT.RooRealVar("cb_1_%s" % mH_, '', 0.5115)
-            #cb_2 = ROOT.RooRealVar("cb_2_%s" % mH_, '', 0.445, 0, 1)
-            cb_2 = ROOT.RooRealVar("cb_2_%s" % mH_, '', 0.4415)
-   
-            '''
-            ## RECO
-            yMax = 1600
             yMax_norm = 0.15
             mean = ROOT.RooRealVar("mean_%s" % mH_, '', 1.25090e+02, mH-1., mH+1.)
             #sigma = ROOT.RooRealVar("sigma_%s" % mH_, '', 4.08196e-01, 0, 1)
@@ -149,6 +126,7 @@ def doSignal(normYields = True):
 
             #mean_gt = ROOT.RooRealVar("mean_gt_%s" % mH_, '', 1.25338e+02, recoilMin, recoilMax)
             mean_gt_offset = ROOT.RooRealVar("mean_gt_offset_%s" % mH_, '', 0.35)
+            #mean_gt_offset = ROOT.RooRealVar("mean_gt_offset_%s" % mH_, '', 0.35, recoilMin, recoilMax)
             mean_gt = ROOT.RooFormulaVar("mean_gt_%s" % mH_, "@0+@1", ROOT.RooArgList(mean, mean_gt_offset))
             
             #sigma_gt = ROOT.RooRealVar("sigma_gt_%s" % mH_, '', 8.30603e-01, 0, 2)
@@ -160,68 +138,323 @@ def doSignal(normYields = True):
             cb_2 = ROOT.RooRealVar("cb_2_%s" % mH_, '', 0.419)
             
             
-        
-        if cat == 0 and flavor == 'ee':
             '''
-            ## MC
+            # NO BES
+            yMax = 1000
+            yMax_norm = 0.15
+            mean = ROOT.RooRealVar("mean_%s" % mH_, '', 1.25090e+02, mH-1., mH+1.)
+            #sigma = ROOT.RooRealVar("sigma_%s" % mH_, '', 0.21985, 0, 1)
+            sigma = ROOT.RooRealVar("sigma_%s" % mH_, '', 0.21985) # fixed
+            alpha_1 = ROOT.RooRealVar("alpha_1_%s" % mH_, '', -2.00592e-01, -10, 0)
+            #alpha_1 = ROOT.RooRealVar("alpha_1_%s" % mH_, '', -0.2)
+            #alpha_2 = ROOT.RooRealVar("alpha_2_%s" % mH_, '', 4.05919e+00, 0, 10)
+            alpha_2 = ROOT.RooRealVar("alpha_2_%s" % mH_, '', 1.4406)
+            n_1 = ROOT.RooRealVar("n_1_%s" % mH_, '', 2.48214e+00, -10, 10)
+            #n_1 = ROOT.RooRealVar("n_1_%s" % mH_, '', 2.577)
+            n_2 = ROOT.RooRealVar("n_2_%s" % mH_, '', 0.04, -10, 10)
+            #n_2 = ROOT.RooRealVar("n_2_%s" % mH_, '', 1.028)
+
+            #mean_gt = ROOT.RooRealVar("mean_gt_%s" % mH_, '', 1.25338e+02, recoilMin, recoilMax)
+            mean_gt_offset = ROOT.RooRealVar("mean_gt_offset_%s" % mH_, '', 0.35)
+            #mean_gt_offset = ROOT.RooRealVar("mean_gt_offset_%s" % mH_, '', 0.15, recoilMin, recoilMax)
+            mean_gt = ROOT.RooFormulaVar("mean_gt_%s" % mH_, "@0+@1", ROOT.RooArgList(mean, mean_gt_offset))
+            
+            sigma_gt = ROOT.RooRealVar("sigma_gt_%s" % mH_, '', 8.30603e-01, 0, 2)
+            sigma_gt = ROOT.RooRealVar("sigma_gt_%s" % mH_, '', 0.4) # fixed  
+           
+            cb_1 = ROOT.RooRealVar("cb_1_%s" % mH_, '', 0.5, 0, 1)
+            #cb_1 = ROOT.RooRealVar("cb_1_%s" % mH_, '', 0.479)
+            cb_2 = ROOT.RooRealVar("cb_2_%s" % mH_, '', 0.4, 0, 1)
+            #cb_2 = ROOT.RooRealVar("cb_2_%s" % mH_, '', 0.419)
+            '''
+            
+        if cat == 0 and flavor == 'mumu' and mode == 'IDEA_3T':
+            yMax = 2000
+            yMax_norm = 0.15
+            mean = ROOT.RooRealVar("mean_%s" % mH_, '', 1.25090e+02, mH-1., mH+1.)
+            #sigma = ROOT.RooRealVar("sigma_%s" % mH_, '', 4.08196e-01, 0, 1)
+            sigma = ROOT.RooRealVar("sigma_%s" % mH_, '', 0.36474) # fixed
+            alpha_1 = ROOT.RooRealVar("alpha_1_%s" % mH_, '', -2.00592e-01, -10, 0)
+            #alpha_1 = ROOT.RooRealVar("alpha_1_%s" % mH_, '', -0.2)
+            alpha_2 = ROOT.RooRealVar("alpha_2_%s" % mH_, '', 4.05919e+00, 0, 10)
+            #alpha_2 = ROOT.RooRealVar("alpha_2_%s" % mH_, '', 3.35)
+            n_1 = ROOT.RooRealVar("n_1_%s" % mH_, '', 2.48214e+00, -10, 10)
+            #n_1 = ROOT.RooRealVar("n_1_%s" % mH_, '', 2.577)
+            #n_2 = ROOT.RooRealVar("n_2_%s" % mH_, '', 0.04, -10, 10)
+            n_2 = ROOT.RooRealVar("n_2_%s" % mH_, '', 0.39)
+
+            #mean_gt = ROOT.RooRealVar("mean_gt_%s" % mH_, '', 1.25338e+02, recoilMin, recoilMax)
+            mean_gt_offset = ROOT.RooRealVar("mean_gt_offset_%s" % mH_, '', 0.35)
+            #mean_gt_offset = ROOT.RooRealVar("mean_gt_offset_%s" % mH_, '', 0.6869, recoilMin, recoilMax)
+            mean_gt = ROOT.RooFormulaVar("mean_gt_%s" % mH_, "@0+@1", ROOT.RooArgList(mean, mean_gt_offset))
+            
+            sigma_gt = ROOT.RooRealVar("sigma_gt_%s" % mH_, '', 8.30603e-01, 0, 2)
+            #sigma_gt = ROOT.RooRealVar("sigma_gt_%s" % mH_, '', 0.6869) # fixed  
+           
+            cb_1 = ROOT.RooRealVar("cb_1_%s" % mH_, '', 0.5, 0, 1)
+            #cb_1 = ROOT.RooRealVar("cb_1_%s" % mH_, '', 0.479)
+            cb_2 = ROOT.RooRealVar("cb_2_%s" % mH_, '', 0.4, 0, 1)
+            #cb_2 = ROOT.RooRealVar("cb_2_%s" % mH_, '', 0.419)
+ 
+        if cat == 0 and flavor == 'mumu' and mode == 'CLD':
+            yMax = 2000
+            yMax_norm = 0.15
+            mean = ROOT.RooRealVar("mean_%s" % mH_, '', 1.25090e+02, mH-1., mH+1.)
+            sigma = ROOT.RooRealVar("sigma_%s" % mH_, '', 4.08196e-01, 0, 1)
+            #sigma = ROOT.RooRealVar("sigma_%s" % mH_, '', 0.4335) # fixed
+            alpha_1 = ROOT.RooRealVar("alpha_1_%s" % mH_, '', -2.00592e-01, -10, 0)
+            #alpha_1 = ROOT.RooRealVar("alpha_1_%s" % mH_, '', -0.2)
+            alpha_2 = ROOT.RooRealVar("alpha_2_%s" % mH_, '', 4.05919e+00, 0, 10)
+            #alpha_2 = ROOT.RooRealVar("alpha_2_%s" % mH_, '', 3.35)
+            n_1 = ROOT.RooRealVar("n_1_%s" % mH_, '', 2.48214e+00, -10, 10)
+            #n_1 = ROOT.RooRealVar("n_1_%s" % mH_, '', 2.577)
+            #n_2 = ROOT.RooRealVar("n_2_%s" % mH_, '', 0.04, -10, 10)
+            n_2 = ROOT.RooRealVar("n_2_%s" % mH_, '', 0.26)
+
+            #mean_gt = ROOT.RooRealVar("mean_gt_%s" % mH_, '', 1.25338e+02, recoilMin, recoilMax)
+            mean_gt_offset = ROOT.RooRealVar("mean_gt_offset_%s" % mH_, '', 0.25)
+            #mean_gt_offset = ROOT.RooRealVar("mean_gt_offset_%s" % mH_, '', 0.35, recoilMin, recoilMax)
+            mean_gt = ROOT.RooFormulaVar("mean_gt_%s" % mH_, "@0+@1", ROOT.RooArgList(mean, mean_gt_offset))
+            
+            sigma_gt = ROOT.RooRealVar("sigma_gt_%s" % mH_, '', 8.30603e-01, 0, 2)
+            #sigma_gt = ROOT.RooRealVar("sigma_gt_%s" % mH_, '', 0.84) # fixed  
+           
+            cb_1 = ROOT.RooRealVar("cb_1_%s" % mH_, '', 0.5, 0, 1)
+            #cb_1 = ROOT.RooRealVar("cb_1_%s" % mH_, '', 0.479)
+            cb_2 = ROOT.RooRealVar("cb_2_%s" % mH_, '', 0.4, 0, 1)
+            #cb_2 = ROOT.RooRealVar("cb_2_%s" % mH_, '', 0.419)
+ 
+        if cat == 0 and flavor == 'mumu' and mode == 'IDEA_MC':
             yMax = 2000
             yMax_norm = 0.2
             mean = ROOT.RooRealVar("mean_%s" % mH_, '', 125.1, mH-1., mH+1.)
-            #sigma = ROOT.RooRealVar("sigma_%s" % mH_, '', 0.3225, 0, 1)
-            sigma = ROOT.RooRealVar("sigma_%s" % mH_, '', 0.3225) # fixed
-            #alpha_1 = ROOT.RooRealVar("alpha_1_%s" % mH_, '', -0.18965, -10, 0)
-            alpha_1 = ROOT.RooRealVar("alpha_1_%s" % mH_, '', -0.1367)
-            #alpha_2 = ROOT.RooRealVar("alpha_2_%s" % mH_, '', 4.1, 0, 10)
-            alpha_2 = ROOT.RooRealVar("alpha_2_%s" % mH_, '', 3.771)
+            sigma = ROOT.RooRealVar("sigma_%s" % mH_, '', 0.3225, 0, 1)
+            #sigma = ROOT.RooRealVar("sigma_%s" % mH_, '', 0.3225) # fixed
+            alpha_1 = ROOT.RooRealVar("alpha_1_%s" % mH_, '', -0.18965, -10, 0)
+            #alpha_1 = ROOT.RooRealVar("alpha_1_%s" % mH_, '', -0.1880)
+            alpha_2 = ROOT.RooRealVar("alpha_2_%s" % mH_, '', 4.1, 0, 10)
+            #alpha_2 = ROOT.RooRealVar("alpha_2_%s" % mH_, '', 4.137)
             #n_1 = ROOT.RooRealVar("n_1_%s" % mH_, '', 2.217, -10, 10)
-            n_1 = ROOT.RooRealVar("n_1_%s" % mH_, '', 3.00)
+            n_1 = ROOT.RooRealVar("n_1_%s" % mH_, '', 2.325)
             #n_2 = ROOT.RooRealVar("n_2_%s" % mH_, '', 0.08, -10, 10)
-            n_2 = ROOT.RooRealVar("n_2_%s" % mH_, '', 0.3)
+            n_2 = ROOT.RooRealVar("n_2_%s" % mH_, '', 0.294)
 
             #mean_gt = ROOT.RooRealVar("mean_gt_%s" % mH_, '', 1.25338e+02, recoilMin, recoilMax)
-            mean_gt_offset = ROOT.RooRealVar("mean_gt_offset_%s" % mH_, '', 0.55)
+            #mean_gt_offset = ROOT.RooRealVar("mean_gt_offset_%s" % mH_, '', 0.45, 0, 1)
+            mean_gt_offset = ROOT.RooRealVar("mean_gt_offset_%s" % mH_, '', 0.63)
             mean_gt = ROOT.RooFormulaVar("mean_gt_%s" % mH_, "@0+@1", ROOT.RooArgList(mean, mean_gt_offset))
             
-            #sigma_gt = ROOT.RooRealVar("sigma_gt_%s" % mH_, '', 0.495, 0, 2)
-            sigma_gt = ROOT.RooRealVar("sigma_gt_%s" % mH_, '', 0.5) # fixed  
+            sigma_gt = ROOT.RooRealVar("sigma_gt_%s" % mH_, '', 0.495, 0, 2)
+            #sigma_gt = ROOT.RooRealVar("sigma_gt_%s" % mH_, '', 0.5) # fixed  
             
-            #cb_1 = ROOT.RooRealVar("cb_1_%s" % mH_, '', 0.5097 , 0, 1)
-            cb_1 = ROOT.RooRealVar("cb_1_%s" % mH_, '', 0.5707)
-            #cb_2 = ROOT.RooRealVar("cb_2_%s" % mH_, '', 0.445, 0, 1)
-            cb_2 = ROOT.RooRealVar("cb_2_%s" % mH_, '', 0.37)
-            '''
-            ## RECO
-            yMax = 1200
+            cb_1 = ROOT.RooRealVar("cb_1_%s" % mH_, '', 0.5097 , 0, 1)
+            #cb_1 = ROOT.RooRealVar("cb_1_%s" % mH_, '', 0.5115)
+            cb_2 = ROOT.RooRealVar("cb_2_%s" % mH_, '', 0.445, 0, 1)
+            #cb_2 = ROOT.RooRealVar("cb_2_%s" % mH_, '', 0.4415)
+    
+        if cat == 0 and flavor == 'mumu' and mode == 'IDEA_noBES':
+            yMax = 2000
+            yMax_norm = 0.2
+            mean = ROOT.RooRealVar("mean_%s" % mH_, '', 125.1, mH-1., mH+1.)
+            sigma = ROOT.RooRealVar("sigma_%s" % mH_, '', 0.3225, 0, 1)
+            #sigma = ROOT.RooRealVar("sigma_%s" % mH_, '', 0.3225) # fixed
+            alpha_1 = ROOT.RooRealVar("alpha_1_%s" % mH_, '', -0.18965, -10, 0)
+            #alpha_1 = ROOT.RooRealVar("alpha_1_%s" % mH_, '', -0.1880)
+            alpha_2 = ROOT.RooRealVar("alpha_2_%s" % mH_, '', 4.1, 0, 10)
+            #alpha_2 = ROOT.RooRealVar("alpha_2_%s" % mH_, '', 4.137)
+            #n_1 = ROOT.RooRealVar("n_1_%s" % mH_, '', 2.217, -10, 10)
+            n_1 = ROOT.RooRealVar("n_1_%s" % mH_, '', 1.954)
+            #n_2 = ROOT.RooRealVar("n_2_%s" % mH_, '', 0.08, -10, 10)
+            n_2 = ROOT.RooRealVar("n_2_%s" % mH_, '', 4.75)
+
+            #mean_gt = ROOT.RooRealVar("mean_gt_%s" % mH_, '', 1.25338e+02, recoilMin, recoilMax)
+            #mean_gt_offset = ROOT.RooRealVar("mean_gt_offset_%s" % mH_, '', 0.45, 0, 1)
+            mean_gt_offset = ROOT.RooRealVar("mean_gt_offset_%s" % mH_, '', 0.29)
+            mean_gt = ROOT.RooFormulaVar("mean_gt_%s" % mH_, "@0+@1", ROOT.RooArgList(mean, mean_gt_offset))
+            
+            sigma_gt = ROOT.RooRealVar("sigma_gt_%s" % mH_, '', 0.495, 0, 2)
+            #sigma_gt = ROOT.RooRealVar("sigma_gt_%s" % mH_, '', 0.5) # fixed  
+            
+            cb_1 = ROOT.RooRealVar("cb_1_%s" % mH_, '', 0.5097 , 0, 1)
+            #cb_1 = ROOT.RooRealVar("cb_1_%s" % mH_, '', 0.5115)
+            cb_2 = ROOT.RooRealVar("cb_2_%s" % mH_, '', 0.445, 0, 1)
+            #cb_2 = ROOT.RooRealVar("cb_2_%s" % mH_, '', 0.4415)
+ 
+ 
+ 
+        if cat == 0 and flavor == 'ee' and (mode == 'IDEA' or mode == "IDEA_BES6pct"):
+            yMax = 2000
             yMax_norm = 0.12
             mean = ROOT.RooRealVar("mean_%s" % mH_, '', 1.25090e+02, mH-1., mH+1.)
             #sigma = ROOT.RooRealVar("sigma_%s" % mH_, '', 4.08196e-01, 0, 1)
             sigma = ROOT.RooRealVar("sigma_%s" % mH_, '', 0.4581) # fixed
-            alpha_1 = ROOT.RooRealVar("alpha_1_%s" % mH_, '', -2.00592e-01, -10, 0)
-            #alpha_1 = ROOT.RooRealVar("alpha_1_%s" % mH_, '', -0.192)
-            alpha_2 = ROOT.RooRealVar("alpha_2_%s" % mH_, '', 4.05919e+00, 0, 10)
-            #alpha_2 = ROOT.RooRealVar("alpha_2_%s" % mH_, '', 3.88)
+            #alpha_1 = ROOT.RooRealVar("alpha_1_%s" % mH_, '', -2.00592e-01, -10, 0)
+            alpha_1 = ROOT.RooRealVar("alpha_1_%s" % mH_, '', -0.18366)
+            #alpha_2 = ROOT.RooRealVar("alpha_2_%s" % mH_, '', 4.05919e+00, 0, 10)
+            alpha_2 = ROOT.RooRealVar("alpha_2_%s" % mH_, '', 3.937)
             #n_1 = ROOT.RooRealVar("n_1_%s" % mH_, '', 3.62, -10, 10)
             n_1 = ROOT.RooRealVar("n_1_%s" % mH_, '', 3.044)
             #n_2 = ROOT.RooRealVar("n_2_%s" % mH_, '', 1.25675e-02, -10, 10)
             n_2 = ROOT.RooRealVar("n_2_%s" % mH_, '', 0.15)
 
             #mean_gt = ROOT.RooRealVar("mean_gt_%s" % mH_, '', 1.25338e+02, recoilMin, recoilMax)
-            mean_gt_offset = ROOT.RooRealVar("mean_gt_offset_%s" % mH_, '', 0.44)
+            mean_gt_offset = ROOT.RooRealVar("mean_gt_offset_%s" % mH_, '', 0.5)
             mean_gt = ROOT.RooFormulaVar("mean_gt_%s" % mH_, "@0+@1", ROOT.RooArgList(mean, mean_gt_offset))
             
             #sigma_gt = ROOT.RooRealVar("sigma_gt_%s" % mH_, '', 8.30603e-01, 0, 2)
             sigma_gt = ROOT.RooRealVar("sigma_gt_%s" % mH_, '', 0.79) # fixed  
             
-            cb_1 = ROOT.RooRealVar("cb_1_%s" % mH_, '', 4.94921e-01 , 0, 1)
-            #cb_1 = ROOT.RooRealVar("cb_1_%s" % mH_, '', 0.563)
-            cb_2 = ROOT.RooRealVar("cb_2_%s" % mH_, '', 3.86757e-01 , 0, 1)
-            #cb_2 = ROOT.RooRealVar("cb_2_%s" % mH_, '', 0.296)
+            #cb_1 = ROOT.RooRealVar("cb_1_%s" % mH_, '', 4.94921e-01 , 0, 1)
+            cb_1 = ROOT.RooRealVar("cb_1_%s" % mH_, '', 0.5682)
+            #cb_2 = ROOT.RooRealVar("cb_2_%s" % mH_, '', 3.86757e-01 , 0, 1)
+            cb_2 = ROOT.RooRealVar("cb_2_%s" % mH_, '', 0.3597)
+
+        if cat == 0 and flavor == 'ee' and mode == 'IDEA_3T':
+            yMax = 2000
+            yMax_norm = 0.12
+            mean = ROOT.RooRealVar("mean_%s" % mH_, '', 1.25090e+02, mH-1., mH+1.)
+            sigma = ROOT.RooRealVar("sigma_%s" % mH_, '', 4.08196e-01, 0, 1)
+            #sigma = ROOT.RooRealVar("sigma_%s" % mH_, '', 0.4581) # fixed
+            alpha_1 = ROOT.RooRealVar("alpha_1_%s" % mH_, '', -2.00592e-01, -10, 0)
+            #alpha_1 = ROOT.RooRealVar("alpha_1_%s" % mH_, '', -0.18366)
+            alpha_2 = ROOT.RooRealVar("alpha_2_%s" % mH_, '', 4.05919e+00, 0, 10)
+            #alpha_2 = ROOT.RooRealVar("alpha_2_%s" % mH_, '', 3.937)
+            n_1 = ROOT.RooRealVar("n_1_%s" % mH_, '', 3.62, -10, 10)
+            #n_1 = ROOT.RooRealVar("n_1_%s" % mH_, '', 3.044)
+            #n_2 = ROOT.RooRealVar("n_2_%s" % mH_, '', 1.25675e-02, -10, 10)
+            n_2 = ROOT.RooRealVar("n_2_%s" % mH_, '', 0.015)
+
+            #mean_gt = ROOT.RooRealVar("mean_gt_%s" % mH_, '', 1.25338e+02, recoilMin, recoilMax)
+            mean_gt_offset = ROOT.RooRealVar("mean_gt_offset_%s" % mH_, '', 0.5)
+            mean_gt = ROOT.RooFormulaVar("mean_gt_%s" % mH_, "@0+@1", ROOT.RooArgList(mean, mean_gt_offset))
             
+            sigma_gt = ROOT.RooRealVar("sigma_gt_%s" % mH_, '', 8.30603e-01, 0, 2)
+            #sigma_gt = ROOT.RooRealVar("sigma_gt_%s" % mH_, '', 0.79) # fixed  
+            
+            cb_1 = ROOT.RooRealVar("cb_1_%s" % mH_, '', 4.94921e-01 , 0, 1)
+            #cb_1 = ROOT.RooRealVar("cb_1_%s" % mH_, '', 0.5682)
+            cb_2 = ROOT.RooRealVar("cb_2_%s" % mH_, '', 3.86757e-01 , 0, 1)
+            #cb_2 = ROOT.RooRealVar("cb_2_%s" % mH_, '', 0.3597)
+
+        if cat == 0 and flavor == 'ee' and mode == 'CLD':
+            yMax = 2000
+            yMax_norm = 0.12
+            mean = ROOT.RooRealVar("mean_%s" % mH_, '', 1.25090e+02, mH-1., mH+1.)
+            sigma = ROOT.RooRealVar("sigma_%s" % mH_, '', 4.08196e-01, 0, 1)
+            #sigma = ROOT.RooRealVar("sigma_%s" % mH_, '', 0.4581) # fixed
+            alpha_1 = ROOT.RooRealVar("alpha_1_%s" % mH_, '', -2.00592e-01, -10, 0)
+            #alpha_1 = ROOT.RooRealVar("alpha_1_%s" % mH_, '', -0.18366)
+            alpha_2 = ROOT.RooRealVar("alpha_2_%s" % mH_, '', 4.05919e+00, 0, 10)
+            #alpha_2 = ROOT.RooRealVar("alpha_2_%s" % mH_, '', 3.937)
+            #n_1 = ROOT.RooRealVar("n_1_%s" % mH_, '', 3.62, -10, 10)
+            n_1 = ROOT.RooRealVar("n_1_%s" % mH_, '', 3.33)
+            #n_2 = ROOT.RooRealVar("n_2_%s" % mH_, '', 1.25675e-02, -10, 10)
+            n_2 = ROOT.RooRealVar("n_2_%s" % mH_, '', 0.015)
+
+            #mean_gt = ROOT.RooRealVar("mean_gt_%s" % mH_, '', 1.25338e+02, recoilMin, recoilMax)
+            mean_gt_offset = ROOT.RooRealVar("mean_gt_offset_%s" % mH_, '', 0.5)
+            mean_gt = ROOT.RooFormulaVar("mean_gt_%s" % mH_, "@0+@1", ROOT.RooArgList(mean, mean_gt_offset))
+            
+            sigma_gt = ROOT.RooRealVar("sigma_gt_%s" % mH_, '', 8.30603e-01, 0, 2)
+            #sigma_gt = ROOT.RooRealVar("sigma_gt_%s" % mH_, '', 0.79) # fixed  
+            
+            cb_1 = ROOT.RooRealVar("cb_1_%s" % mH_, '', 4.94921e-01 , 0, 1)
+            #cb_1 = ROOT.RooRealVar("cb_1_%s" % mH_, '', 0.5682)
+            cb_2 = ROOT.RooRealVar("cb_2_%s" % mH_, '', 3.86757e-01 , 0, 1)
+            #cb_2 = ROOT.RooRealVar("cb_2_%s" % mH_, '', 0.3597)
+
+        if cat == 0 and flavor == 'ee' and mode == 'IDEA_MC':
+            yMax = 2000
+            yMax_norm = 0.2
+            mean = ROOT.RooRealVar("mean_%s" % mH_, '', 125.1, mH-1., mH+1.)
+            sigma = ROOT.RooRealVar("sigma_%s" % mH_, '', 0.3225, 0, 1)
+            #sigma = ROOT.RooRealVar("sigma_%s" % mH_, '', 0.3225) # fixed
+            alpha_1 = ROOT.RooRealVar("alpha_1_%s" % mH_, '', -0.18965, -10, 0)
+            #alpha_1 = ROOT.RooRealVar("alpha_1_%s" % mH_, '', -0.1367)
+            alpha_2 = ROOT.RooRealVar("alpha_2_%s" % mH_, '', 4.1, 0, 10)
+            #alpha_2 = ROOT.RooRealVar("alpha_2_%s" % mH_, '', 3.771)
+            n_1 = ROOT.RooRealVar("n_1_%s" % mH_, '', 2.217, -10, 10)
+            #n_1 = ROOT.RooRealVar("n_1_%s" % mH_, '', 3.00)
+            #n_2 = ROOT.RooRealVar("n_2_%s" % mH_, '', 0.08, -10, 10)
+            n_2 = ROOT.RooRealVar("n_2_%s" % mH_, '', 0.256)
+
+            #mean_gt = ROOT.RooRealVar("mean_gt_%s" % mH_, '', 1.25338e+02, recoilMin, recoilMax)
+            #mean_gt_offset = ROOT.RooRealVar("mean_gt_offset_%s" % mH_, '', 0.55, 0, 1)
+            mean_gt_offset = ROOT.RooRealVar("mean_gt_offset_%s" % mH_, '', 0.661)
+            mean_gt = ROOT.RooFormulaVar("mean_gt_%s" % mH_, "@0+@1", ROOT.RooArgList(mean, mean_gt_offset))
+            
+            sigma_gt = ROOT.RooRealVar("sigma_gt_%s" % mH_, '', 0.495, 0, 2)
+            #sigma_gt = ROOT.RooRealVar("sigma_gt_%s" % mH_, '', 0.5) # fixed  
+            
+            cb_1 = ROOT.RooRealVar("cb_1_%s" % mH_, '', 0.5097 , 0, 1)
+            #cb_1 = ROOT.RooRealVar("cb_1_%s" % mH_, '', 0.5707)
+            cb_2 = ROOT.RooRealVar("cb_2_%s" % mH_, '', 0.445, 0, 1)
+            #cb_2 = ROOT.RooRealVar("cb_2_%s" % mH_, '', 0.37)
+
+        if cat == 0 and flavor == 'ee' and mode == 'IDEA_noBES':
+            yMax = 2000
+            yMax_norm = 0.2
+            mean = ROOT.RooRealVar("mean_%s" % mH_, '', 125.1, mH-1., mH+1.)
+            sigma = ROOT.RooRealVar("sigma_%s" % mH_, '', 0.3225, 0, 1)
+            #sigma = ROOT.RooRealVar("sigma_%s" % mH_, '', 0.3225) # fixed
+            alpha_1 = ROOT.RooRealVar("alpha_1_%s" % mH_, '', -0.18965, -10, 0)
+            #alpha_1 = ROOT.RooRealVar("alpha_1_%s" % mH_, '', -0.1367)
+            alpha_2 = ROOT.RooRealVar("alpha_2_%s" % mH_, '', 4.1, 0, 10)
+            #alpha_2 = ROOT.RooRealVar("alpha_2_%s" % mH_, '', 3.771)
+            n_1 = ROOT.RooRealVar("n_1_%s" % mH_, '', 2.217, -10, 10)
+            #n_1 = ROOT.RooRealVar("n_1_%s" % mH_, '', 3.00)
+            #n_2 = ROOT.RooRealVar("n_2_%s" % mH_, '', 0.08, -10, 10)
+            n_2 = ROOT.RooRealVar("n_2_%s" % mH_, '', 0.01)
+
+            #mean_gt = ROOT.RooRealVar("mean_gt_%s" % mH_, '', 1.25338e+02, recoilMin, recoilMax)
+            #mean_gt_offset = ROOT.RooRealVar("mean_gt_offset_%s" % mH_, '', 0.55, 0, 1)
+            mean_gt_offset = ROOT.RooRealVar("mean_gt_offset_%s" % mH_, '', 0.205)
+            mean_gt = ROOT.RooFormulaVar("mean_gt_%s" % mH_, "@0+@1", ROOT.RooArgList(mean, mean_gt_offset))
+            
+            sigma_gt = ROOT.RooRealVar("sigma_gt_%s" % mH_, '', 0.495, 0, 2)
+            #sigma_gt = ROOT.RooRealVar("sigma_gt_%s" % mH_, '', 0.5) # fixed  
+            
+            cb_1 = ROOT.RooRealVar("cb_1_%s" % mH_, '', 0.5097 , 0, 1)
+            #cb_1 = ROOT.RooRealVar("cb_1_%s" % mH_, '', 0.5707)
+            cb_2 = ROOT.RooRealVar("cb_2_%s" % mH_, '', 0.445, 0, 1)
+            #cb_2 = ROOT.RooRealVar("cb_2_%s" % mH_, '', 0.37)
+
+
+        if cat == 0 and flavor == 'ee' and mode == 'IDEA_2E':
+            yMax = 2000
+            yMax_norm = 0.12
+            mean = ROOT.RooRealVar("mean_%s" % mH_, '', 1.25090e+02, mH-1., mH+1.)
+            sigma = ROOT.RooRealVar("sigma_%s" % mH_, '', 4.08196e-01, 0, 1)
+            #sigma = ROOT.RooRealVar("sigma_%s" % mH_, '', 0.4581) # fixed
+            alpha_1 = ROOT.RooRealVar("alpha_1_%s" % mH_, '', -2.00592e-01, -10, 0)
+            #alpha_1 = ROOT.RooRealVar("alpha_1_%s" % mH_, '', -0.18366)
+            alpha_2 = ROOT.RooRealVar("alpha_2_%s" % mH_, '', 4.05919e+00, 0, 10)
+            #alpha_2 = ROOT.RooRealVar("alpha_2_%s" % mH_, '', 3.937)
+            n_1 = ROOT.RooRealVar("n_1_%s" % mH_, '', 3.62, -10, 10)
+            #n_1 = ROOT.RooRealVar("n_1_%s" % mH_, '', 3.52)
+            #n_2 = ROOT.RooRealVar("n_2_%s" % mH_, '', 1.25675e-02, -10, 10)
+            n_2 = ROOT.RooRealVar("n_2_%s" % mH_, '', 0.01)
+
+            #mean_gt = ROOT.RooRealVar("mean_gt_%s" % mH_, '', 1.25338e+02, recoilMin, recoilMax)
+            #mean_gt_offset = ROOT.RooRealVar("mean_gt_offset_%s" % mH_, '', 0.5, 0, 1)
+            mean_gt_offset = ROOT.RooRealVar("mean_gt_offset_%s" % mH_, '', 0.589)
+            mean_gt = ROOT.RooFormulaVar("mean_gt_%s" % mH_, "@0+@1", ROOT.RooArgList(mean, mean_gt_offset))
+            
+            sigma_gt = ROOT.RooRealVar("sigma_gt_%s" % mH_, '', 8.30603e-01, 0, 2)
+            #sigma_gt = ROOT.RooRealVar("sigma_gt_%s" % mH_, '', 0.79) # fixed  
+            
+            cb_1 = ROOT.RooRealVar("cb_1_%s" % mH_, '', 4.94921e-01 , 0, 1)
+            #cb_1 = ROOT.RooRealVar("cb_1_%s" % mH_, '', 0.5682)
+            cb_2 = ROOT.RooRealVar("cb_2_%s" % mH_, '', 3.86757e-01 , 0, 1)
+            #cb_2 = ROOT.RooRealVar("cb_2_%s" % mH_, '', 0.3597)
+
+
+
 
         
-        if cat == 1 and flavor == "mumu":
-            
-            yMax = 800
+        
+        if cat == 1 and flavor == 'mumu' and (mode == 'IDEA' or mode == "IDEA_2E" or mode == "IDEA_BES6pct"):
+            yMax = 1600
             yMax_norm = 0.2
             mean = ROOT.RooRealVar("mean_%s" % mH_, '', 1.25090e+02, mH-1., mH+1.)
             #sigma = ROOT.RooRealVar("sigma_%s" % mH_, '', 4.08196e-01, 0, 1)
@@ -245,10 +478,122 @@ def doSignal(normYields = True):
             cb_1 = ROOT.RooRealVar("cb_1_%s" % mH_, '', 0.5, 0, 1)
             #cb_1 = ROOT.RooRealVar("cb_1_%s" % mH_, '', 0.5)
             cb_2 = ROOT.RooRealVar("cb_2_%s" % mH_, '', 0.4, 0, 1)
+            #cb_2 = ROOT.RooRealVar("cb_2_%s" % mH_, '', 0.37)
+            
+        if cat == 1 and flavor == 'mumu' and mode == 'IDEA_3T':
+            yMax = 1600
+            yMax_norm = 0.2
+            mean = ROOT.RooRealVar("mean_%s" % mH_, '', 1.25090e+02, mH-1., mH+1.)
+            sigma = ROOT.RooRealVar("sigma_%s" % mH_, '', 4.08196e-01, 0, 1)
+            #sigma = ROOT.RooRealVar("sigma_%s" % mH_, '', 0.415) # fixed
+            alpha_1 = ROOT.RooRealVar("alpha_1_%s" % mH_, '', -2.00592e-01, -10, 0)
+            #alpha_1 = ROOT.RooRealVar("alpha_1_%s" % mH_, '', -0.23)
+            alpha_2 = ROOT.RooRealVar("alpha_2_%s" % mH_, '', 4.05919e+00, 0, 10)
+            #alpha_2 = ROOT.RooRealVar("alpha_2_%s" % mH_, '', 3.89)
+            n_1 = ROOT.RooRealVar("n_1_%s" % mH_, '', 2.48214e+00, -10, 10)
+            #n_1 = ROOT.RooRealVar("n_1_%s" % mH_, '', 2.153)
+            #n_2 = ROOT.RooRealVar("n_2_%s" % mH_, '', 0.04, -10, 10)
+            n_2 = ROOT.RooRealVar("n_2_%s" % mH_, '', 0.35)
+
+            mean_gt = ROOT.RooRealVar("mean_gt_%s" % mH_, '', 1.25338e+02, recoilMin, recoilMax)
+            #mean_gt_offset = ROOT.RooRealVar("mean_gt_offset_%s" % mH_, '', 0.6, recoilMin, recoilMax)
+            mean_gt_offset = ROOT.RooRealVar("mean_gt_offset_%s" % mH_, '', 0.6)
+            mean_gt = ROOT.RooFormulaVar("mean_gt_%s" % mH_, "@0+@1", ROOT.RooArgList(mean, mean_gt_offset))
+            
+            sigma_gt = ROOT.RooRealVar("sigma_gt_%s" % mH_, '', 8.30603e-01, 0, 2)
+            #sigma_gt = ROOT.RooRealVar("sigma_gt_%s" % mH_, '', 0.66) # fixed  
+            
+            cb_1 = ROOT.RooRealVar("cb_1_%s" % mH_, '', 0.5, 0, 1)
+            #cb_1 = ROOT.RooRealVar("cb_1_%s" % mH_, '', 0.5)
+            cb_2 = ROOT.RooRealVar("cb_2_%s" % mH_, '', 0.4, 0, 1)
             #cb_2 = ROOT.RooRealVar("cb_2_%s" % mH_, '', 0.37)   
+
+        if cat == 1 and flavor == 'mumu' and mode == 'CLD':
+            yMax = 1600
+            yMax_norm = 0.2
+            mean = ROOT.RooRealVar("mean_%s" % mH_, '', 1.25090e+02, mH-1., mH+1.)
+            sigma = ROOT.RooRealVar("sigma_%s" % mH_, '', 4.08196e-01, 0, 1)
+            #sigma = ROOT.RooRealVar("sigma_%s" % mH_, '', 0.415) # fixed
+            alpha_1 = ROOT.RooRealVar("alpha_1_%s" % mH_, '', -2.00592e-01, -10, 0)
+            #alpha_1 = ROOT.RooRealVar("alpha_1_%s" % mH_, '', -0.23)
+            alpha_2 = ROOT.RooRealVar("alpha_2_%s" % mH_, '', 4.05919e+00, 0, 10)
+            #alpha_2 = ROOT.RooRealVar("alpha_2_%s" % mH_, '', 3.89)
+            n_1 = ROOT.RooRealVar("n_1_%s" % mH_, '', 2.48214e+00, -10, 10)
+            #n_1 = ROOT.RooRealVar("n_1_%s" % mH_, '', 2.153)
+            #n_2 = ROOT.RooRealVar("n_2_%s" % mH_, '', 0.04, -10, 10)
+            n_2 = ROOT.RooRealVar("n_2_%s" % mH_, '', 0.08)
+
+            #mean_gt = ROOT.RooRealVar("mean_gt_%s" % mH_, '', 1.25338e+02, recoilMin, recoilMax)
+            mean_gt_offset = ROOT.RooRealVar("mean_gt_offset_%s" % mH_, '', 0.6)
+            mean_gt = ROOT.RooFormulaVar("mean_gt_%s" % mH_, "@0+@1", ROOT.RooArgList(mean, mean_gt_offset))
+            
+            sigma_gt = ROOT.RooRealVar("sigma_gt_%s" % mH_, '', 8.30603e-01, 0, 2)
+            #sigma_gt = ROOT.RooRealVar("sigma_gt_%s" % mH_, '', 0.66) # fixed  
+            
+            cb_1 = ROOT.RooRealVar("cb_1_%s" % mH_, '', 0.5, 0, 1)
+            #cb_1 = ROOT.RooRealVar("cb_1_%s" % mH_, '', 0.5)
+            cb_2 = ROOT.RooRealVar("cb_2_%s" % mH_, '', 0.4, 0, 1)
+            #cb_2 = ROOT.RooRealVar("cb_2_%s" % mH_, '', 0.37)
+   
+        if cat == 1 and flavor == 'mumu' and mode == 'IDEA_MC':
+            yMax = 1600
+            yMax_norm = 0.2
+            mean = ROOT.RooRealVar("mean_%s" % mH_, '', 1.25090e+02, mH-1., mH+1.)
+            sigma = ROOT.RooRealVar("sigma_%s" % mH_, '', 4.08196e-01, 0, 1)
+            #sigma = ROOT.RooRealVar("sigma_%s" % mH_, '', 0.415) # fixed
+            alpha_1 = ROOT.RooRealVar("alpha_1_%s" % mH_, '', -2.00592e-01, -10, 0)
+            #alpha_1 = ROOT.RooRealVar("alpha_1_%s" % mH_, '', -0.23)
+            alpha_2 = ROOT.RooRealVar("alpha_2_%s" % mH_, '', 4.05919e+00, 0, 10)
+            #alpha_2 = ROOT.RooRealVar("alpha_2_%s" % mH_, '', 3.89)
+            n_1 = ROOT.RooRealVar("n_1_%s" % mH_, '', 2.48214e+00, -10, 10)
+            #n_1 = ROOT.RooRealVar("n_1_%s" % mH_, '', 2.153)
+            #n_2 = ROOT.RooRealVar("n_2_%s" % mH_, '', 0.04, -10, 10)
+            n_2 = ROOT.RooRealVar("n_2_%s" % mH_, '', 0.05)
+
+            #mean_gt = ROOT.RooRealVar("mean_gt_%s" % mH_, '', 1.25338e+02, recoilMin, recoilMax)
+            #mean_gt_offset = ROOT.RooRealVar("mean_gt_offset_%s" % mH_, '', 0.6, 0, 1)
+            mean_gt_offset = ROOT.RooRealVar("mean_gt_offset_%s" % mH_, '', 0.29)
+            mean_gt = ROOT.RooFormulaVar("mean_gt_%s" % mH_, "@0+@1", ROOT.RooArgList(mean, mean_gt_offset))
+            
+            sigma_gt = ROOT.RooRealVar("sigma_gt_%s" % mH_, '', 8.30603e-01, 0, 2)
+            #sigma_gt = ROOT.RooRealVar("sigma_gt_%s" % mH_, '', 0.66) # fixed  
+            
+            #cb_1 = ROOT.RooRealVar("cb_1_%s" % mH_, '', 0.5, 0, 1)
+            cb_1 = ROOT.RooRealVar("cb_1_%s" % mH_, '', 0.5)
+            #cb_2 = ROOT.RooRealVar("cb_2_%s" % mH_, '', 0.4, 0, 1)
+            cb_2 = ROOT.RooRealVar("cb_2_%s" % mH_, '', 0.37)
+            
+        if cat == 1 and flavor == 'mumu' and mode == 'IDEA_noBES':
+            yMax = 1600
+            yMax_norm = 0.2
+            mean = ROOT.RooRealVar("mean_%s" % mH_, '', 1.25090e+02, mH-1., mH+1.)
+            sigma = ROOT.RooRealVar("sigma_%s" % mH_, '', 4.08196e-01, 0, 1)
+            #sigma = ROOT.RooRealVar("sigma_%s" % mH_, '', 0.415) # fixed
+            alpha_1 = ROOT.RooRealVar("alpha_1_%s" % mH_, '', -2.00592e-01, -10, 0)
+            #alpha_1 = ROOT.RooRealVar("alpha_1_%s" % mH_, '', -0.23)
+            alpha_2 = ROOT.RooRealVar("alpha_2_%s" % mH_, '', 4.05919e+00, 0, 10)
+            #alpha_2 = ROOT.RooRealVar("alpha_2_%s" % mH_, '', 3.89)
+            n_1 = ROOT.RooRealVar("n_1_%s" % mH_, '', 2.48214e+00, -10, 10)
+            #n_1 = ROOT.RooRealVar("n_1_%s" % mH_, '', 2.153)
+            #n_2 = ROOT.RooRealVar("n_2_%s" % mH_, '', 0.04, -10, 10)
+            n_2 = ROOT.RooRealVar("n_2_%s" % mH_, '', 0.11)
+
+            #mean_gt = ROOT.RooRealVar("mean_gt_%s" % mH_, '', 1.25338e+02, recoilMin, recoilMax)
+            #mean_gt_offset = ROOT.RooRealVar("mean_gt_offset_%s" % mH_, '', 0.6, 0, 1)
+            mean_gt_offset = ROOT.RooRealVar("mean_gt_offset_%s" % mH_, '', 0.243)
+            mean_gt = ROOT.RooFormulaVar("mean_gt_%s" % mH_, "@0+@1", ROOT.RooArgList(mean, mean_gt_offset))
+            
+            sigma_gt = ROOT.RooRealVar("sigma_gt_%s" % mH_, '', 8.30603e-01, 0, 2)
+            #sigma_gt = ROOT.RooRealVar("sigma_gt_%s" % mH_, '', 0.66) # fixed  
+            
+            cb_1 = ROOT.RooRealVar("cb_1_%s" % mH_, '', 0.5, 0, 1)
+            #cb_1 = ROOT.RooRealVar("cb_1_%s" % mH_, '', 0.5)
+            cb_2 = ROOT.RooRealVar("cb_2_%s" % mH_, '', 0.4, 0, 1)
+            #cb_2 = ROOT.RooRealVar("cb_2_%s" % mH_, '', 0.37)
+           
         
-        if cat == 1 and flavor == 'ee':
-            yMax = 600
+        if cat == 1 and flavor == 'ee' and (mode == 'IDEA' or mode == "IDEA_BES6pct"):
+            yMax = 1200
             yMax_norm = 0.12
             mean = ROOT.RooRealVar("mean_%s" % mH_, '', 1.25090e+02, mH-1., mH+1.)
             #sigma = ROOT.RooRealVar("sigma_%s" % mH_, '', 4.08196e-01, 0, 1)
@@ -269,41 +614,299 @@ def doSignal(normYields = True):
             #sigma_gt = ROOT.RooRealVar("sigma_gt_%s" % mH_, '', 8.30603e-01, 0, 2)
             sigma_gt = ROOT.RooRealVar("sigma_gt_%s" % mH_, '', 0.7) # fixed  
             
+            #cb_1 = ROOT.RooRealVar("cb_1_%s" % mH_, '', 4.94921e-01 , 0, 1)
+            cb_1 = ROOT.RooRealVar("cb_1_%s" % mH_, '', 0.5804)
+            #cb_2 = ROOT.RooRealVar("cb_2_%s" % mH_, '', 3.86757e-01 , 0, 1)
+            cb_2 = ROOT.RooRealVar("cb_2_%s" % mH_, '', 0.3737)
+
+
+        if cat == 1 and flavor == 'ee' and mode == 'IDEA_3T':
+            yMax = 1200
+            yMax_norm = 0.12
+            mean = ROOT.RooRealVar("mean_%s" % mH_, '', 1.25090e+02, mH-1., mH+1.)
+            sigma = ROOT.RooRealVar("sigma_%s" % mH_, '', 4.08196e-01, 0, 1)
+            #sigma = ROOT.RooRealVar("sigma_%s" % mH_, '', 0.4389) # fixed
+            alpha_1 = ROOT.RooRealVar("alpha_1_%s" % mH_, '', -2.00592e-01, -10, 0)
+            #alpha_1 = ROOT.RooRealVar("alpha_1_%s" % mH_, '', -0.1918)
+            alpha_2 = ROOT.RooRealVar("alpha_2_%s" % mH_, '', 4.05919e+00, 0, 10)
+            #alpha_2 = ROOT.RooRealVar("alpha_2_%s" % mH_, '', 3.82)
+            n_1 = ROOT.RooRealVar("n_1_%s" % mH_, '', 3.62, -10, 10)
+            #n_1 = ROOT.RooRealVar("n_1_%s" % mH_, '', 2.685)
+            #n_2 = ROOT.RooRealVar("n_2_%s" % mH_, '', 1.25675e-02, -10, 10)
+            n_2 = ROOT.RooRealVar("n_2_%s" % mH_, '', 0.43)
+
+            #mean_gt = ROOT.RooRealVar("mean_gt_%s" % mH_, '', 1.25338e+02, recoilMin, recoilMax)
+            mean_gt_offset = ROOT.RooRealVar("mean_gt_offset_%s" % mH_, '', 0.63)
+            mean_gt = ROOT.RooFormulaVar("mean_gt_%s" % mH_, "@0+@1", ROOT.RooArgList(mean, mean_gt_offset))
+            
+            sigma_gt = ROOT.RooRealVar("sigma_gt_%s" % mH_, '', 8.30603e-01, 0, 2)
+            #sigma_gt = ROOT.RooRealVar("sigma_gt_%s" % mH_, '', 0.7) # fixed  
+            
             cb_1 = ROOT.RooRealVar("cb_1_%s" % mH_, '', 4.94921e-01 , 0, 1)
-            #cb_1 = ROOT.RooRealVar("cb_1_%s" % mH_, '', 0.5635)
+            #cb_1 = ROOT.RooRealVar("cb_1_%s" % mH_, '', 0.5804)
             cb_2 = ROOT.RooRealVar("cb_2_%s" % mH_, '', 3.86757e-01 , 0, 1)
-            #cb_2 = ROOT.RooRealVar("cb_2_%s" % mH_, '', 0.375)
-         
-        if cat == 2 and flavor == 'mumu':
-            yMax = 600
+            #cb_2 = ROOT.RooRealVar("cb_2_%s" % mH_, '', 0.3737)
+
+
+            
+        if cat == 1 and flavor == 'ee' and mode == 'IDEA_2E':
+            yMax = 1200
+            yMax_norm = 0.12
+            mean = ROOT.RooRealVar("mean_%s" % mH_, '', 1.25090e+02, mH-1., mH+1.)
+            sigma = ROOT.RooRealVar("sigma_%s" % mH_, '', 4.08196e-01, 0, 1)
+            #sigma = ROOT.RooRealVar("sigma_%s" % mH_, '', 0.4389) # fixed
+            alpha_1 = ROOT.RooRealVar("alpha_1_%s" % mH_, '', -2.00592e-01, -10, 0)
+            #alpha_1 = ROOT.RooRealVar("alpha_1_%s" % mH_, '', -0.1918)
+            alpha_2 = ROOT.RooRealVar("alpha_2_%s" % mH_, '', 4.05919e+00, 0, 10)
+            #alpha_2 = ROOT.RooRealVar("alpha_2_%s" % mH_, '', 3.82)
+            n_1 = ROOT.RooRealVar("n_1_%s" % mH_, '', 3.62, -10, 10)
+            #n_1 = ROOT.RooRealVar("n_1_%s" % mH_, '', 2.95)
+            #n_2 = ROOT.RooRealVar("n_2_%s" % mH_, '', 1.25675e-02, -10, 10)
+            n_2 = ROOT.RooRealVar("n_2_%s" % mH_, '', 0.01)
+
+            #mean_gt = ROOT.RooRealVar("mean_gt_%s" % mH_, '', 1.25338e+02, recoilMin, recoilMax)
+            #mean_gt_offset = ROOT.RooRealVar("mean_gt_offset_%s" % mH_, '', 0.63, 0, 1)
+            mean_gt_offset = ROOT.RooRealVar("mean_gt_offset_%s" % mH_, '', 0.67)
+            mean_gt = ROOT.RooFormulaVar("mean_gt_%s" % mH_, "@0+@1", ROOT.RooArgList(mean, mean_gt_offset))
+            
+            sigma_gt = ROOT.RooRealVar("sigma_gt_%s" % mH_, '', 8.30603e-01, 0, 2)
+            #sigma_gt = ROOT.RooRealVar("sigma_gt_%s" % mH_, '', 0.7) # fixed  
+            
+            cb_1 = ROOT.RooRealVar("cb_1_%s" % mH_, '', 4.94921e-01 , 0, 1)
+            #cb_1 = ROOT.RooRealVar("cb_1_%s" % mH_, '', 0.5804)
+            cb_2 = ROOT.RooRealVar("cb_2_%s" % mH_, '', 3.86757e-01 , 0, 1)
+            #cb_2 = ROOT.RooRealVar("cb_2_%s" % mH_, '', 0.3737)
+       
+
+        if cat == 1 and flavor == 'ee' and mode == 'CLD':
+            yMax = 1200
+            yMax_norm = 0.12
+            mean = ROOT.RooRealVar("mean_%s" % mH_, '', 1.25090e+02, mH-1., mH+1.)
+            sigma = ROOT.RooRealVar("sigma_%s" % mH_, '', 4.08196e-01, 0, 1)
+            #sigma = ROOT.RooRealVar("sigma_%s" % mH_, '', 0.4389) # fixed
+            alpha_1 = ROOT.RooRealVar("alpha_1_%s" % mH_, '', -2.00592e-01, -10, 0)
+            #alpha_1 = ROOT.RooRealVar("alpha_1_%s" % mH_, '', -0.1918)
+            alpha_2 = ROOT.RooRealVar("alpha_2_%s" % mH_, '', 4.05919e+00, 0, 10)
+            #alpha_2 = ROOT.RooRealVar("alpha_2_%s" % mH_, '', 3.82)
+            n_1 = ROOT.RooRealVar("n_1_%s" % mH_, '', 3.62, -10, 10)
+            #n_1 = ROOT.RooRealVar("n_1_%s" % mH_, '', 2.685)
+            #n_2 = ROOT.RooRealVar("n_2_%s" % mH_, '', 1.25675e-02, -10, 10)
+            n_2 = ROOT.RooRealVar("n_2_%s" % mH_, '', 0.15)
+
+            #mean_gt = ROOT.RooRealVar("mean_gt_%s" % mH_, '', 1.25338e+02, recoilMin, recoilMax)
+            mean_gt_offset = ROOT.RooRealVar("mean_gt_offset_%s" % mH_, '', 0.63)
+            mean_gt = ROOT.RooFormulaVar("mean_gt_%s" % mH_, "@0+@1", ROOT.RooArgList(mean, mean_gt_offset))
+            
+            sigma_gt = ROOT.RooRealVar("sigma_gt_%s" % mH_, '', 8.30603e-01, 0, 2)
+            #sigma_gt = ROOT.RooRealVar("sigma_gt_%s" % mH_, '', 0.7) # fixed  
+            
+            cb_1 = ROOT.RooRealVar("cb_1_%s" % mH_, '', 4.94921e-01 , 0, 1)
+            #cb_1 = ROOT.RooRealVar("cb_1_%s" % mH_, '', 0.5804)
+            cb_2 = ROOT.RooRealVar("cb_2_%s" % mH_, '', 3.86757e-01 , 0, 1)
+            #cb_2 = ROOT.RooRealVar("cb_2_%s" % mH_, '', 0.3737)
+
+
+        if cat == 1 and flavor == 'ee' and mode == 'IDEA_MC':
+            yMax = 1200
+            yMax_norm = 0.12
+            mean = ROOT.RooRealVar("mean_%s" % mH_, '', 1.25090e+02, mH-1., mH+1.)
+            sigma = ROOT.RooRealVar("sigma_%s" % mH_, '', 4.08196e-01, 0, 1)
+            #sigma = ROOT.RooRealVar("sigma_%s" % mH_, '', 0.4389) # fixed
+            alpha_1 = ROOT.RooRealVar("alpha_1_%s" % mH_, '', -2.00592e-01, -10, 0)
+            #alpha_1 = ROOT.RooRealVar("alpha_1_%s" % mH_, '', -0.1918)
+            alpha_2 = ROOT.RooRealVar("alpha_2_%s" % mH_, '', 4.05919e+00, 0, 10)
+            #alpha_2 = ROOT.RooRealVar("alpha_2_%s" % mH_, '', 3.82)
+            n_1 = ROOT.RooRealVar("n_1_%s" % mH_, '', 3.62, -10, 10)
+            #n_1 = ROOT.RooRealVar("n_1_%s" % mH_, '', 2.95)
+            #n_2 = ROOT.RooRealVar("n_2_%s" % mH_, '', 1.25675e-02, -10, 10)
+            n_2 = ROOT.RooRealVar("n_2_%s" % mH_, '', 0.33)
+
+            #mean_gt = ROOT.RooRealVar("mean_gt_%s" % mH_, '', 1.25338e+02, recoilMin, recoilMax)
+            #mean_gt_offset = ROOT.RooRealVar("mean_gt_offset_%s" % mH_, '', 0.63, 0, 1)
+            mean_gt_offset = ROOT.RooRealVar("mean_gt_offset_%s" % mH_, '', 0.64)
+            mean_gt = ROOT.RooFormulaVar("mean_gt_%s" % mH_, "@0+@1", ROOT.RooArgList(mean, mean_gt_offset))
+            
+            sigma_gt = ROOT.RooRealVar("sigma_gt_%s" % mH_, '', 8.30603e-01, 0, 2)
+            #sigma_gt = ROOT.RooRealVar("sigma_gt_%s" % mH_, '', 0.7) # fixed  
+            
+            cb_1 = ROOT.RooRealVar("cb_1_%s" % mH_, '', 4.94921e-01 , 0, 1)
+            #cb_1 = ROOT.RooRealVar("cb_1_%s" % mH_, '', 0.5804)
+            cb_2 = ROOT.RooRealVar("cb_2_%s" % mH_, '', 3.86757e-01 , 0, 1)
+            #cb_2 = ROOT.RooRealVar("cb_2_%s" % mH_, '', 0.3737)
+       
+        if cat == 1 and flavor == 'ee' and mode == 'IDEA_noBES':
+            yMax = 1200
+            yMax_norm = 0.12
+            mean = ROOT.RooRealVar("mean_%s" % mH_, '', 1.25090e+02, mH-1., mH+1.)
+            sigma = ROOT.RooRealVar("sigma_%s" % mH_, '', 4.08196e-01, 0, 1)
+            #sigma = ROOT.RooRealVar("sigma_%s" % mH_, '', 0.4389) # fixed
+            alpha_1 = ROOT.RooRealVar("alpha_1_%s" % mH_, '', -2.00592e-01, -10, 0)
+            #alpha_1 = ROOT.RooRealVar("alpha_1_%s" % mH_, '', -0.1918)
+            alpha_2 = ROOT.RooRealVar("alpha_2_%s" % mH_, '', 4.05919e+00, 0, 10)
+            #alpha_2 = ROOT.RooRealVar("alpha_2_%s" % mH_, '', 3.82)
+            n_1 = ROOT.RooRealVar("n_1_%s" % mH_, '', 3.62, -10, 10)
+            #n_1 = ROOT.RooRealVar("n_1_%s" % mH_, '', 2.95)
+            #n_2 = ROOT.RooRealVar("n_2_%s" % mH_, '', 1.25675e-02, -10, 10)
+            n_2 = ROOT.RooRealVar("n_2_%s" % mH_, '', 0.18)
+
+            #mean_gt = ROOT.RooRealVar("mean_gt_%s" % mH_, '', 1.25338e+02, recoilMin, recoilMax)
+            #mean_gt_offset = ROOT.RooRealVar("mean_gt_offset_%s" % mH_, '', 0.63, 0, 1)
+            mean_gt_offset = ROOT.RooRealVar("mean_gt_offset_%s" % mH_, '', 0.32)
+            mean_gt = ROOT.RooFormulaVar("mean_gt_%s" % mH_, "@0+@1", ROOT.RooArgList(mean, mean_gt_offset))
+            
+            sigma_gt = ROOT.RooRealVar("sigma_gt_%s" % mH_, '', 8.30603e-01, 0, 2)
+            #sigma_gt = ROOT.RooRealVar("sigma_gt_%s" % mH_, '', 0.7) # fixed  
+            
+            cb_1 = ROOT.RooRealVar("cb_1_%s" % mH_, '', 4.94921e-01 , 0, 1)
+            #cb_1 = ROOT.RooRealVar("cb_1_%s" % mH_, '', 0.5804)
+            cb_2 = ROOT.RooRealVar("cb_2_%s" % mH_, '', 3.86757e-01 , 0, 1)
+            #cb_2 = ROOT.RooRealVar("cb_2_%s" % mH_, '', 0.3737)
+            
+       
+       
+        if cat == 2 and flavor == 'mumu' and (mode == 'IDEA' or mode == "IDEA_2E" or mode == "IDEA_BES6pct"):
+            yMax = 1200
             yMax_norm = 0.15
             mean = ROOT.RooRealVar("mean_%s" % mH_, '', 1.25090e+02, mH-1., mH+1.)
             #sigma = ROOT.RooRealVar("sigma_%s" % mH_, '', 4.08196e-01, 0, 1)
-            sigma = ROOT.RooRealVar("sigma_%s" % mH_, '', 0.445) # fixed
+            sigma = ROOT.RooRealVar("sigma_%s" % mH_, '', 0.4455) # fixed
             #alpha_1 = ROOT.RooRealVar("alpha_1_%s" % mH_, '', -2.00592e-01, -10, 0)
-            alpha_1 = ROOT.RooRealVar("alpha_1_%s" % mH_, '', -0.21)
+            alpha_1 = ROOT.RooRealVar("alpha_1_%s" % mH_, '', -0.17713)
             #alpha_2 = ROOT.RooRealVar("alpha_2_%s" % mH_, '', 4.05919e+00, 0, 10)
-            alpha_2 = ROOT.RooRealVar("alpha_2_%s" % mH_, '', 3.9)
+            alpha_2 = ROOT.RooRealVar("alpha_2_%s" % mH_, '', 3.49)
             #n_1 = ROOT.RooRealVar("n_1_%s" % mH_, '', 2.48214e+00, -10, 10)
-            n_1 = ROOT.RooRealVar("n_1_%s" % mH_, '', 3.03)
+            n_1 = ROOT.RooRealVar("n_1_%s" % mH_, '', 3.887)
             #n_2 = ROOT.RooRealVar("n_2_%s" % mH_, '', 0.04, -10, 10)
-            n_2 = ROOT.RooRealVar("n_2_%s" % mH_, '', 0.216)
+            n_2 = ROOT.RooRealVar("n_2_%s" % mH_, '', 0.851)
 
             #mean_gt = ROOT.RooRealVar("mean_gt_%s" % mH_, '', 1.25338e+02, recoilMin, recoilMax)
-            mean_gt_offset = ROOT.RooRealVar("mean_gt_offset_%s" % mH_, '', 0.281)
+            mean_gt_offset = ROOT.RooRealVar("mean_gt_offset_%s" % mH_, '', 0.35)
+            #mean_gt_offset = ROOT.RooRealVar("mean_gt_offset_%s" % mH_, '', 0.281, recoilMin, recoilMax)
             mean_gt = ROOT.RooFormulaVar("mean_gt_%s" % mH_, "@0+@1", ROOT.RooArgList(mean, mean_gt_offset))
             
             #sigma_gt = ROOT.RooRealVar("sigma_gt_%s" % mH_, '', 8.30603e-01, 0, 2)
-            sigma_gt = ROOT.RooRealVar("sigma_gt_%s" % mH_, '', 0.830) # fixed  
+            sigma_gt = ROOT.RooRealVar("sigma_gt_%s" % mH_, '', 0.860) # fixed  
+            
+            #cb_1 = ROOT.RooRealVar("cb_1_%s" % mH_, '', 0.5, 0, 1)
+            cb_1 = ROOT.RooRealVar("cb_1_%s" % mH_, '', 0.4541)
+            #cb_2 = ROOT.RooRealVar("cb_2_%s" % mH_, '', 0.4, 0, 1)
+            cb_2 = ROOT.RooRealVar("cb_2_%s" % mH_, '', 0.4310)     
+
+        if cat == 2 and flavor == 'mumu' and mode == 'IDEA_3T':
+            yMax = 1200
+            yMax_norm = 0.15
+            mean = ROOT.RooRealVar("mean_%s" % mH_, '', 1.25090e+02, mH-1., mH+1.)
+            sigma = ROOT.RooRealVar("sigma_%s" % mH_, '', 4.08196e-01, 0, 1)
+            #sigma = ROOT.RooRealVar("sigma_%s" % mH_, '', 0.4455) # fixed
+            alpha_1 = ROOT.RooRealVar("alpha_1_%s" % mH_, '', -2.00592e-01, -10, 0)
+            #alpha_1 = ROOT.RooRealVar("alpha_1_%s" % mH_, '', -0.17713)
+            alpha_2 = ROOT.RooRealVar("alpha_2_%s" % mH_, '', 4.05919e+00, 0, 10)
+            #alpha_2 = ROOT.RooRealVar("alpha_2_%s" % mH_, '', 3.49)
+            #n_1 = ROOT.RooRealVar("n_1_%s" % mH_, '', 2.48214e+00, -10, 10)
+            n_1 = ROOT.RooRealVar("n_1_%s" % mH_, '', 3.4)
+            #n_2 = ROOT.RooRealVar("n_2_%s" % mH_, '', 0.04, -10, 10)
+            n_2 = ROOT.RooRealVar("n_2_%s" % mH_, '', 0.4)
+
+            #mean_gt = ROOT.RooRealVar("mean_gt_%s" % mH_, '', 1.25338e+02, recoilMin, recoilMax)
+            mean_gt_offset = ROOT.RooRealVar("mean_gt_offset_%s" % mH_, '', 0.35)
+            #mean_gt_offset = ROOT.RooRealVar("mean_gt_offset_%s" % mH_, '', 0.281, recoilMin, recoilMax)
+            mean_gt = ROOT.RooFormulaVar("mean_gt_%s" % mH_, "@0+@1", ROOT.RooArgList(mean, mean_gt_offset))
+            
+            sigma_gt = ROOT.RooRealVar("sigma_gt_%s" % mH_, '', 8.30603e-01, 0, 2)
+            #sigma_gt = ROOT.RooRealVar("sigma_gt_%s" % mH_, '', 0.860) # fixed  
             
             cb_1 = ROOT.RooRealVar("cb_1_%s" % mH_, '', 0.5, 0, 1)
-            #cb_1 = ROOT.RooRealVar("cb_1_%s" % mH_, '', 0.4879)
+            #cb_1 = ROOT.RooRealVar("cb_1_%s" % mH_, '', 0.4541)
             cb_2 = ROOT.RooRealVar("cb_2_%s" % mH_, '', 0.4, 0, 1)
-            #cb_2 = ROOT.RooRealVar("cb_2_%s" % mH_, '', 0.37)     
+            #cb_2 = ROOT.RooRealVar("cb_2_%s" % mH_, '', 0.4310)     
+
+        if cat == 2 and flavor == 'mumu' and mode == 'CLD':
+            yMax = 1200
+            yMax_norm = 0.15
+            mean = ROOT.RooRealVar("mean_%s" % mH_, '', 1.25090e+02, mH-1., mH+1.)
+            sigma = ROOT.RooRealVar("sigma_%s" % mH_, '', 4.08196e-01, 0, 1)
+            #sigma = ROOT.RooRealVar("sigma_%s" % mH_, '', 0.4455) # fixed
+            alpha_1 = ROOT.RooRealVar("alpha_1_%s" % mH_, '', -2.00592e-01, -10, 0)
+            #alpha_1 = ROOT.RooRealVar("alpha_1_%s" % mH_, '', -0.17713)
+            alpha_2 = ROOT.RooRealVar("alpha_2_%s" % mH_, '', 4.05919e+00, 0, 10)
+            #alpha_2 = ROOT.RooRealVar("alpha_2_%s" % mH_, '', 3.49)
+            #n_1 = ROOT.RooRealVar("n_1_%s" % mH_, '', 2.48214e+00, -10, 10)
+            n_1 = ROOT.RooRealVar("n_1_%s" % mH_, '', 7.8)
+            #n_2 = ROOT.RooRealVar("n_2_%s" % mH_, '', 0.04, -10, 10)
+            n_2 = ROOT.RooRealVar("n_2_%s" % mH_, '', 0.11)
+
+            #mean_gt = ROOT.RooRealVar("mean_gt_%s" % mH_, '', 1.25338e+02, recoilMin, recoilMax)
+            mean_gt_offset = ROOT.RooRealVar("mean_gt_offset_%s" % mH_, '', 0.35)
+            #mean_gt_offset = ROOT.RooRealVar("mean_gt_offset_%s" % mH_, '', 0.281, recoilMin, recoilMax)
+            mean_gt = ROOT.RooFormulaVar("mean_gt_%s" % mH_, "@0+@1", ROOT.RooArgList(mean, mean_gt_offset))
+            
+            sigma_gt = ROOT.RooRealVar("sigma_gt_%s" % mH_, '', 8.30603e-01, 0, 2)
+            #sigma_gt = ROOT.RooRealVar("sigma_gt_%s" % mH_, '', 0.860) # fixed  
+            
+            cb_1 = ROOT.RooRealVar("cb_1_%s" % mH_, '', 0.5, 0, 1)
+            #cb_1 = ROOT.RooRealVar("cb_1_%s" % mH_, '', 0.4541)
+            cb_2 = ROOT.RooRealVar("cb_2_%s" % mH_, '', 0.4, 0, 1)
+            #cb_2 = ROOT.RooRealVar("cb_2_%s" % mH_, '', 0.4310)     
+
+        if cat == 2 and flavor == 'mumu' and mode == 'IDEA_MC':
+            yMax = 1200
+            yMax_norm = 0.15
+            mean = ROOT.RooRealVar("mean_%s" % mH_, '', 1.25090e+02, mH-1., mH+1.)
+            sigma = ROOT.RooRealVar("sigma_%s" % mH_, '', 4.08196e-01, 0, 1)
+            #sigma = ROOT.RooRealVar("sigma_%s" % mH_, '', 0.4455) # fixed
+            alpha_1 = ROOT.RooRealVar("alpha_1_%s" % mH_, '', -2.00592e-01, -10, 0)
+            #alpha_1 = ROOT.RooRealVar("alpha_1_%s" % mH_, '', -0.17713)
+            alpha_2 = ROOT.RooRealVar("alpha_2_%s" % mH_, '', 4.05919e+00, 0, 10)
+            #alpha_2 = ROOT.RooRealVar("alpha_2_%s" % mH_, '', 3.49)
+            n_1 = ROOT.RooRealVar("n_1_%s" % mH_, '', 2.48214e+00, -10, 10)
+            #n_1 = ROOT.RooRealVar("n_1_%s" % mH_, '', 3.887)
+            #n_2 = ROOT.RooRealVar("n_2_%s" % mH_, '', 0.04, -10, 10)
+            n_2 = ROOT.RooRealVar("n_2_%s" % mH_, '', 0.37)
+
+            #mean_gt = ROOT.RooRealVar("mean_gt_%s" % mH_, '', 1.25338e+02, recoilMin, recoilMax)
+            #mean_gt_offset = ROOT.RooRealVar("mean_gt_offset_%s" % mH_, '', 0.35, 0, 1)
+            mean_gt_offset = ROOT.RooRealVar("mean_gt_offset_%s" % mH_, '', 0.683)
+            mean_gt = ROOT.RooFormulaVar("mean_gt_%s" % mH_, "@0+@1", ROOT.RooArgList(mean, mean_gt_offset))
+            
+            sigma_gt = ROOT.RooRealVar("sigma_gt_%s" % mH_, '', 8.30603e-01, 0, 2)
+            #sigma_gt = ROOT.RooRealVar("sigma_gt_%s" % mH_, '', 0.860) # fixed  
+            
+            cb_1 = ROOT.RooRealVar("cb_1_%s" % mH_, '', 0.5, 0, 1)
+            #cb_1 = ROOT.RooRealVar("cb_1_%s" % mH_, '', 0.4541)
+            cb_2 = ROOT.RooRealVar("cb_2_%s" % mH_, '', 0.4, 0, 1)
+            #cb_2 = ROOT.RooRealVar("cb_2_%s" % mH_, '', 0.4310)     
+
+        if cat == 2 and flavor == 'mumu' and mode == 'IDEA_noBES':
+            yMax = 1200
+            yMax_norm = 0.15
+            mean = ROOT.RooRealVar("mean_%s" % mH_, '', 1.25090e+02, mH-1., mH+1.)
+            sigma = ROOT.RooRealVar("sigma_%s" % mH_, '', 4.08196e-01, 0, 1)
+            #sigma = ROOT.RooRealVar("sigma_%s" % mH_, '', 0.4455) # fixed
+            alpha_1 = ROOT.RooRealVar("alpha_1_%s" % mH_, '', -2.00592e-01, -10, 0)
+            #alpha_1 = ROOT.RooRealVar("alpha_1_%s" % mH_, '', -0.17713)
+            alpha_2 = ROOT.RooRealVar("alpha_2_%s" % mH_, '', 4.05919e+00, 0, 10)
+            #alpha_2 = ROOT.RooRealVar("alpha_2_%s" % mH_, '', 3.49)
+            n_1 = ROOT.RooRealVar("n_1_%s" % mH_, '', 2.48214e+00, -10, 10)
+            #n_1 = ROOT.RooRealVar("n_1_%s" % mH_, '', 3.887)
+            #n_2 = ROOT.RooRealVar("n_2_%s" % mH_, '', 0.04, -10, 10)
+            n_2 = ROOT.RooRealVar("n_2_%s" % mH_, '', 4.62)
+
+            #mean_gt = ROOT.RooRealVar("mean_gt_%s" % mH_, '', 1.25338e+02, recoilMin, recoilMax)
+            #mean_gt_offset = ROOT.RooRealVar("mean_gt_offset_%s" % mH_, '', 0.35, 0, 1)
+            mean_gt_offset = ROOT.RooRealVar("mean_gt_offset_%s" % mH_, '', 0.250)
+            mean_gt = ROOT.RooFormulaVar("mean_gt_%s" % mH_, "@0+@1", ROOT.RooArgList(mean, mean_gt_offset))
+            
+            sigma_gt = ROOT.RooRealVar("sigma_gt_%s" % mH_, '', 8.30603e-01, 0, 2)
+            #sigma_gt = ROOT.RooRealVar("sigma_gt_%s" % mH_, '', 0.860) # fixed  
+            
+            cb_1 = ROOT.RooRealVar("cb_1_%s" % mH_, '', 0.5, 0, 1)
+            #cb_1 = ROOT.RooRealVar("cb_1_%s" % mH_, '', 0.4541)
+            cb_2 = ROOT.RooRealVar("cb_2_%s" % mH_, '', 0.4, 0, 1)
+            #cb_2 = ROOT.RooRealVar("cb_2_%s" % mH_, '', 0.4310)     
 
 
-        if cat == 2 and flavor == 'ee':
-            yMax = 500
+        if cat == 2 and flavor == 'ee' and (mode == 'IDEA' or mode == "IDEA_BES6pct"):
+            yMax = 1000
             yMax_norm = 0.1
             mean = ROOT.RooRealVar("mean_%s" % mH_, '', 1.25090e+02, mH-1., mH+1.)
             #sigma = ROOT.RooRealVar("sigma_%s" % mH_, '', 4.08196e-01, 0, 1)
@@ -328,14 +931,160 @@ def doSignal(normYields = True):
             cb_1 = ROOT.RooRealVar("cb_1_%s" % mH_, '', 0.5324)
             #cb_2 = ROOT.RooRealVar("cb_2_%s" % mH_, '', 3.86757e-01 , 0, 1)
             cb_2 = ROOT.RooRealVar("cb_2_%s" % mH_, '', 0.3779)
+ 
+ 
+        if cat == 2 and flavor == 'ee' and mode == 'IDEA_3T':
+            yMax = 1000
+            yMax_norm = 0.1
+            mean = ROOT.RooRealVar("mean_%s" % mH_, '', 1.25090e+02, mH-1., mH+1.)
+            sigma = ROOT.RooRealVar("sigma_%s" % mH_, '', 4.08196e-01, 0, 1)
+            #sigma = ROOT.RooRealVar("sigma_%s" % mH_, '', 0.4633) # fixed
+            alpha_1 = ROOT.RooRealVar("alpha_1_%s" % mH_, '', -2.00592e-01, -10, 0)
+            #alpha_1 = ROOT.RooRealVar("alpha_1_%s" % mH_, '', -0.15)
+            alpha_2 = ROOT.RooRealVar("alpha_2_%s" % mH_, '', 4.05919e+00, 0, 10)
+            #alpha_2 = ROOT.RooRealVar("alpha_2_%s" % mH_, '', 4.1)
+            n_1 = ROOT.RooRealVar("n_1_%s" % mH_, '', 3.62, -10, 10)
+            #n_1 = ROOT.RooRealVar("n_1_%s" % mH_, '', 5.862)
+            #n_2 = ROOT.RooRealVar("n_2_%s" % mH_, '', 1.25675e-02, -10, 10)
+            n_2 = ROOT.RooRealVar("n_2_%s" % mH_, '', 0.0028)
+
+            #mean_gt = ROOT.RooRealVar("mean_gt_%s" % mH_, '', 1.25338e+02, recoilMin, recoilMax)
+            mean_gt_offset = ROOT.RooRealVar("mean_gt_offset_%s" % mH_, '', 0.5)
+            mean_gt = ROOT.RooFormulaVar("mean_gt_%s" % mH_, "@0+@1", ROOT.RooArgList(mean, mean_gt_offset))
+            
+            sigma_gt = ROOT.RooRealVar("sigma_gt_%s" % mH_, '', 8.30603e-01, 0, 2)
+            #sigma_gt = ROOT.RooRealVar("sigma_gt_%s" % mH_, '', 0.810) # fixed  
+            
+            cb_1 = ROOT.RooRealVar("cb_1_%s" % mH_, '', 4.94921e-01 , 0, 1)
+            #cb_1 = ROOT.RooRealVar("cb_1_%s" % mH_, '', 0.5324)
+            cb_2 = ROOT.RooRealVar("cb_2_%s" % mH_, '', 3.86757e-01 , 0, 1)
+            #cb_2 = ROOT.RooRealVar("cb_2_%s" % mH_, '', 0.3779)
+ 
+ 
+        if cat == 2 and flavor == 'ee' and mode == 'IDEA_2E':
+            yMax = 1000
+            yMax_norm = 0.1
+            mean = ROOT.RooRealVar("mean_%s" % mH_, '', 1.25090e+02, mH-1., mH+1.)
+            sigma = ROOT.RooRealVar("sigma_%s" % mH_, '', 4.08196e-01, 0, 1)
+            #sigma = ROOT.RooRealVar("sigma_%s" % mH_, '', 0.4633) # fixed
+            alpha_1 = ROOT.RooRealVar("alpha_1_%s" % mH_, '', -2.00592e-01, -10, 0)
+            #alpha_1 = ROOT.RooRealVar("alpha_1_%s" % mH_, '', -0.15)
+            alpha_2 = ROOT.RooRealVar("alpha_2_%s" % mH_, '', 4.05919e+00, 0, 10)
+            #alpha_2 = ROOT.RooRealVar("alpha_2_%s" % mH_, '', 4.1)
+            n_1 = ROOT.RooRealVar("n_1_%s" % mH_, '', 3.62, -10, 10)
+            #n_1 = ROOT.RooRealVar("n_1_%s" % mH_, '', 5.23)
+            n_2 = ROOT.RooRealVar("n_2_%s" % mH_, '', 1.25675e-02, -10, 10)
+            n_2 = ROOT.RooRealVar("n_2_%s" % mH_, '', 0.02)
+
+            #mean_gt = ROOT.RooRealVar("mean_gt_%s" % mH_, '', 1.25338e+02, recoilMin, recoilMax)
+            mean_gt_offset = ROOT.RooRealVar("mean_gt_offset_%s" % mH_, '', 0.5, 0, 1)
+            mean_gt_offset = ROOT.RooRealVar("mean_gt_offset_%s" % mH_, '', 0.68)
+            mean_gt = ROOT.RooFormulaVar("mean_gt_%s" % mH_, "@0+@1", ROOT.RooArgList(mean, mean_gt_offset))
+            
+            sigma_gt = ROOT.RooRealVar("sigma_gt_%s" % mH_, '', 8.30603e-01, 0, 2)
+            #sigma_gt = ROOT.RooRealVar("sigma_gt_%s" % mH_, '', 0.810) # fixed  
+            
+            cb_1 = ROOT.RooRealVar("cb_1_%s" % mH_, '', 4.94921e-01 , 0, 1)
+            #cb_1 = ROOT.RooRealVar("cb_1_%s" % mH_, '', 0.5324)
+            cb_2 = ROOT.RooRealVar("cb_2_%s" % mH_, '', 3.86757e-01 , 0, 1)
+            #cb_2 = ROOT.RooRealVar("cb_2_%s" % mH_, '', 0.3779)
 
 
-        if cat == 3 and flavor == 'mumu':
+        if cat == 2 and flavor == 'ee' and mode == 'CLD':
+            yMax = 1000
+            yMax_norm = 0.1
+            mean = ROOT.RooRealVar("mean_%s" % mH_, '', 1.25090e+02, mH-1., mH+1.)
+            sigma = ROOT.RooRealVar("sigma_%s" % mH_, '', 4.08196e-01, 0, 1)
+            #sigma = ROOT.RooRealVar("sigma_%s" % mH_, '', 0.4633) # fixed
+            alpha_1 = ROOT.RooRealVar("alpha_1_%s" % mH_, '', -2.00592e-01, -10, 0)
+            #alpha_1 = ROOT.RooRealVar("alpha_1_%s" % mH_, '', -0.15)
+            alpha_2 = ROOT.RooRealVar("alpha_2_%s" % mH_, '', 4.05919e+00, 0, 10)
+            #alpha_2 = ROOT.RooRealVar("alpha_2_%s" % mH_, '', 4.1)
+            #n_1 = ROOT.RooRealVar("n_1_%s" % mH_, '', 3.62, -10, 10)
+            n_1 = ROOT.RooRealVar("n_1_%s" % mH_, '', 6.0)
+            #n_2 = ROOT.RooRealVar("n_2_%s" % mH_, '', 1.25675e-02, -10, 10)
+            n_2 = ROOT.RooRealVar("n_2_%s" % mH_, '', 0.01)
+
+            #mean_gt = ROOT.RooRealVar("mean_gt_%s" % mH_, '', 1.25338e+02, recoilMin, recoilMax)
+            mean_gt_offset = ROOT.RooRealVar("mean_gt_offset_%s" % mH_, '', 0.5)
+            mean_gt = ROOT.RooFormulaVar("mean_gt_%s" % mH_, "@0+@1", ROOT.RooArgList(mean, mean_gt_offset))
+            
+            sigma_gt = ROOT.RooRealVar("sigma_gt_%s" % mH_, '', 8.30603e-01, 0, 2)
+            #sigma_gt = ROOT.RooRealVar("sigma_gt_%s" % mH_, '', 0.810) # fixed  
+            
+            cb_1 = ROOT.RooRealVar("cb_1_%s" % mH_, '', 4.94921e-01 , 0, 1)
+            #cb_1 = ROOT.RooRealVar("cb_1_%s" % mH_, '', 0.5324)
+            cb_2 = ROOT.RooRealVar("cb_2_%s" % mH_, '', 3.86757e-01 , 0, 1)
+            #cb_2 = ROOT.RooRealVar("cb_2_%s" % mH_, '', 0.3779)
+ 
+
+        if cat == 2 and flavor == 'ee' and mode == 'IDEA_MC':
+            yMax = 1000
+            yMax_norm = 0.1
+            mean = ROOT.RooRealVar("mean_%s" % mH_, '', 1.25090e+02, mH-1., mH+1.)
+            sigma = ROOT.RooRealVar("sigma_%s" % mH_, '', 4.08196e-01, 0, 1)
+            #sigma = ROOT.RooRealVar("sigma_%s" % mH_, '', 0.4633) # fixed
+            alpha_1 = ROOT.RooRealVar("alpha_1_%s" % mH_, '', -2.00592e-01, -10, 0)
+            #alpha_1 = ROOT.RooRealVar("alpha_1_%s" % mH_, '', -0.15)
+            alpha_2 = ROOT.RooRealVar("alpha_2_%s" % mH_, '', 4.05919e+00, 0, 10)
+            #alpha_2 = ROOT.RooRealVar("alpha_2_%s" % mH_, '', 4.1)
+            n_1 = ROOT.RooRealVar("n_1_%s" % mH_, '', 3.62, -10, 10)
+            #n_1 = ROOT.RooRealVar("n_1_%s" % mH_, '', 5.23)
+            #n_2 = ROOT.RooRealVar("n_2_%s" % mH_, '', 1.25675e-02, -10, 10)
+            n_2 = ROOT.RooRealVar("n_2_%s" % mH_, '', 0.23)
+
+            #mean_gt = ROOT.RooRealVar("mean_gt_%s" % mH_, '', 1.25338e+02, recoilMin, recoilMax)
+            #mean_gt_offset = ROOT.RooRealVar("mean_gt_offset_%s" % mH_, '', 0.5, 0, 1)
+            mean_gt_offset = ROOT.RooRealVar("mean_gt_offset_%s" % mH_, '', 0.66)
+            mean_gt = ROOT.RooFormulaVar("mean_gt_%s" % mH_, "@0+@1", ROOT.RooArgList(mean, mean_gt_offset))
+            
+            sigma_gt = ROOT.RooRealVar("sigma_gt_%s" % mH_, '', 8.30603e-01, 0, 2)
+            #sigma_gt = ROOT.RooRealVar("sigma_gt_%s" % mH_, '', 0.810) # fixed  
+            
+            cb_1 = ROOT.RooRealVar("cb_1_%s" % mH_, '', 4.94921e-01 , 0, 1)
+            #cb_1 = ROOT.RooRealVar("cb_1_%s" % mH_, '', 0.5324)
+            cb_2 = ROOT.RooRealVar("cb_2_%s" % mH_, '', 3.86757e-01 , 0, 1)
+            #cb_2 = ROOT.RooRealVar("cb_2_%s" % mH_, '', 0.3779)
+
+        if cat == 2 and flavor == 'ee' and mode == 'IDEA_noBES':
+            yMax = 1000
+            yMax_norm = 0.1
+            mean = ROOT.RooRealVar("mean_%s" % mH_, '', 1.25090e+02, mH-1., mH+1.)
+            sigma = ROOT.RooRealVar("sigma_%s" % mH_, '', 4.08196e-01, 0, 1)
+            #sigma = ROOT.RooRealVar("sigma_%s" % mH_, '', 0.4633) # fixed
+            alpha_1 = ROOT.RooRealVar("alpha_1_%s" % mH_, '', -2.00592e-01, -10, 0)
+            #alpha_1 = ROOT.RooRealVar("alpha_1_%s" % mH_, '', -0.15)
+            alpha_2 = ROOT.RooRealVar("alpha_2_%s" % mH_, '', 4.05919e+00, 0, 10)
+            #alpha_2 = ROOT.RooRealVar("alpha_2_%s" % mH_, '', 4.1)
+            #n_1 = ROOT.RooRealVar("n_1_%s" % mH_, '', 3.8, -10, 10)
+            n_1 = ROOT.RooRealVar("n_1_%s" % mH_, '', 3.73)
+            #n_2 = ROOT.RooRealVar("n_2_%s" % mH_, '', 1.25675e-02, -10, 10)
+            n_2 = ROOT.RooRealVar("n_2_%s" % mH_, '', 0.01)
+
+            #mean_gt = ROOT.RooRealVar("mean_gt_%s" % mH_, '', 1.25338e+02, recoilMin, recoilMax)
+            mean_gt_offset = ROOT.RooRealVar("mean_gt_offset_%s" % mH_, '', 0.5, 0, 1)
+            #mean_gt_offset = ROOT.RooRealVar("mean_gt_offset_%s" % mH_, '', 0.23)
+            mean_gt = ROOT.RooFormulaVar("mean_gt_%s" % mH_, "@0+@1", ROOT.RooArgList(mean, mean_gt_offset))
+            
+            sigma_gt = ROOT.RooRealVar("sigma_gt_%s" % mH_, '', 8.30603e-01, 0, 2)
+            #sigma_gt = ROOT.RooRealVar("sigma_gt_%s" % mH_, '', 0.810) # fixed  
+            
+            cb_1 = ROOT.RooRealVar("cb_1_%s" % mH_, '', 4.94921e-01 , 0, 1)
+            #cb_1 = ROOT.RooRealVar("cb_1_%s" % mH_, '', 0.5324)
+            cb_2 = ROOT.RooRealVar("cb_2_%s" % mH_, '', 3.86757e-01 , 0, 1)
+            #cb_2 = ROOT.RooRealVar("cb_2_%s" % mH_, '', 0.3779)
+
+
+
+
+
+
+        if cat == 3 and flavor == 'mumu' and (mode == 'IDEA' or mode == "IDEA_2E" or mode == "IDEA_BES6pct"):
             yMax = 400
             yMax_norm = 0.12
             mean = ROOT.RooRealVar("mean_%s" % mH_, '', 1.25090e+02, mH-1., mH+1.)
             #sigma = ROOT.RooRealVar("sigma_%s" % mH_, '', 4.08196e-01, 0, 1)
-            sigma = ROOT.RooRealVar("sigma_%s" % mH_, '', 0.49) # fixed
+            sigma = ROOT.RooRealVar("sigma_%s" % mH_, '', 0.5) # fixed
             #alpha_1 = ROOT.RooRealVar("alpha_1_%s" % mH_, '', -2.00592e-01, -10, 0)
             alpha_1 = ROOT.RooRealVar("alpha_1_%s" % mH_, '', -0.3368)
             #alpha_2 = ROOT.RooRealVar("alpha_2_%s" % mH_, '', 4.05919e+00, 0, 10)
@@ -346,20 +1095,133 @@ def doSignal(normYields = True):
             n_2 = ROOT.RooRealVar("n_2_%s" % mH_, '', 0.38)
 
             #mean_gt = ROOT.RooRealVar("mean_gt_%s" % mH_, '', 1.25338e+02, recoilMin, recoilMax)
+            #mean_gt_offset = ROOT.RooRealVar("mean_gt_offset_%s" % mH_, '', 0.3, recoilMin, recoilMax)
             mean_gt_offset = ROOT.RooRealVar("mean_gt_offset_%s" % mH_, '', 0.05)
             mean_gt = ROOT.RooFormulaVar("mean_gt_%s" % mH_, "@0+@1", ROOT.RooArgList(mean, mean_gt_offset))
             
             #sigma_gt = ROOT.RooRealVar("sigma_gt_%s" % mH_, '', 8.30603e-01, 0, 2)
-            sigma_gt = ROOT.RooRealVar("sigma_gt_%s" % mH_, '', 0.95) # fixed  
+            sigma_gt = ROOT.RooRealVar("sigma_gt_%s" % mH_, '', 0.958) # fixed  
+            
+            #cb_1 = ROOT.RooRealVar("cb_1_%s" % mH_, '', 0.5, 0, 1)
+            cb_1 = ROOT.RooRealVar("cb_1_%s" % mH_, '', 0.5634)
+            #cb_2 = ROOT.RooRealVar("cb_2_%s" % mH_, '', 0.4, 0, 1)
+            cb_2 = ROOT.RooRealVar("cb_2_%s" % mH_, '', 0.3403)               
+
+        if cat == 3 and flavor == 'mumu' and mode == 'IDEA_3T':
+            yMax = 400
+            yMax_norm = 0.12
+            mean = ROOT.RooRealVar("mean_%s" % mH_, '', 1.25090e+02, mH-1., mH+1.)
+            sigma = ROOT.RooRealVar("sigma_%s" % mH_, '', 4.08196e-01, 0, 1)
+            #sigma = ROOT.RooRealVar("sigma_%s" % mH_, '', 0.5) # fixed
+            alpha_1 = ROOT.RooRealVar("alpha_1_%s" % mH_, '', -2.00592e-01, -10, 0)
+            #alpha_1 = ROOT.RooRealVar("alpha_1_%s" % mH_, '', -0.3368)
+            alpha_2 = ROOT.RooRealVar("alpha_2_%s" % mH_, '', 4.05919e+00, 0, 10)
+            #alpha_2 = ROOT.RooRealVar("alpha_2_%s" % mH_, '', 3.8)
+            n_1 = ROOT.RooRealVar("n_1_%s" % mH_, '', 2.48214e+00, -10, 10)
+            #n_1 = ROOT.RooRealVar("n_1_%s" % mH_, '', 1.705)
+            #n_2 = ROOT.RooRealVar("n_2_%s" % mH_, '', 0.04, -10, 10)
+            n_2 = ROOT.RooRealVar("n_2_%s" % mH_, '', 0.6)
+
+            #mean_gt = ROOT.RooRealVar("mean_gt_%s" % mH_, '', 1.25338e+02, recoilMin, recoilMax)
+            #mean_gt_offset = ROOT.RooRealVar("mean_gt_offset_%s" % mH_, '', 0.3, recoilMin, recoilMax)
+            mean_gt_offset = ROOT.RooRealVar("mean_gt_offset_%s" % mH_, '', 0.05)
+            mean_gt = ROOT.RooFormulaVar("mean_gt_%s" % mH_, "@0+@1", ROOT.RooArgList(mean, mean_gt_offset))
+            
+            sigma_gt = ROOT.RooRealVar("sigma_gt_%s" % mH_, '', 8.30603e-01, 0, 2)
+            #sigma_gt = ROOT.RooRealVar("sigma_gt_%s" % mH_, '', 0.958) # fixed  
             
             cb_1 = ROOT.RooRealVar("cb_1_%s" % mH_, '', 0.5, 0, 1)
-            #cb_1 = ROOT.RooRealVar("cb_1_%s" % mH_, '', 0.4879)
-            #cb_2 = ROOT.RooRealVar("cb_2_%s" % mH_, '', 0.4, 0, 1)
-            cb_2 = ROOT.RooRealVar("cb_2_%s" % mH_, '', 0.3217)               
+            #cb_1 = ROOT.RooRealVar("cb_1_%s" % mH_, '', 0.5634)
+            cb_2 = ROOT.RooRealVar("cb_2_%s" % mH_, '', 0.4, 0, 1)
+            #cb_2 = ROOT.RooRealVar("cb_2_%s" % mH_, '', 0.3403)               
+
+        if cat == 3 and flavor == 'mumu' and mode == 'CLD':
+            yMax = 400
+            yMax_norm = 0.12
+            mean = ROOT.RooRealVar("mean_%s" % mH_, '', 1.25090e+02, mH-1., mH+1.)
+            sigma = ROOT.RooRealVar("sigma_%s" % mH_, '', 4.08196e-01, 0, 1)
+            #sigma = ROOT.RooRealVar("sigma_%s" % mH_, '', 0.5) # fixed
+            alpha_1 = ROOT.RooRealVar("alpha_1_%s" % mH_, '', -2.00592e-01, -10, 0)
+            #alpha_1 = ROOT.RooRealVar("alpha_1_%s" % mH_, '', -0.3368)
+            alpha_2 = ROOT.RooRealVar("alpha_2_%s" % mH_, '', 4.05919e+00, 0, 10)
+            #alpha_2 = ROOT.RooRealVar("alpha_2_%s" % mH_, '', 3.8)
+            #n_1 = ROOT.RooRealVar("n_1_%s" % mH_, '', 2.48214e+00, -10, 10)
+            n_1 = ROOT.RooRealVar("n_1_%s" % mH_, '', 2.48)
+            #n_2 = ROOT.RooRealVar("n_2_%s" % mH_, '', 0.04, -10, 10)
+            n_2 = ROOT.RooRealVar("n_2_%s" % mH_, '', 0.01)
+
+            #mean_gt = ROOT.RooRealVar("mean_gt_%s" % mH_, '', 1.25338e+02, recoilMin, recoilMax)
+            #mean_gt_offset = ROOT.RooRealVar("mean_gt_offset_%s" % mH_, '', 0.3, recoilMin, recoilMax)
+            mean_gt_offset = ROOT.RooRealVar("mean_gt_offset_%s" % mH_, '', 0.05)
+            mean_gt = ROOT.RooFormulaVar("mean_gt_%s" % mH_, "@0+@1", ROOT.RooArgList(mean, mean_gt_offset))
+            
+            sigma_gt = ROOT.RooRealVar("sigma_gt_%s" % mH_, '', 8.30603e-01, 0, 2)
+            #sigma_gt = ROOT.RooRealVar("sigma_gt_%s" % mH_, '', 0.958) # fixed  
+            
+            cb_1 = ROOT.RooRealVar("cb_1_%s" % mH_, '', 0.5, 0, 1)
+            #cb_1 = ROOT.RooRealVar("cb_1_%s" % mH_, '', 0.5634)
+            cb_2 = ROOT.RooRealVar("cb_2_%s" % mH_, '', 0.4, 0, 1)
+            #cb_2 = ROOT.RooRealVar("cb_2_%s" % mH_, '', 0.3403)               
+
+        if cat == 3 and flavor == 'mumu' and mode == 'IDEA_MC':
+            yMax = 400
+            yMax_norm = 0.12
+            mean = ROOT.RooRealVar("mean_%s" % mH_, '', 1.25090e+02, mH-1., mH+1.)
+            sigma = ROOT.RooRealVar("sigma_%s" % mH_, '', 4.08196e-01, 0, 1)
+            #sigma = ROOT.RooRealVar("sigma_%s" % mH_, '', 0.5) # fixed
+            alpha_1 = ROOT.RooRealVar("alpha_1_%s" % mH_, '', -2.00592e-01, -10, 0)
+            #alpha_1 = ROOT.RooRealVar("alpha_1_%s" % mH_, '', -0.3368)
+            alpha_2 = ROOT.RooRealVar("alpha_2_%s" % mH_, '', 4.05919e+00, 0, 10)
+            #alpha_2 = ROOT.RooRealVar("alpha_2_%s" % mH_, '', 3.8)
+            n_1 = ROOT.RooRealVar("n_1_%s" % mH_, '', 2.48214e+00, -10, 10)
+            #n_1 = ROOT.RooRealVar("n_1_%s" % mH_, '', 1.705)
+            #n_2 = ROOT.RooRealVar("n_2_%s" % mH_, '', 0.04, -10, 10)
+            n_2 = ROOT.RooRealVar("n_2_%s" % mH_, '', 0.6)
+
+            #mean_gt = ROOT.RooRealVar("mean_gt_%s" % mH_, '', 1.25338e+02, recoilMin, recoilMax)
+            #mean_gt_offset = ROOT.RooRealVar("mean_gt_offset_%s" % mH_, '', 0.3, 0, 1)
+            mean_gt_offset = ROOT.RooRealVar("mean_gt_offset_%s" % mH_, '', 0.57)
+            mean_gt = ROOT.RooFormulaVar("mean_gt_%s" % mH_, "@0+@1", ROOT.RooArgList(mean, mean_gt_offset))
+            
+            sigma_gt = ROOT.RooRealVar("sigma_gt_%s" % mH_, '', 8.30603e-01, 0, 2)
+            #sigma_gt = ROOT.RooRealVar("sigma_gt_%s" % mH_, '', 0.958) # fixed  
+            
+            cb_1 = ROOT.RooRealVar("cb_1_%s" % mH_, '', 0.5, 0, 1)
+            #cb_1 = ROOT.RooRealVar("cb_1_%s" % mH_, '', 0.5634)
+            cb_2 = ROOT.RooRealVar("cb_2_%s" % mH_, '', 0.4, 0, 1)
+            #cb_2 = ROOT.RooRealVar("cb_2_%s" % mH_, '', 0.3403)               
+
+        if cat == 3 and flavor == 'mumu' and mode == 'IDEA_noBES':
+            yMax = 400
+            yMax_norm = 0.12
+            mean = ROOT.RooRealVar("mean_%s" % mH_, '', 1.25090e+02, mH-1., mH+1.)
+            sigma = ROOT.RooRealVar("sigma_%s" % mH_, '', 4.08196e-01, 0, 1)
+            #sigma = ROOT.RooRealVar("sigma_%s" % mH_, '', 0.5) # fixed
+            alpha_1 = ROOT.RooRealVar("alpha_1_%s" % mH_, '', -2.00592e-01, -10, 0)
+            #alpha_1 = ROOT.RooRealVar("alpha_1_%s" % mH_, '', -0.3368)
+            alpha_2 = ROOT.RooRealVar("alpha_2_%s" % mH_, '', 4.05919e+00, 0, 10)
+            #alpha_2 = ROOT.RooRealVar("alpha_2_%s" % mH_, '', 3.8)
+            #n_1 = ROOT.RooRealVar("n_1_%s" % mH_, '', 2.48214e+00, -10, 10)
+            n_1 = ROOT.RooRealVar("n_1_%s" % mH_, '', 1.6)
+            #n_2 = ROOT.RooRealVar("n_2_%s" % mH_, '', 0.04, -10, 10)
+            n_2 = ROOT.RooRealVar("n_2_%s" % mH_, '', 10)
+
+            #mean_gt = ROOT.RooRealVar("mean_gt_%s" % mH_, '', 1.25338e+02, recoilMin, recoilMax)
+            #mean_gt_offset = ROOT.RooRealVar("mean_gt_offset_%s" % mH_, '', 0.3, 0, 1)
+            mean_gt_offset = ROOT.RooRealVar("mean_gt_offset_%s" % mH_, '', 0.242)
+            mean_gt = ROOT.RooFormulaVar("mean_gt_%s" % mH_, "@0+@1", ROOT.RooArgList(mean, mean_gt_offset))
+            
+            sigma_gt = ROOT.RooRealVar("sigma_gt_%s" % mH_, '', 8.30603e-01, 0, 2)
+            #sigma_gt = ROOT.RooRealVar("sigma_gt_%s" % mH_, '', 0.958) # fixed  
+            
+            cb_1 = ROOT.RooRealVar("cb_1_%s" % mH_, '', 0.5, 0, 1)
+            #cb_1 = ROOT.RooRealVar("cb_1_%s" % mH_, '', 0.5634)
+            cb_2 = ROOT.RooRealVar("cb_2_%s" % mH_, '', 0.4, 0, 1)
+            #cb_2 = ROOT.RooRealVar("cb_2_%s" % mH_, '', 0.3403)               
 
 
-        if cat == 3 and flavor == 'ee':
-            yMax = 200
+        if cat == 3 and flavor == 'ee' and (mode == 'IDEA' or mode == "IDEA_BES6pct"):
+            yMax = 400
             yMax_norm = 0.1
             mean = ROOT.RooRealVar("mean_%s" % mH_, '', 1.25090e+02, mH-1., mH+1.)
             #sigma = ROOT.RooRealVar("sigma_%s" % mH_, '', 4.08196e-01, 0, 1)
@@ -380,11 +1242,153 @@ def doSignal(normYields = True):
             #sigma_gt = ROOT.RooRealVar("sigma_gt_%s" % mH_, '', 8.30603e-01, 0, 2)
             sigma_gt = ROOT.RooRealVar("sigma_gt_%s" % mH_, '', 0.871) # fixed  
             
-            cb_1 = ROOT.RooRealVar("cb_1_%s" % mH_, '', 4.94921e-01 , 0, 1)
-            #cb_1 = ROOT.RooRealVar("cb_1_%s" % mH_, '', 0.599)
+            #cb_1 = ROOT.RooRealVar("cb_1_%s" % mH_, '', 4.94921e-01 , 0, 1)
+            cb_1 = ROOT.RooRealVar("cb_1_%s" % mH_, '', 0.6121)
             #cb_2 = ROOT.RooRealVar("cb_2_%s" % mH_, '', 3.86757e-01 , 0, 1)
             cb_2 = ROOT.RooRealVar("cb_2_%s" % mH_, '', 0.3188)
 
+        if cat == 3 and flavor == 'ee' and mode == 'IDEA_3T':
+            yMax = 400
+            yMax_norm = 0.1
+            mean = ROOT.RooRealVar("mean_%s" % mH_, '', 1.25090e+02, mH-1., mH+1.)
+            sigma = ROOT.RooRealVar("sigma_%s" % mH_, '', 4.08196e-01, 0, 1)
+            #sigma = ROOT.RooRealVar("sigma_%s" % mH_, '', 0.5170) # fixed
+            alpha_1 = ROOT.RooRealVar("alpha_1_%s" % mH_, '', -2.00592e-01, -10, 0)
+            #alpha_1 = ROOT.RooRealVar("alpha_1_%s" % mH_, '', -0.2328)
+            alpha_2 = ROOT.RooRealVar("alpha_2_%s" % mH_, '', 4.05919e+00, 0, 10)
+            #alpha_2 = ROOT.RooRealVar("alpha_2_%s" % mH_, '', 4.090)
+            n_1 = ROOT.RooRealVar("n_1_%s" % mH_, '', 3.62, -10, 10)
+            #n_1 = ROOT.RooRealVar("n_1_%s" % mH_, '', 2.130)
+            #n_2 = ROOT.RooRealVar("n_2_%s" % mH_, '', 1.25675e-02, -10, 10)
+            n_2 = ROOT.RooRealVar("n_2_%s" % mH_, '', 0.01)
+
+            #mean_gt = ROOT.RooRealVar("mean_gt_%s" % mH_, '', 1.25338e+02, recoilMin, recoilMax)
+            mean_gt_offset = ROOT.RooRealVar("mean_gt_offset_%s" % mH_, '', 0.343)
+            mean_gt = ROOT.RooFormulaVar("mean_gt_%s" % mH_, "@0+@1", ROOT.RooArgList(mean, mean_gt_offset))
+            
+            sigma_gt = ROOT.RooRealVar("sigma_gt_%s" % mH_, '', 8.30603e-01, 0, 2)
+            #sigma_gt = ROOT.RooRealVar("sigma_gt_%s" % mH_, '', 0.871) # fixed  
+            
+            cb_1 = ROOT.RooRealVar("cb_1_%s" % mH_, '', 4.94921e-01 , 0, 1)
+            #cb_1 = ROOT.RooRealVar("cb_1_%s" % mH_, '', 0.6121)
+            cb_2 = ROOT.RooRealVar("cb_2_%s" % mH_, '', 3.86757e-01 , 0, 1)
+            #cb_2 = ROOT.RooRealVar("cb_2_%s" % mH_, '', 0.3188)
+
+        if cat == 3 and flavor == 'ee' and mode == 'CLD':
+            yMax = 400
+            yMax_norm = 0.1
+            mean = ROOT.RooRealVar("mean_%s" % mH_, '', 1.25090e+02, mH-1., mH+1.)
+            sigma = ROOT.RooRealVar("sigma_%s" % mH_, '', 4.08196e-01, 0, 1)
+            #sigma = ROOT.RooRealVar("sigma_%s" % mH_, '', 0.5170) # fixed
+            alpha_1 = ROOT.RooRealVar("alpha_1_%s" % mH_, '', -2.00592e-01, -10, 0)
+            #alpha_1 = ROOT.RooRealVar("alpha_1_%s" % mH_, '', -0.2328)
+            alpha_2 = ROOT.RooRealVar("alpha_2_%s" % mH_, '', 4.05919e+00, 0, 10)
+            #alpha_2 = ROOT.RooRealVar("alpha_2_%s" % mH_, '', 4.090)
+            n_1 = ROOT.RooRealVar("n_1_%s" % mH_, '', 3.62, -10, 10)
+            #n_1 = ROOT.RooRealVar("n_1_%s" % mH_, '', 2.130)
+            #n_2 = ROOT.RooRealVar("n_2_%s" % mH_, '', 1.25675e-02, -10, 10)
+            n_2 = ROOT.RooRealVar("n_2_%s" % mH_, '', 0.025)
+
+            #mean_gt = ROOT.RooRealVar("mean_gt_%s" % mH_, '', 1.25338e+02, recoilMin, recoilMax)
+            mean_gt_offset = ROOT.RooRealVar("mean_gt_offset_%s" % mH_, '', 0.343)
+            mean_gt = ROOT.RooFormulaVar("mean_gt_%s" % mH_, "@0+@1", ROOT.RooArgList(mean, mean_gt_offset))
+            
+            sigma_gt = ROOT.RooRealVar("sigma_gt_%s" % mH_, '', 8.30603e-01, 0, 2)
+            #sigma_gt = ROOT.RooRealVar("sigma_gt_%s" % mH_, '', 0.871) # fixed  
+            
+            cb_1 = ROOT.RooRealVar("cb_1_%s" % mH_, '', 4.94921e-01 , 0, 1)
+            #cb_1 = ROOT.RooRealVar("cb_1_%s" % mH_, '', 0.6121)
+            cb_2 = ROOT.RooRealVar("cb_2_%s" % mH_, '', 3.86757e-01 , 0, 1)
+            #cb_2 = ROOT.RooRealVar("cb_2_%s" % mH_, '', 0.3188)
+
+
+        if cat == 3 and flavor == 'ee' and mode == 'IDEA_MC':
+            yMax = 400
+            yMax_norm = 0.1
+            mean = ROOT.RooRealVar("mean_%s" % mH_, '', 1.25090e+02, mH-1., mH+1.)
+            sigma = ROOT.RooRealVar("sigma_%s" % mH_, '', 4.08196e-01, 0, 1)
+            #sigma = ROOT.RooRealVar("sigma_%s" % mH_, '', 0.5170) # fixed
+            alpha_1 = ROOT.RooRealVar("alpha_1_%s" % mH_, '', -2.00592e-01, -10, 0)
+            #alpha_1 = ROOT.RooRealVar("alpha_1_%s" % mH_, '', -0.2328)
+            alpha_2 = ROOT.RooRealVar("alpha_2_%s" % mH_, '', 4.05919e+00, 0, 10)
+            #alpha_2 = ROOT.RooRealVar("alpha_2_%s" % mH_, '', 4.090)
+            #n_1 = ROOT.RooRealVar("n_1_%s" % mH_, '', 3.62, -10, 10)
+            n_1 = ROOT.RooRealVar("n_1_%s" % mH_, '', 2.05)
+            #n_2 = ROOT.RooRealVar("n_2_%s" % mH_, '', 1.25675e-02, -10, 10)
+            n_2 = ROOT.RooRealVar("n_2_%s" % mH_, '', 0.25)
+
+            #mean_gt = ROOT.RooRealVar("mean_gt_%s" % mH_, '', 1.25338e+02, recoilMin, recoilMax)
+            #mean_gt_offset = ROOT.RooRealVar("mean_gt_offset_%s" % mH_, '', 0.343, 0, 1)
+            mean_gt_offset = ROOT.RooRealVar("mean_gt_offset_%s" % mH_, '', 0.598)
+            mean_gt = ROOT.RooFormulaVar("mean_gt_%s" % mH_, "@0+@1", ROOT.RooArgList(mean, mean_gt_offset))
+            
+            sigma_gt = ROOT.RooRealVar("sigma_gt_%s" % mH_, '', 8.30603e-01, 0, 2)
+            #sigma_gt = ROOT.RooRealVar("sigma_gt_%s" % mH_, '', 0.871) # fixed  
+            
+            cb_1 = ROOT.RooRealVar("cb_1_%s" % mH_, '', 4.94921e-01 , 0, 1)
+            #cb_1 = ROOT.RooRealVar("cb_1_%s" % mH_, '', 0.6121)
+            cb_2 = ROOT.RooRealVar("cb_2_%s" % mH_, '', 3.86757e-01 , 0, 1)
+            #cb_2 = ROOT.RooRealVar("cb_2_%s" % mH_, '', 0.3188)
+
+
+
+        if cat == 3 and flavor == 'ee' and mode == 'IDEA_2E':
+            yMax = 400
+            yMax_norm = 0.1
+            mean = ROOT.RooRealVar("mean_%s" % mH_, '', 1.25090e+02, mH-1., mH+1.)
+            sigma = ROOT.RooRealVar("sigma_%s" % mH_, '', 4.08196e-01, 0, 1)
+            #sigma = ROOT.RooRealVar("sigma_%s" % mH_, '', 0.5170) # fixed
+            alpha_1 = ROOT.RooRealVar("alpha_1_%s" % mH_, '', -2.00592e-01, -10, 0)
+            #alpha_1 = ROOT.RooRealVar("alpha_1_%s" % mH_, '', -0.2328)
+            alpha_2 = ROOT.RooRealVar("alpha_2_%s" % mH_, '', 4.05919e+00, 0, 10)
+            #alpha_2 = ROOT.RooRealVar("alpha_2_%s" % mH_, '', 4.090)
+            n_1 = ROOT.RooRealVar("n_1_%s" % mH_, '', 3.62, -10, 10)
+            #n_1 = ROOT.RooRealVar("n_1_%s" % mH_, '', 2.14)
+            #n_2 = ROOT.RooRealVar("n_2_%s" % mH_, '', 1.25675e-02, -10, 10)
+            n_2 = ROOT.RooRealVar("n_2_%s" % mH_, '', 0.01)
+
+            #mean_gt = ROOT.RooRealVar("mean_gt_%s" % mH_, '', 1.25338e+02, recoilMin, recoilMax)
+            #mean_gt_offset = ROOT.RooRealVar("mean_gt_offset_%s" % mH_, '', 0.343, 0, 1)
+            mean_gt_offset = ROOT.RooRealVar("mean_gt_offset_%s" % mH_, '', 0.72)
+            mean_gt = ROOT.RooFormulaVar("mean_gt_%s" % mH_, "@0+@1", ROOT.RooArgList(mean, mean_gt_offset))
+            
+            sigma_gt = ROOT.RooRealVar("sigma_gt_%s" % mH_, '', 8.30603e-01, 0, 2)
+            #sigma_gt = ROOT.RooRealVar("sigma_gt_%s" % mH_, '', 0.983) # fixed  
+            
+            cb_1 = ROOT.RooRealVar("cb_1_%s" % mH_, '', 4.94921e-01 , 0, 1)
+            #cb_1 = ROOT.RooRealVar("cb_1_%s" % mH_, '', 0.6121)
+            cb_2 = ROOT.RooRealVar("cb_2_%s" % mH_, '', 3.86757e-01 , 0, 1)
+            #cb_2 = ROOT.RooRealVar("cb_2_%s" % mH_, '', 0.3188)
+
+
+        if cat == 3 and flavor == 'ee' and mode == 'IDEA_noBES':
+            yMax = 400
+            yMax_norm = 0.1
+            mean = ROOT.RooRealVar("mean_%s" % mH_, '', 1.25090e+02, mH-1., mH+1.)
+            sigma = ROOT.RooRealVar("sigma_%s" % mH_, '', 4.08196e-01, 0, 1)
+            #sigma = ROOT.RooRealVar("sigma_%s" % mH_, '', 0.5170) # fixed
+            alpha_1 = ROOT.RooRealVar("alpha_1_%s" % mH_, '', -2.00592e-01, -10, 0)
+            #alpha_1 = ROOT.RooRealVar("alpha_1_%s" % mH_, '', -0.2328)
+            alpha_2 = ROOT.RooRealVar("alpha_2_%s" % mH_, '', 4.05919e+00, 0, 10)
+            #alpha_2 = ROOT.RooRealVar("alpha_2_%s" % mH_, '', 4.090)
+            n_1 = ROOT.RooRealVar("n_1_%s" % mH_, '', 3.62, -10, 10)
+            #n_1 = ROOT.RooRealVar("n_1_%s" % mH_, '', 2.14)
+            #n_2 = ROOT.RooRealVar("n_2_%s" % mH_, '', 1.25675e-02, -10, 10)
+            n_2 = ROOT.RooRealVar("n_2_%s" % mH_, '', 0.49)
+
+            #mean_gt = ROOT.RooRealVar("mean_gt_%s" % mH_, '', 1.25338e+02, recoilMin, recoilMax)
+            mean_gt_offset = ROOT.RooRealVar("mean_gt_offset_%s" % mH_, '', 0.343, 0, 1)
+            #mean_gt_offset = ROOT.RooRealVar("mean_gt_offset_%s" % mH_, '', 0.037)
+            mean_gt = ROOT.RooFormulaVar("mean_gt_%s" % mH_, "@0+@1", ROOT.RooArgList(mean, mean_gt_offset))
+            
+            sigma_gt = ROOT.RooRealVar("sigma_gt_%s" % mH_, '', 8.30603e-01, 0, 2)
+            #sigma_gt = ROOT.RooRealVar("sigma_gt_%s" % mH_, '', 0.983) # fixed  
+            
+            cb_1 = ROOT.RooRealVar("cb_1_%s" % mH_, '', 4.94921e-01 , 0, 1)
+            #cb_1 = ROOT.RooRealVar("cb_1_%s" % mH_, '', 0.6121)
+            cb_2 = ROOT.RooRealVar("cb_2_%s" % mH_, '', 3.86757e-01 , 0, 1)
+            #cb_2 = ROOT.RooRealVar("cb_2_%s" % mH_, '', 0.3188)
+        
         
         # construct the 2CBG and perform the fit: pdf = cb_1*cbs_1 + cb_2*cbs_2 + gauss (cb_1 and cb_2 are the fractions, floating)
         cbs_1 = ROOT.RooCBShape("CrystallBall_1_%s" % mH_, "CrystallBall_1", recoilmass, mean, sigma, alpha_1, n_1) # first CrystallBall
@@ -409,22 +1413,21 @@ def doSignal(normYields = True):
         plotter.cfg = cfg
         
         canvas, padT, padB = plotter.canvasRatio()
-        dummyT, dummyB = plotter.dummyRatio()
+        dummyT, dummyB, dummyL = plotter.dummyRatio(rline=0)
         
         ## TOP PAD ##
         canvas.cd()
         padT.Draw()
         padT.cd()
+        padT.SetGrid()
         dummyT.Draw("HIST")
         
         plt = recoilmass.frame()
         plt.SetTitle("ZH signal")
-        rdh_zh.plotOn(plt, ROOT.RooFit.Binning(200)) # , ROOT.RooFit.Normalization(yield_zh, ROOT.RooAbsReal.NumEvent)
-        
+        rdh_zh.plotOn(plt, ROOT.RooFit.Binning(300)) # , ROOT.RooFit.Normalization(yield_zh, ROOT.RooAbsReal.NumEvent)
         sig_fit.plotOn(plt, ROOT.RooFit.LineColor(ROOT.kRed))
         chisq = plt.chiSquare()
         sig_fit.paramOn(plt, ROOT.RooFit.Format("NELU", ROOT.RooFit.AutoPrecision(2)), ROOT.RooFit.Layout(0.45, 0.9, 0.9))
-        
         histpull = plt.pullHist()
         plt.Draw("SAME")
         
@@ -436,30 +1439,27 @@ def doSignal(normYields = True):
         latex.SetTextAlign(13)
         latex.DrawLatex(0.2, 0.88, label)
         latex.DrawLatex(0.2, 0.82, "#chi^{2} = %.3f" % chisq)
-        
-        
+ 
         plotter.auxRatio()
+        ROOT.gPad.SetTickx()
+        ROOT.gPad.SetTicky()
+        ROOT.gPad.RedrawAxis()  
         
         ## BOTTOM PAD ##
         canvas.cd()
         padB.Draw()
+        padB.SetFillStyle(0)
         padB.cd()
         dummyB.Draw("HIST")
-        
+        dummyL.Draw("SAME")
 
         plt = recoilmass.frame()
         plt.addPlotable(histpull, "P")
         plt.Draw("SAME")
-        
-        line = ROOT.TLine(120, 0, 140, 0)
-        line.SetLineColor(ROOT.kBlue+2)
-        line.SetLineWidth(2)
-        line.Draw("SAME")
-        
       
-        canvas.Modify()
-        canvas.Update()
-        canvas.Draw()
+        ROOT.gPad.SetTickx()
+        ROOT.gPad.SetTicky()
+        ROOT.gPad.RedrawAxis()
         canvas.SaveAs("%s/fit_mH%s.png" % (outDir, mH_))
         canvas.SaveAs("%s/fit_mH%s.pdf" % (outDir, mH_))
         
@@ -548,6 +1548,7 @@ def doSignal(normYields = True):
         param_mean.append(mean.getVal())
         param_sigma.append(sigma.getVal())
         param_mean_gt.append(mean_gt.getVal())
+        param_mean_gt_offset.append(mean_gt_offset.getVal())
         param_sigma_gt.append(sigma_gt.getVal())
         param_alpha_1.append(alpha_1.getVal())
         param_alpha_2.append(alpha_2.getVal())
@@ -560,6 +1561,7 @@ def doSignal(normYields = True):
         param_mean_err.append(mean.getError())
         param_sigma_err.append(sigma.getError())
         param_mean_gt_err.append(mean.getError())
+        param_mean_gt_offset_err.append(mean_gt_offset.getError())
         param_sigma_gt_err.append(sigma.getError())
         param_alpha_1_err.append(alpha_1.getError())
         param_alpha_2_err.append(alpha_2.getError())
@@ -619,6 +1621,7 @@ def doSignal(normYields = True):
     spline_mean = ROOT.RooSpline1D("spline_mean", "spline_mean", MH, len(param_mh), array.array('d', param_mh), array.array('d', param_mean))
     spline_sigma = ROOT.RooSpline1D("spline_sigma", "spline_sigma", MH, len(param_mh), array.array('d', param_mh), array.array('d', param_sigma))
     spline_mean_gt = ROOT.RooSpline1D("spline_mean_gt", "spline_mean_gt", MH, len(param_mh), array.array('d', param_mh), array.array('d', param_mean_gt))
+    spline_mean_gt_offset = ROOT.RooSpline1D("spline_mean_gt_offset", "spline_mean_gt_offset", MH, len(param_mh), array.array('d', param_mh), array.array('d', param_mean_gt_offset))
     #spline_mean_gt = ROOT.RooFormulaVar("spline_mean_gt", "0.9728*@0 + 3.8228", ROOT.RooArgList(MH))
     spline_sigma_gt = ROOT.RooSpline1D("spline_sigma_gt", "spline_sigma_gt", MH, len(param_mh), array.array('d', param_mh), array.array('d', param_sigma_gt))
     spline_yield = ROOT.RooSpline1D("spline_yield", "spline_yield", MH, len(param_mh), array.array('d', param_mh), array.array('d', param_yield))
@@ -648,7 +1651,7 @@ def doSignal(normYields = True):
         'xtitle'            : "m_{h} (GeV)",
         'ytitle'            : "#mu (GeV)",
         
-        'topRight'          : "ZH, #sqrt{s} = 240 GeV, 5 ab^{#minus1}", 
+        'topRight'          : "ZH, #sqrt{s} = 240 GeV, 10 ab^{#minus1}", 
         'topLeft'           : "#bf{FCC-ee} #scale[0.7]{#it{Internal}}",
     }
 
@@ -674,9 +1677,9 @@ def doSignal(normYields = True):
     canvas.SaveAs("%s/fit_mean.pdf" % (outDir))   
     
     ##################################
-    # mean_gt
+    # mean_gt_offset
     ##################################
-    graph_mean_gt = ROOT.TGraphErrors(len(param_mh), array.array('d', param_mh), array.array('d', param_mean_gt), array.array('d', [0]*len(param_mean_gt_err)), array.array('d', param_mean_gt_err))
+    graph_mean_gt = ROOT.TGraphErrors(len(param_mh), array.array('d', param_mh), array.array('d', param_mean_gt_offset), array.array('d', [0]*len(param_mean_gt_offset_err)), array.array('d', param_mean_gt_offset_err))
     
     cfg = {
 
@@ -685,13 +1688,13 @@ def doSignal(normYields = True):
     
         'xmin'              : 124.8,
         'xmax'              : 125.2,
-        'ymin'              : 0.999*min(param_mean_gt),
-        'ymax'              : 1.001*max(param_mean_gt),
+        'ymin'              : 0.999*min(param_mean_gt_offset),
+        'ymax'              : 1.001*max(param_mean_gt_offset),
         
         'xtitle'            : "m_{h} (GeV)",
-        'ytitle'            : "#mu_{gt} (GeV)",
+        'ytitle'            : "#mu_{gt} offset (GeV)",
         
-        'topRight'          : "ZH, #sqrt{s} = 240 GeV, 5 ab^{#minus1}", 
+        'topRight'          : "ZH, #sqrt{s} = 240 GeV, 10 ab^{#minus1}", 
         'topLeft'           : "#bf{FCC-ee} #scale[0.7]{#it{Internal}}",
     }
 
@@ -701,7 +1704,7 @@ def doSignal(normYields = True):
     dummy.Draw("HIST")
 
     plt = MH.frame()
-    spline_mean_gt.plotOn(plt)    
+    spline_mean_gt_offset.plotOn(plt)    
     graph_mean_gt.SetMarkerStyle(8)
     graph_mean_gt.SetMarkerColor(ROOT.kBlack)
     graph_mean_gt.SetMarkerSize(1.5)
@@ -713,8 +1716,8 @@ def doSignal(normYields = True):
     canvas.Modify()
     canvas.Update()
     canvas.Draw()
-    canvas.SaveAs("%s/fit_mean_gt.png" % (outDir)) 
-    canvas.SaveAs("%s/fit_mean_gt.pdf" % (outDir)) 
+    canvas.SaveAs("%s/fit_mean_gt_offset.png" % (outDir)) 
+    canvas.SaveAs("%s/fit_mean_gt_offset.pdf" % (outDir)) 
     
     
     ##################################
@@ -735,7 +1738,7 @@ def doSignal(normYields = True):
         'xtitle'            : "m_{h} (GeV)",
         'ytitle'            : "Events",
         
-        'topRight'          : "ZH, #sqrt{s} = 240 GeV, 5 ab^{#minus1}", 
+        'topRight'          : "ZH, #sqrt{s} = 240 GeV, 10 ab^{#minus1}", 
         'topLeft'           : "#bf{FCC-ee} #scale[0.7]{#it{Internal}}",
     }
 
@@ -779,7 +1782,7 @@ def doSignal(normYields = True):
         'xtitle'            : "m_{h} (GeV)",
         'ytitle'            : "#sigma (GeV)",
         
-        'topRight'          : "ZH, #sqrt{s} = 240 GeV, 5 ab^{#minus1}", 
+        'topRight'          : "ZH, #sqrt{s} = 240 GeV, 10 ab^{#minus1}", 
         'topLeft'           : "#bf{FCC-ee} #scale[0.7]{#it{Internal}}",
     }
 
@@ -822,7 +1825,7 @@ def doSignal(normYields = True):
         'xtitle'            : "m_{h} (GeV)",
         'ytitle'            : "#sigma_{gt} (GeV)",
         
-        'topRight'          : "ZH, #sqrt{s} = 240 GeV, 5 ab^{#minus1}", 
+        'topRight'          : "ZH, #sqrt{s} = 240 GeV, 10 ab^{#minus1}", 
         'topLeft'           : "#bf{FCC-ee} #scale[0.7]{#it{Internal}}",
     }
 
@@ -865,7 +1868,7 @@ def doSignal(normYields = True):
         'xtitle'            : "m_{h} (GeV)",
         'ytitle'            : "#alpha_{1}",
         
-        'topRight'          : "ZH, #sqrt{s} = 240 GeV, 5 ab^{#minus1}", 
+        'topRight'          : "ZH, #sqrt{s} = 240 GeV, 10 ab^{#minus1}", 
         'topLeft'           : "#bf{FCC-ee} #scale[0.7]{#it{Internal}}",
     }
 
@@ -908,7 +1911,7 @@ def doSignal(normYields = True):
         'xtitle'            : "m_{h} (GeV)",
         'ytitle'            : "#alpha_{2}",
         
-        'topRight'          : "ZH, #sqrt{s} = 240 GeV, 5 ab^{#minus1}", 
+        'topRight'          : "ZH, #sqrt{s} = 240 GeV, 10 ab^{#minus1}", 
         'topLeft'           : "#bf{FCC-ee} #scale[0.7]{#it{Internal}}",
     }
 
@@ -952,7 +1955,7 @@ def doSignal(normYields = True):
         'xtitle'            : "m_{h} (GeV)",
         'ytitle'            : "n_{1}",
         
-        'topRight'          : "ZH, #sqrt{s} = 240 GeV, 5 ab^{#minus1}", 
+        'topRight'          : "ZH, #sqrt{s} = 240 GeV, 10 ab^{#minus1}", 
         'topLeft'           : "#bf{FCC-ee} #scale[0.7]{#it{Internal}}",
     }
 
@@ -995,7 +1998,7 @@ def doSignal(normYields = True):
         'xtitle'            : "m_{h} (GeV)",
         'ytitle'            : "n_{2}",
         
-        'topRight'          : "ZH, #sqrt{s} = 240 GeV, 5 ab^{#minus1}", 
+        'topRight'          : "ZH, #sqrt{s} = 240 GeV, 10 ab^{#minus1}", 
         'topLeft'           : "#bf{FCC-ee} #scale[0.7]{#it{Internal}}",
     }
 
@@ -1038,7 +2041,7 @@ def doSignal(normYields = True):
         'xtitle'            : "m_{h} (GeV)",
         'ytitle'            : "cb_{1}",
         
-        'topRight'          : "ZH, #sqrt{s} = 240 GeV, 5 ab^{#minus1}", 
+        'topRight'          : "ZH, #sqrt{s} = 240 GeV, 10 ab^{#minus1}", 
         'topLeft'           : "#bf{FCC-ee} #scale[0.7]{#it{Internal}}",
     }
 
@@ -1081,7 +2084,7 @@ def doSignal(normYields = True):
         'xtitle'            : "m_{h} (GeV)",
         'ytitle'            : "cb_{2}",
         
-        'topRight'          : "ZH, #sqrt{s} = 240 GeV, 5 ab^{#minus1}", 
+        'topRight'          : "ZH, #sqrt{s} = 240 GeV, 10 ab^{#minus1}", 
         'topLeft'           : "#bf{FCC-ee} #scale[0.7]{#it{Internal}}",
     }
 
@@ -1161,9 +2164,9 @@ def doBackgrounds():
 
     # construct background as 4th order Bernstein polynomial
     b0 = ROOT.RooRealVar("bern0", "bern_coeff", 1, -2, 2)
-    b1 = ROOT.RooRealVar("bern1", "bern_coeff", 0.001, -10, 10)
-    b2 = ROOT.RooRealVar("bern2", "bern_coeff", 0.001, -10, 10)
-    b3 = ROOT.RooRealVar("bern3", "bern_coeff", 0.001, -10, 10)
+    b1 = ROOT.RooRealVar("bern1", "bern_coeff", 1, -10, 10)
+    b2 = ROOT.RooRealVar("bern2", "bern_coeff", 1, -10, 10)
+    b3 = ROOT.RooRealVar("bern3", "bern_coeff", 1, -10, 10)
     bkg = ROOT.RooBernsteinFast(3)("bkg", "bkg", recoilmass, ROOT.RooArgList(b0, b1, b2))
 
     bkg_norm = ROOT.RooRealVar('bkg_norm', 'bkg_norm', yield_bkg_, 0, 1e6)
@@ -1182,13 +2185,13 @@ def doBackgrounds():
         'ymin'              : 0,
         'ymax'              : 500 if flavor=="mumu" else 800,
         
-        'xtitle'            : "Recoil mass (GeV)",
-        'ytitle'            : "Events / 0.1 GeV",
+        'xtitle'            : "m_{rec} (GeV)",
+        'ytitle'            : "Events",
         
-        'topRight'          : "BKGS, #sqrt{s} = 240 GeV, 5 ab^{#minus1}", 
+        'topRight'          : "BKGS, #sqrt{s} = 240 GeV, 10 ab^{#minus1}", 
         'topLeft'           : "#bf{FCC-ee} #scale[0.7]{#it{Internal}}",
         
-        'ratiofraction'     : 0.25,
+        'ratiofraction'     : 0.3,
         'ytitleR'           : "Pull",
         'yminR'             : -3.5,
         'ymaxR'             : 3.5,
@@ -1197,16 +2200,17 @@ def doBackgrounds():
     plotter.cfg = cfg
     
     canvas, padT, padB = plotter.canvasRatio()
-    dummyT, dummyB = plotter.dummyRatio()
+    dummyT, dummyB, dummyL = plotter.dummyRatio(rline=0)
     
     ## TOP PAD ##
     canvas.cd()
     padT.Draw()
     padT.cd()
+    padT.SetGrid()
     dummyT.Draw("HIST")
-    
+
     plt = recoilmass.frame()
-    rdh_bkg.plotOn(plt, ROOT.RooFit.Binning(200))
+    rdh_bkg.plotOn(plt, ROOT.RooFit.Binning(300))
     
     bkg_fit.plotOn(plt, ROOT.RooFit.LineColor(ROOT.kRed))
     bkg_fit.paramOn(plt, ROOT.RooFit.Format("NELU", ROOT.RooFit.AutoPrecision(2)), ROOT.RooFit.Layout(0.5, 0.9, 0.9))
@@ -1229,27 +2233,25 @@ def doBackgrounds():
     
     
     plotter.auxRatio()
-    
+    ROOT.gPad.SetTickx()
+    ROOT.gPad.SetTicky()
+    ROOT.gPad.RedrawAxis()  
+        
     ## BOTTOM PAD ##
     canvas.cd()
     padB.Draw()
+    padB.SetFillStyle(0)
     padB.cd()
     dummyB.Draw("HIST")
-    
+    dummyL.Draw("SAME")
 
     plt = recoilmass.frame()
     plt.addPlotable(histpull, "P")
     plt.Draw("SAME")
     
-    line = ROOT.TLine(120, 0, 140, 0)
-    line.SetLineColor(ROOT.kBlue+2)
-    line.SetLineWidth(2)
-    line.Draw("SAME")
-    
-  
-    canvas.Modify()
-    canvas.Update()
-    canvas.Draw()
+    ROOT.gPad.SetTickx()
+    ROOT.gPad.SetTicky()
+    ROOT.gPad.RedrawAxis()
     canvas.SaveAs("%s/fit_bkg.png" % (outDir))  
     canvas.SaveAs("%s/fit_bkg.pdf" % (outDir))  
     
@@ -1269,6 +2271,9 @@ def doBackgrounds():
 def doBES():
 
     pct = 1
+    if mode == "IDEA_BES6pct":
+        pct = 6
+    
 
     scale_BES = ROOT.RooRealVar("scale_BES", "BES scale parameter", 0, -1, 1)
 
@@ -1293,15 +2298,15 @@ def doBES():
         'xmin'              : 120,
         'xmax'              : 140,
         'ymin'              : 0,
-        'ymax'              : 1500,
+        'ymax'              : 2000,
         
-        'xtitle'            : "Recoil mass (GeV)",
-        'ytitle'            : "Events / 0.2 GeV",
+        'xtitle'            : "m_{rec} (GeV)",
+        'ytitle'            : "Events",
         
-        'topRight'          : "ZH, #sqrt{s} = 240 GeV, 5 ab^{#minus1}", 
+        'topRight'          : "ZH, #sqrt{s} = 240 GeV, 10 ab^{#minus1}", 
         'topLeft'           : "#bf{FCC-ee} #scale[0.7]{#it{Internal}}",
         
-        'ratiofraction'     : 0.25,
+        'ratiofraction'     : 0.3,
         'ytitleR'           : "Pull",
         'yminR'             : -3.5,
         'ymaxR'             : 3.5,
@@ -1319,18 +2324,39 @@ def doBES():
     spline_mean_gt = w_tmp.obj("spline_mean_gt")
     spline_sigma_gt = w_tmp.obj("spline_sigma_gt")
 
-
     mean__ = []
     sigma__ = []
     norm__ = []
         
     for s in ["Up", "Down"]:
 
-        if s == "Up": proc = "wzp6_ee_%sH_BES-higher-%dpc_ecm240" % (flavor, pct)
-        if s == "Down": proc = "wzp6_ee_%sH_BES-lower-%dpc_ecm240" % (flavor, pct)
+        if s == "Up": proc = "p_wzp6_ee_%sH_BES-higher-%dpc_ecm240" % (flavor, pct)
+        if s == "Down": proc = "p_wzp6_ee_%sH_BES-lower-%dpc_ecm240" % (flavor, pct)
+
+
+        if mode == "IDEA_3T":
+            if flavor == "mumu":
+                proc += "_3T"
+            else:
+                proc = "p_wzp6_ee_eeH_ecm240_3T"
+        if mode == "CLD":
+            if flavor == "mumu":
+                proc += "_CLD"
+            else:
+                proc = "p_wzp6_ee_eeH_ecm240_CLD"
+        if mode == "IDEA_2E":
+            if flavor == "ee":
+                proc = "p_wzp6_ee_eeH_ecm240_E2"
+
+        if mode == "IDEA_noBES":
+            if flavor == "mumu":
+                proc = "p_wzp6_ee_mumuH_noBES_ecm240"
+            else:
+                proc = "p_wzp6_ee_eeH_noBES_ecm240"
+
         
         # get norm
-        hist_zh_nom = fIn.Get("%s/%s" % ("wzp6_ee_%sH_ecm240" % flavor, hName))
+        hist_zh_nom = fIn.Get("%s/%s" % ("p_wzp6_ee_%sH_ecm240" % flavor, hName))
         hist_zh_nom = hist_zh_nom.ProjectionX("nom", cat_idx_min, cat_idx_max)
         yield_nom = hist_zh_nom.Integral()
             
@@ -1342,11 +2368,11 @@ def doBES():
         rdh_zh = ROOT.RooDataHist("rdh_zh_%s_BES%s" % (mH_, s), "rdh_zh", ROOT.RooArgList(recoilmass), ROOT.RooFit.Import(hist_zh))
         yield_zh = rdh_zh.sum(False)
 
-        yMax = 1600
+        yMax = 2000
         yMax_norm = 0.15
 
-        mean = ROOT.RooRealVar("mean_%s_BES%s" % (mH_, s), '', 1.25086e+02, mH-1., mH+1.)
-        sigma = ROOT.RooRealVar("sigma_%s_BES%s" % (mH_, s), '', 0.4335, 0, 1)
+        mean = ROOT.RooRealVar("mean_%s_BES%s" % (mH_, s), '', 1.25086e+02, mH-1., mH+1.) # float
+        sigma = ROOT.RooRealVar("sigma_%s_BES%s" % (mH_, s), '', 0.4335, 0, 1) # float
         alpha_1 = ROOT.RooRealVar("alpha_1_%s_BES%s" % (mH_, s), '', spline_alpha_1.getVal())
         alpha_2 = ROOT.RooRealVar("alpha_2_%s_BES%s" % (mH_, s), '', spline_alpha_2.getVal())
         n_1 = ROOT.RooRealVar("n_1_%s_BES%s" % (mH_, s), '', spline_n_1.getVal())
@@ -1355,10 +2381,7 @@ def doBES():
         sigma_gt = ROOT.RooRealVar("sigma_gt_%s_BES%s" % (mH_, s), '', spline_sigma_gt.getVal())   
         cb_1 = ROOT.RooRealVar("cb_1_%s_BES%s" % (mH_, s), '', spline_cb_1.getVal())
         cb_2 = ROOT.RooRealVar("cb_2_%s_BES%s" % (mH_, s), '', spline_cb_2.getVal())    
-            
-        
-        
-                
+    
         cbs_1 = ROOT.RooCBShape("CrystallBall_1_%s_BES%s" % (mH_, s), "CrystallBall_1", recoilmass, mean, sigma, alpha_1, n_1)
         cbs_2 = ROOT.RooCBShape("CrystallBall_2_%s_BES%s" % (mH_, s), "CrystallBall_2", recoilmass, mean, sigma, alpha_2, n_2)
         gauss = ROOT.RooGaussian("gauss_%s_BES%s" % (mH_, s), "gauss", recoilmass, mean_gt, sigma_gt)
@@ -1378,17 +2401,19 @@ def doBES():
         plotter.cfg = cfg
             
         canvas, padT, padB = plotter.canvasRatio()
-        dummyT, dummyB = plotter.dummyRatio()
+        dummyT, dummyB, dummyL = plotter.dummyRatio(rline=0)
             
         ## TOP PAD ##
         canvas.cd()
         padT.Draw()
         padT.cd()
+        padT.SetGrid()
         dummyT.Draw("HIST")
+    
             
         plt = recoilmass.frame()
         plt.SetTitle("ZH signal")
-        rdh_zh.plotOn(plt, ROOT.RooFit.Binning(200))
+        rdh_zh.plotOn(plt, ROOT.RooFit.Binning(300))
             
         sig_fit.plotOn(plt, ROOT.RooFit.LineColor(ROOT.kRed))
         chisq = plt.chiSquare()
@@ -1407,27 +2432,27 @@ def doBES():
         latex.DrawLatex(0.2, 0.82, "#chi^{2} = %.3f" % chisq)
             
         plotter.auxRatio()
+        ROOT.gPad.SetTickx()
+        ROOT.gPad.SetTicky()
+        ROOT.gPad.RedrawAxis()  
             
         ## BOTTOM PAD ##
         canvas.cd()
         padB.Draw()
+        padB.SetFillStyle(0)
         padB.cd()
         dummyB.Draw("HIST")
+        dummyL.Draw("SAME")
             
 
         plt = recoilmass.frame()
         plt.addPlotable(histpull, "P")
         plt.Draw("SAME")
             
-        line = ROOT.TLine(120, 0, 140, 0)
-        line.SetLineColor(ROOT.kBlue+2)
-        line.SetLineWidth(2)
-        line.Draw("SAME")
-            
           
-        canvas.Modify()
-        canvas.Update()
-        canvas.Draw()
+        ROOT.gPad.SetTickx()
+        ROOT.gPad.SetTicky()
+        ROOT.gPad.RedrawAxis()
         canvas.SaveAs("%s/fit_mH%s_BES%s.png" % (outDir, mH_, s))
         canvas.SaveAs("%s/fit_mH%s_BES%s.pdf" % (outDir, mH_, s))
             
@@ -1559,7 +2584,17 @@ def doSQRTS():
 
     ## only consider variation for 125 GeV
     ## assume variations to be indentical for other mass points
-    proc = "wzp6_ee_%sH_ecm240" % flavor
+    proc = "p_wzp6_ee_%sH_ecm240" % flavor
+
+    if mode == "IDEA_3T":
+        proc += "_3T"
+    if mode == "CLD":
+        proc += "_CLD"
+    if mode == "IDEA_noBES":
+        proc = proc.replace("_ecm240", "_noBES_ecm240")
+    if mode == "IDEA_2E" and flavor == "ee":
+        proc += "_E2"
+
     mH = 125.0
     mH_ = ("%.2f" % mH).replace(".", "p")
 
@@ -1579,15 +2614,15 @@ def doSQRTS():
         'xmin'              : 120,
         'xmax'              : 140,
         'ymin'              : 0,
-        'ymax'              : 1500,
+        'ymax'              : 2000,
         
-        'xtitle'            : "Recoil mass (GeV)",
-        'ytitle'            : "Events / 0.2 GeV",
+        'xtitle'            : "m_{rec} (GeV)",
+        'ytitle'            : "Events",
         
-        'topRight'          : "ZH, #sqrt{s} = 240 GeV, 5 ab^{#minus1}", 
+        'topRight'          : "ZH, #sqrt{s} = 240 GeV, 10 ab^{#minus1}", 
         'topLeft'           : "#bf{FCC-ee} #scale[0.7]{#it{Internal}}",
         
-        'ratiofraction'     : 0.25,
+        'ratiofraction'     : 0.3,
         'ytitleR'           : "Pull",
         'yminR'             : -3.5,
         'ymaxR'             : 3.5,
@@ -1662,17 +2697,18 @@ def doSQRTS():
         plotter.cfg = cfg
             
         canvas, padT, padB = plotter.canvasRatio()
-        dummyT, dummyB = plotter.dummyRatio()
+        dummyT, dummyB, dummyL = plotter.dummyRatio(rline=0)
             
         ## TOP PAD ##
         canvas.cd()
         padT.Draw()
         padT.cd()
+        padT.SetGrid()
         dummyT.Draw("HIST")
             
         plt = recoilmass.frame()
         plt.SetTitle("ZH signal")
-        rdh_zh.plotOn(plt, ROOT.RooFit.Binning(200))
+        rdh_zh.plotOn(plt, ROOT.RooFit.Binning(300))
             
         sig_fit.plotOn(plt, ROOT.RooFit.LineColor(ROOT.kRed))
         chisq = plt.chiSquare()
@@ -1691,27 +2727,26 @@ def doSQRTS():
         latex.DrawLatex(0.2, 0.82, "#chi^{2} = %.3f" % chisq)
             
         plotter.auxRatio()
+        ROOT.gPad.SetTickx()
+        ROOT.gPad.SetTicky()
+        ROOT.gPad.RedrawAxis()  
             
         ## BOTTOM PAD ##
         canvas.cd()
         padB.Draw()
+        padB.SetFillStyle(0)
         padB.cd()
         dummyB.Draw("HIST")
+        dummyL.Draw("SAME")
             
 
         plt = recoilmass.frame()
         plt.addPlotable(histpull, "P")
         plt.Draw("SAME")
-            
-        line = ROOT.TLine(120, 0, 140, 0)
-        line.SetLineColor(ROOT.kBlue+2)
-        line.SetLineWidth(2)
-        line.Draw("SAME")
-            
-          
-        canvas.Modify()
-        canvas.Update()
-        canvas.Draw()
+
+        ROOT.gPad.SetTickx()
+        ROOT.gPad.SetTicky()
+        ROOT.gPad.RedrawAxis()
         canvas.SaveAs("%s/fit_mH%s_SQRTS%s.png" % (outDir, mH_, s))
         canvas.SaveAs("%s/fit_mH%s_SQRTS%s.pdf" % (outDir, mH_, s))
             
@@ -1812,7 +2847,18 @@ def doLEPSCALE():
 
     ## only consider variation for 125 GeV
     ## assume variations to be indentical for other mass points
-    proc = "wzp6_ee_%sH_ecm240" % flavor
+    proc = "p_wzp6_ee_%sH_ecm240" % flavor
+
+    if mode == "IDEA_3T":
+        proc += "_3T"
+    if mode == "CLD":
+        proc += "_CLD"
+    if mode == "IDEA_noBES":
+        proc = proc.replace("_ecm240", "_noBES_ecm240")
+    if mode == "IDEA_2E" and flavor == "ee":
+        proc += "_E2"
+
+
     mH = 125.0
     mH_ = ("%.2f" % mH).replace(".", "p")
 
@@ -1832,15 +2878,15 @@ def doLEPSCALE():
         'xmin'              : 120,
         'xmax'              : 140,
         'ymin'              : 0,
-        'ymax'              : 1500,
+        'ymax'              : 2000,
         
-        'xtitle'            : "Recoil mass (GeV)",
-        'ytitle'            : "Events / 0.2 GeV",
+        'xtitle'            : "m_{rec} (GeV)",
+        'ytitle'            : "Events",
         
-        'topRight'          : "ZH, #sqrt{s} = 240 GeV, 5 ab^{#minus1}", 
+        'topRight'          : "ZH, #sqrt{s} = 240 GeV, 10 ab^{#minus1}", 
         'topLeft'           : "#bf{FCC-ee} #scale[0.7]{#it{Internal}}",
         
-        'ratiofraction'     : 0.25,
+        'ratiofraction'     : 0.3,
         'ytitleR'           : "Pull",
         'yminR'             : -3.5,
         'ymaxR'             : 3.5,
@@ -1917,17 +2963,18 @@ def doLEPSCALE():
         plotter.cfg = cfg
             
         canvas, padT, padB = plotter.canvasRatio()
-        dummyT, dummyB = plotter.dummyRatio()
+        dummyT, dummyB, dummyL = plotter.dummyRatio(rline=0)
             
         ## TOP PAD ##
         canvas.cd()
         padT.Draw()
         padT.cd()
+        padT.SetGrid()
         dummyT.Draw("HIST")
             
         plt = recoilmass.frame()
         plt.SetTitle("ZH signal")
-        rdh_zh.plotOn(plt, ROOT.RooFit.Binning(200))
+        rdh_zh.plotOn(plt, ROOT.RooFit.Binning(300))
             
         sig_fit.plotOn(plt, ROOT.RooFit.LineColor(ROOT.kRed))
         chisq = plt.chiSquare()  
@@ -1946,27 +2993,26 @@ def doLEPSCALE():
         latex.DrawLatex(0.2, 0.82, "#chi^{2} = %.3f" % chisq)
             
         plotter.auxRatio()
+        ROOT.gPad.SetTickx()
+        ROOT.gPad.SetTicky()
+        ROOT.gPad.RedrawAxis()  
             
         ## BOTTOM PAD ##
         canvas.cd()
         padB.Draw()
+        padB.SetFillStyle(0)
         padB.cd()
         dummyB.Draw("HIST")
-            
+        dummyL.Draw("SAME")
 
         plt = recoilmass.frame()
         plt.addPlotable(histpull, "P")
         plt.Draw("SAME")
-            
-        line = ROOT.TLine(120, 0, 140, 0)
-        line.SetLineColor(ROOT.kBlue+2)
-        line.SetLineWidth(2)
-        line.Draw("SAME")
-            
-          
-        canvas.Modify()
-        canvas.Update()
-        canvas.Draw()
+        
+
+        ROOT.gPad.SetTickx()
+        ROOT.gPad.SetTicky()
+        ROOT.gPad.RedrawAxis()
         canvas.SaveAs("%s/fit_mH%s_LEPSCALE%s.png" % (outDir, mH_, s))
         canvas.SaveAs("%s/fit_mH%s_LEPSCALE%s.pdf" % (outDir, mH_, s))
             
@@ -2082,10 +3128,10 @@ def doISR():
         'ymin'              : 0,
         'ymax'              : 1500,
         
-        'xtitle'            : "Recoil mass (GeV)",
-        'ytitle'            : "Events / 0.2 GeV",
+        'xtitle'            : "m_{rec} (GeV)",
+        'ytitle'            : "Events",
         
-        'topRight'          : "ZH, #sqrt{s} = 240 GeV, 5 ab^{#minus1}", 
+        'topRight'          : "ZH, #sqrt{s} = 240 GeV, 10 ab^{#minus1}", 
         'topLeft'           : "#bf{FCC-ee} #scale[0.7]{#it{Internal}}",
         
         'ratiofraction'     : 0.25,
@@ -2150,7 +3196,7 @@ def doISR():
     plotter.cfg = cfg
             
     canvas, padT, padB = plotter.canvasRatio()
-    dummyT, dummyB = plotter.dummyRatio()
+    dummyT, dummyB, dummyL = plotter.dummyRatio()
             
     ## TOP PAD ##
     canvas.cd()
@@ -2286,18 +3332,22 @@ def doISR():
  
 if __name__ == "__main__":
 
+    mode = "IDEA_MC" # IDEA, IDEA_MC, IDEA_3T, CLD, IDEA_noBES, IDEA_2E, IDEA_BES6pct
     flavor = "ee"
-    cat = 3
-    label = "#mu^{#plus}#mu^{#minus}, category %d" % (cat) if flavor == "mumu" else "e^{#plus}e^{#minus}, category %d" % (cat)
-    fIn = ROOT.TFile("tmp/output_ZH_mass_%s.root" % flavor)
-    outDir = "/eos/user/j/jaeyserm/www/FCCee/ZH_mass_xsec/combine/%s_cat%d/" % (flavor, cat)
+    cat = 0
+    
+    
+    label = "#mu^{#plus}#mu^{#minus}, category %d" % (cat) if flavor == "mumu" else "e^{#plus}e^{#minus}, category %d, %s" % (cat, mode)
+    fIn = ROOT.TFile("tmp/output_ZH_mass_%s_%s.root"%(flavor, "mc" if mode == "IDEA_MC" else "reco"))
+    outDir = "/eos/user/j/jaeyserm/www/FCCee/ZH_mass/combine/%s/%s_cat%d/" % (mode, flavor, cat)
+    if not os.path.exists(outDir): os.makedirs(outDir)
     hName = "zll_recoil_m"
     
     if cat == 0: cat_idx_min, cat_idx_max = 0, 5
     else: cat_idx_min, cat_idx_max = cat, cat
     
 
-    runDir = "combine/run/%s_cat%s" % (flavor, cat)
+    runDir = "combine/run/%s/%s_cat%s" % (mode, flavor, cat)
     if not os.path.exists(runDir): os.makedirs(runDir)
 
     rebin = 1 # the recoil histograms are binned at 1 MeV
@@ -2319,6 +3369,10 @@ if __name__ == "__main__":
     doSignal()
     doBackgrounds()
     doSyst = True
+    
+    if mode not in ["IDEA", "IDEA_BES6pct", "IDEA_3T", "CLD", "IDEA_2E", "IDEA_MC", "IDEA_noBES"]:
+        doSyst = False
+    
     if doSyst:
 
         #doISR()

@@ -17,7 +17,7 @@ rate         1              1
 --------------------------------
 bkg_norm rateParam bin1 bkg 1
 BES param 0 1
-#ISR param 0 1
+ISR param 0 1
 SQRTS param 0 1
 LEPSCALE_MU param 0 1
 

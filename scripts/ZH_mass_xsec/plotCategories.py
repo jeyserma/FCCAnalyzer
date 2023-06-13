@@ -28,13 +28,13 @@ def makePlot(doNorm=False):
     h_cat3.Rebin(rebin)
 
     
-    h_cat1.SetLineColor(ROOT.kRed)
-    h_cat2.SetLineColor(ROOT.kBlue)
-    h_cat3.SetLineColor(ROOT.kGreen+1)
+    h_cat1.SetLineColor(ROOT.kBlack)
+    h_cat2.SetLineColor(ROOT.kRed)
+    h_cat3.SetLineColor(ROOT.kBlue)
 
-    h_cat1.SetLineWidth(2)
-    h_cat2.SetLineWidth(2)
-    h_cat3.SetLineWidth(2)
+    h_cat1.SetLineWidth(3)
+    h_cat2.SetLineWidth(3)
+    h_cat3.SetLineWidth(3)
 
 
     leg = ROOT.TLegend(.2, 0.75, 0.9, .90)
@@ -52,15 +52,15 @@ def makePlot(doNorm=False):
         'logy'              : False,
         'logx'              : False,
         
-        'xmin'              : 120,
-        'xmax'              : 140,
+        'xmin'              : 122,
+        'xmax'              : 132,
         'ymin'              : 0,
         'ymax'              : 1.4*max([h_cat1.GetMaximum(), h_cat2.GetMaximum(), h_cat3.GetMaximum()]),
             
         'xtitle'            : "Recoil mass (GeV)",
         'ytitle'            : "Events",
             
-        'topRight'          : "#sqrt{s} = 240 GeV, 5 ab^{#minus1}", 
+        'topRight'          : "#sqrt{s} = 240 GeV, 10 ab^{#minus1}", 
         'topLeft'           : "#bf{FCCee} #scale[0.7]{#it{Simulation}}",
     }
 
@@ -69,9 +69,9 @@ def makePlot(doNorm=False):
     dummy = plotter.dummy()
     dummy.Draw("HIST")
         
-    h_cat1.Draw("SAME HIST")
-    h_cat2.Draw("SAME HIST")
-    h_cat3.Draw("SAME HIST")
+    h_cat1.Draw("SAME C HIST")
+    h_cat2.Draw("SAME C HIST")
+    h_cat3.Draw("SAME C HIST")
     leg.Draw("SAME") 
     plotter.aux()
     canvas.SetGrid()  
@@ -117,7 +117,7 @@ def doFit(cat=1):
         'xtitle'            : "Recoil mass (GeV)",
         'ytitle'            : "Events / 1 MeV",
         
-        'topRight'          : "ZH, #sqrt{s} = 240 GeV, 5 ab^{#minus1}", 
+        'topRight'          : "ZH, #sqrt{s} = 240 GeV, 10 ab^{#minus1}", 
         'topLeft'           : "#bf{FCCee} #scale[0.7]{#it{Internal}}",
         
         'ratiofraction'     : 0.25,
@@ -236,11 +236,11 @@ def doFit(cat=1):
     
 if __name__ == "__main__":
 
-    flavor="ee"
-    fIn = ROOT.TFile("tmp/output_mass_xsec_%s.root" % flavor)
-    outDir = "/eos/user/j/jaeyserm/www/FCCee/ZH_mass_xsec/plots_categories_%s/" % flavor
+    flavor = "ee"
+    fIn = ROOT.TFile("tmp/output_ZH_mass_%s_reco.root" % flavor)
+    outDir = "/eos/user/j/jaeyserm/www/FCCee/ZH_mass/plots_categories_%s/" % flavor
     
-    proc = "wzp6_ee_%sH_ecm240" % flavor
+    proc = "p_wzp6_ee_%sH_ecm240" % flavor
     hist = "zll_recoil_m"
     rebin = 50
 

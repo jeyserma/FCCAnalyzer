@@ -16,7 +16,7 @@ def makePlot():
 
     totEntries = 1 + len(bkgs)
     #leg = ROOT.TLegend(.5, 1.0-totEntries*0.06, .92, .90)
-    leg = ROOT.TLegend(.45, 0.97-(len(bkgs)+2)*0.055, .95, .90)
+    leg = ROOT.TLegend(.45, 0.99-(len(bkgs)+2)*0.055, .95, .90)
     leg.SetBorderSize(0)
     leg.SetFillStyle(0)
     leg.SetTextSize(0.03)
@@ -85,7 +85,7 @@ def makePlot():
         'xtitle'            : "",
         'ytitle'            : "Events",
             
-        'topRight'          : "#sqrt{s} = 240 GeV, 5 ab^{#minus1}", 
+        'topRight'          : "#sqrt{s} = 240 GeV, 10 ab^{#minus1}", 
         'topLeft'           : "#bf{FCC-ee} #scale[0.7]{#it{Simulation}}",
         }
         
@@ -121,8 +121,8 @@ def makePlot():
 if __name__ == "__main__":
 
     flavor = args.flavor
-    fIn = ROOT.TFile("tmp/output_ZH_%s_%s.root" % (args.type, flavor))
-    outDir = "/eos/user/j/jaeyserm/www/FCCee/ZH_mass_xsec/plots_%s/" % flavor
+    fIn = ROOT.TFile(f"tmp/output_ZH_{args.type}_{flavor}.root")
+    outDir = f"/eos/user/j/jaeyserm/www/FCCee/ZH_{args.type}/plots_{flavor}/"
     
     cuts = ["cut0", "cut1", "cut2", "cut3", "cut4", "cut5", "cut6"]
     
@@ -130,9 +130,9 @@ if __name__ == "__main__":
     
     if flavor == "mumu":
     
-        labels = ["All events", "#geq 1 #mu^{#pm} + ISO", "#geq 2 #mu^{#pm} + OS", "86 < m_{#mu^{+}#mu^{#minus}} < 96", "20 < p_{#mu^{+}#mu^{#minus}} < 70", "|cos#theta_{miss}| < 0.98", "120 < m_{rec} < 140"]
+        labels = ["All events", "#geq 1 #mu^{#pm} + ISO", "#geq 2 #mu^{#pm} + OS", "86 < m_{#mu^{+}#mu^{#minus}} < 96", "20 < p_{#mu^{+}#mu^{#minus}} < 70", "120 < m_{rec} < 140", "|cos#theta_{miss}| < 0.98"]
     
-        sigs = ["wzp6_ee_mumuH_ecm240"]
+        sigs = ["p_wzp6_ee_mumuH_ecm240"]
         sig_scale = 10
         sig_legend = "Z(#mu^{+}#mu^{#minus})H (10#times)"
     
@@ -148,9 +148,9 @@ if __name__ == "__main__":
         
     if flavor == "ee":
     
-        labels = ["All events", "#geq 1 e^{#pm} + ISO", "#geq 2 e^{#pm} + OS", "86 < m_{e^{+}e^{#minus}} < 96", "20 < p_{e^{+}e^{#minus}} < 70", "|cos#theta_{miss}| < 0.98", "120 < m_{rec} < 140"]
+        labels = ["All events", "#geq 1 e^{#pm} + ISO", "#geq 2 e^{#pm} + OS", "86 < m_{e^{+}e^{#minus}} < 96", "20 < p_{e^{+}e^{#minus}} < 70", "120 < m_{rec} < 140", "|cos#theta_{miss}| < 0.98"]
     
-        sigs = ["wzp6_ee_eeH_ecm240"]
+        sigs = ["p_wzp6_ee_eeH_ecm240"]
         sig_scale = 10
         sig_legend = "Z(e^{+}e^{#minus})H (10#times)"
     
@@ -181,7 +181,7 @@ if __name__ == "__main__":
             for j,histProc in enumerate(hists):
                 
                 yield_, err = histProc.GetBinContent(i+1), histProc.GetBinError(i+1)
-                row.append("%.3e +/- %.3e" % (yield_, err))
+                row.append("%.2e +/- %.2e" % (yield_, err))
             
             print(formatted_row.format(*row))
         

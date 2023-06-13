@@ -24,6 +24,7 @@ def build_and_run(datadict, build_function, outfile, maxFiles=-1, norm=False, lu
 
         dataset = Dataset(val)
         datasets.append(dataset)
+        print(f"Read {dataset.name}")
 
         chain = ROOT.TChain("events")
         nFiles = 0
@@ -31,15 +32,15 @@ def build_and_run(datadict, build_function, outfile, maxFiles=-1, norm=False, lu
             chain.Add(fpath)
             nFiles += 1
             if maxFiles > 0 and nFiles >= maxFiles: break
-        nEvents = chain.GetEntries()
-        print(f"Import {dataset.name} with {nFiles} files and {nEvents} events from directory {dataset.datadir}")
-    
+        print(f"Import {dataset.name} with {nFiles} files from directory {dataset.datadir}")
+
         # black magic why this needs to be protected from gc
         chains.append(chain)
 
         df = ROOT.ROOT.RDataFrame(chain)
 
         evtcount = df.Count()
+
         res, hweight = build_function(df, dataset)
 
         results.append(res)
@@ -80,6 +81,7 @@ def build_and_run(datadict, build_function, outfile, maxFiles=-1, norm=False, lu
         h_meta.SetBinContent(2, evtcount.GetValue())
         h_meta.SetBinContent(3, dataset.xsec)
         h_meta.Write()
+        print(f" -> {dataset.name}, number of events = {evtcount.GetValue()}, event weights = {hweight.GetValue()}, cross-section = {dataset.xsec}")
 
     time_done = time.time()
     
@@ -125,7 +127,7 @@ def get_basedir(sel=None):
         if "mit.edu" in hostname: return basedirs['mit']
         if "cmswmass2" in hostname: return basedirs['cmswmass2']
         if "lxplus" in hostname: return basedirs['fcc_eos']
-    return None
+    return basedirs['fcc_eos']
     
     
 def filter_datasets(datasets, filt=None):
@@ -137,3 +139,22 @@ def filter_datasets(datasets, filt=None):
             if dataset['name'] in filt: ret.append(dataset)
         return ret
     else: return datasets
+    
+def findROOTFiles(basedir, regex = ""):
+        
+    if ".root" in basedir: return [basedir]
+        
+    if regex != "":
+        
+        if basedir[-1] == "/": basedir = basedir[:-1]
+        regex = basedir + "/" + regex
+
+    files = []
+    for root, directories, filenames in os.walk(basedir):
+        
+        for f in filenames:
+           
+            filePath = os.path.join(os.path.abspath(root), f)
+            if regex == "" or fnmatch.fnmatch(filePath, regex): files.append(filePath)
+                
+    return files

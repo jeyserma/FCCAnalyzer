@@ -140,7 +140,7 @@ def auxRatio():
 
 
 
-def dummyRatio(nbins = 1):
+def dummyRatio(nbins = 1, rline=1):
 
     if cfg['logx']:
         xmin = 0.999*float(cfg['xmin']) # hack to display lower/upper ticks on axis
@@ -160,6 +160,7 @@ def dummyRatio(nbins = 1):
     # dummy
     dummyT = ROOT.TH1D("h1", "h", nbins, xmin, xmax)
     dummyB = ROOT.TH1D("h2", "h", nbins, xmin, xmax)
+
 
     # x-axis
     dummyB.GetXaxis().SetTitle(translate(cfg['xtitle']))
@@ -211,8 +212,12 @@ def dummyRatio(nbins = 1):
     dummyB.GetYaxis().SetTitleOffset(1.3) # 1.7*dummyB.GetYaxis().GetTitleOffset()
     dummyB.GetYaxis().SetLabelOffset(1.4*dummyB.GetYaxis().GetLabelOffset())
     dummyB.GetYaxis().SetNdivisions(505)
+    
+    line = ROOT.TLine(float(cfg['xmin']), rline, float(cfg['xmax']), rline)
+    line.SetLineColor(ROOT.kRed)
+    line.SetLineWidth(2)
 
-    return dummyT, dummyB
+    return dummyT, dummyB, line
 
 def canvasRatio():
 
