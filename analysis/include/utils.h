@@ -4,6 +4,28 @@
 #include "defines.h"
 
 namespace FCCAnalyses {
+	
+
+// select the hadronic Z decays in ZH(Za), second Z)
+bool hadronicDecays(Vec_mc mc_particles, Vec_i daughters) {
+
+	size_t len = mc_particles.size();
+    for(size_t i = 0; i < len; ++i) {
+        if(mc_particles[i].PDG != 23) continue;
+
+		int db = mc_particles[i].daughters_begin;
+		int de = mc_particles[i].daughters_end;
+		
+		int pdgb = std::abs(mc_particles[daughters[db]].PDG);
+		int pdge = std::abs(mc_particles[daughters[de]].PDG);
+		
+		int pdg_prodc = pdgb*pdge;
+		if(pdg_prodc == 1 or pdg_prodc == 4 or pdg_prodc == 9 or pdg_prodc == 16 or pdg_prodc == 25) return true;
+		else return false;
+	}
+
+	return false;
+}
     
 Vec_tlv jetsToTlv(Vec_f px, Vec_f py, Vec_f pz, Vec_f e) {
 

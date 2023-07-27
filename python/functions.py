@@ -1,5 +1,6 @@
 
 import sys, os, glob, shutil, json, math, re, random
+import concurrent.futures
 import time
 import ROOT
 from dataset import Dataset
@@ -7,7 +8,7 @@ from dataset import Dataset
 ROOT.TH1.SetDefaultSumw2(True)
 
 
-def build_and_run(datadict, build_function, outfile, maxFiles=-1, norm=False, lumi=1.):
+def build_and_run(datadict, build_function, outfile, maxFiles=-1, norm=False, lumi=1., treeName="events"):
     time0 = time.time()
 
     results = []
@@ -26,7 +27,7 @@ def build_and_run(datadict, build_function, outfile, maxFiles=-1, norm=False, lu
         datasets.append(dataset)
         print(f"Read {dataset.name}")
 
-        chain = ROOT.TChain("events")
+        chain = ROOT.TChain(treeName)
         nFiles = 0
         for fpath in dataset.rootfiles:
             chain.Add(fpath)
@@ -98,6 +99,144 @@ def build_and_run(datadict, build_function, outfile, maxFiles=-1, norm=False, lu
     
     print("Output written to %s" % outfile)
 
+
+
+def build_and_run_snapshot(datadict, build_function, outfile, maxFiles=-1, treeName="events"):
+
+    time0 = time.time()
+    
+    dataframes = []
+    columns = []
+    datasets = []
+    eventCounts = []
+    snapshots = []
+    for val in datadict:
+    
+        if not os.path.exists(val['datadir']):
+            print(f"WARNING: directory {val['datadir']} does not exist, skipping dataset {val['name']}")
+            continue
+
+        dataset = Dataset(val)
+        datasets.append(dataset)
+        print(f"Read {dataset.name}")
+
+        chain = ROOT.TChain(treeName)
+        nFiles = 0
+        for fpath in dataset.rootfiles:
+            chain.Add(fpath)
+            nFiles += 1
+            if maxFiles > 0 and nFiles >= maxFiles: break
+        print(f"Import {dataset.name} with {nFiles} files from directory {dataset.datadir}")
+
+        df = ROOT.ROOT.RDataFrame(chain)
+        evtcount = df.Count()
+        df, cols = build_function(df, dataset)
+        
+        opts = ROOT.RDF.RSnapshotOptions()
+        opts.fLazy = True # do not trigger the loop yet
+        snapshot = df.Snapshot(treeName, outfile.format(datasetName=dataset.name), cols, opts)
+        snapshots.append(snapshot)
+        dataframes.append(df)
+        columns.append(cols)
+        eventCounts.append(evtcount)
+        
+    time_built = time.time()
+    
+    print("Begin event loop")
+    ROOT.ROOT.RDF.RunGraphs(snapshots)
+    print("Done event loop")
+    time_done_event = time.time()
+
+    print("Write meta information")
+    for dataset, df, cols, evtcount in zip (datasets, dataframes, columns, eventCounts):
+    
+        print(f" -> {dataset.name} done, number of events = {evtcount.GetValue()}, cross-section = {dataset.xsec}")
+        
+        fIn = ROOT.TFile(outfile.format(datasetName=dataset.name), "UPDATE")
+        h_meta = ROOT.TH1D("meta", "", 10, 0, 1)
+        h_meta.SetBinContent(2, evtcount.GetValue())
+        h_meta.SetBinContent(3, dataset.xsec)
+        h_meta.Write()
+        fIn.Close()
+    
+    time_done = time.time()
+    print("Done")
+    print("build graphs:", time_built - time0)
+    print("event loop:", time_done_event - time_built)
+    print("write meta info:", time.time() - time_done)
+    print("total time:", time.time() - time0)
+    
+
+
+def build_and_run_snapshot_mt(datadict, build_function, outfile, maxFiles=-1, treeName="events"):
+
+    time0 = time.time()
+    
+    dataframes = []
+    columns = []
+    datasets = []
+    eventCounts = []
+
+    for val in datadict:
+    
+        if not os.path.exists(val['datadir']):
+            print(f"WARNING: directory {val['datadir']} does not exist, skipping dataset {val['name']}")
+            continue
+
+        dataset = Dataset(val)
+        datasets.append(dataset)
+        print(f"Read {dataset.name}")
+
+        chain = ROOT.TChain(treeName)
+        nFiles = 0
+        for fpath in dataset.rootfiles:
+            chain.Add(fpath)
+            nFiles += 1
+            if maxFiles > 0 and nFiles >= maxFiles: break
+        print(f"Import {dataset.name} with {nFiles} files from directory {dataset.datadir}")
+
+        df = ROOT.ROOT.RDataFrame(chain)
+        #df.SetName(f"df_{dataset.name}")
+        evtcount = df.Count()
+        df, cols = build_function(df, dataset)
+        dataframes.append(df)
+        columns.append(cols)
+        eventCounts.append(evtcount)
+        
+    time_built = time.time()
+
+    def runGraph(dataset, df, cols):
+        df.Snapshot(treeName, outfile.format(datasetName=dataset.name), cols)
+    
+    print("Run processes")
+    with concurrent.futures.ThreadPoolExecutor() as executor:
+        futures = [executor.submit(runGraph, dataset, df, cols) for dataset, df, cols in zip (datasets, dataframes, columns)]
+        for future in concurrent.futures.as_completed(futures):
+            result = future.result()
+            
+    time_done_event = time.time()
+    
+    print("Write meta information")
+    for dataset, df, cols, evtcount in zip (datasets, dataframes, columns, eventCounts):
+    
+        print(f" -> {dataset.name} done, number of events = {evtcount.GetValue()}, cross-section = {dataset.xsec}")
+        
+        fIn = ROOT.TFile(outfile.format(datasetName=dataset.name), "UPDATE")
+        h_meta = ROOT.TH1D("meta", "", 10, 0, 1)
+        h_meta.SetBinContent(2, evtcount.GetValue())
+        h_meta.SetBinContent(3, dataset.xsec)
+        h_meta.Write()
+        fIn.Close()
+    
+    time_done = time.time()
+    print("Done")
+    print("build graphs:", time_built - time0)
+    print("event loop:", time_done_event - time_built)
+    print("write meta info:", time.time() - time_done)
+    print("total time:", time.time() - time0)
+    
+
+ 
    
 def set_threads(args):
 
