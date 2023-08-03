@@ -1,14 +1,21 @@
     
+import functions
 import ROOT
 import pathlib
 
-ROOT.gInterpreter.Declare('#include "helper_tmva.h"')
+functions.add_include_file("include/helper_tmva.h")
 
 class TMVAHelper():
 
-    def __init__(self, model_input, model_name, variables):
+    def __init__(self, model_input, model_name, variables=[]):
     
-        self.variables = variables
+        if len(variables) == 0: # try to get the variables from the model file (saved as a TList)
+            fIn = ROOT.TFile(model_input)
+            variables_ = fIn.Get("variables")
+            self.variables = [str(var.GetString()) for var in variables_]
+            fIn.Close()
+        else: 
+            self.variables = variables
         self.nvars = len(self.variables)
         self.model_input = model_input
         self.model_name = model_name

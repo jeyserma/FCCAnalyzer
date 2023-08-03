@@ -4,11 +4,38 @@ import concurrent.futures
 import time
 import ROOT
 from dataset import Dataset
+import argparse
+import pathlib
+
+
+
+ROOT.gROOT.SetBatch()
+ROOT.gInterpreter.ProcessLine(".O3")
+sys.path.insert(0, "analysis/datasets/")
+
+# load fcc libraries
+print ("Load default cxx analyzers ... ")
+ROOT.gSystem.Load("libedm4hep")
+ROOT.gSystem.Load("libpodio")
+ROOT.gSystem.Load("libFCCAnalyses")
+ROOT.gErrorIgnoreLevel = ROOT.kFatal
+_edm  = ROOT.edm4hep.ReconstructedParticleData()
+_pod  = ROOT.podio.ObjectID()
+_fcc  = ROOT.dummyLoader
+
+# load c++ macros
+ROOT.gInterpreter.ProcessLine(".O3")
+ROOT.gInterpreter.AddIncludePath(f"{pathlib.Path(__file__).parent}/../")
+ROOT.gInterpreter.Declare('#include "include/defines.h"')
+ROOT.gInterpreter.Declare('#include "include/utils.h"')
+ROOT.gInterpreter.Declare('#include "include/gen.h"')
+
 
 ROOT.TH1.SetDefaultSumw2(True)
 
 
-def build_and_run(datadict, build_function, outfile, maxFiles=-1, norm=False, lumi=1., treeName="events"):
+def build_and_run(datadict, build_function, outfile, args, norm=False, lumi=1., treeName="events"):
+    
     time0 = time.time()
 
     results = []
@@ -32,7 +59,7 @@ def build_and_run(datadict, build_function, outfile, maxFiles=-1, norm=False, lu
         for fpath in dataset.rootfiles:
             chain.Add(fpath)
             nFiles += 1
-            if maxFiles > 0 and nFiles >= maxFiles: break
+            if args.maxFiles > 0 and nFiles >= args.maxFiles: break
         print(f"Import {dataset.name} with {nFiles} files from directory {dataset.datadir}")
 
         # black magic why this needs to be protected from gc
@@ -101,7 +128,7 @@ def build_and_run(datadict, build_function, outfile, maxFiles=-1, norm=False, lu
 
 
 
-def build_and_run_snapshot(datadict, build_function, outfile, maxFiles=-1, treeName="events"):
+def build_and_run_snapshot(datadict, build_function, outfile, args, treeName="events"):
 
     time0 = time.time()
     
@@ -125,7 +152,7 @@ def build_and_run_snapshot(datadict, build_function, outfile, maxFiles=-1, treeN
         for fpath in dataset.rootfiles:
             chain.Add(fpath)
             nFiles += 1
-            if maxFiles > 0 and nFiles >= maxFiles: break
+            if args.maxFiles > 0 and nFiles >= args.maxFiles: break
         print(f"Import {dataset.name} with {nFiles} files from directory {dataset.datadir}")
 
         df = ROOT.ROOT.RDataFrame(chain)
@@ -236,8 +263,15 @@ def build_and_run_snapshot_mt(datadict, build_function, outfile, maxFiles=-1, tr
     print("total time:", time.time() - time0)
     
 
+def make_def_argparser():
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--nThreads", type=int, help="number of threads", default=None)
+    parser.add_argument("--maxFiles", type=int, help="Max number of files (per dataset)", default=-1)
+    return parser
  
-   
+def add_include_file(fIn):
+    ROOT.gInterpreter.Declare(f'#include "{fIn}"')
+ 
 def set_threads(args):
 
     ROOT.EnableImplicitMT()
@@ -282,18 +316,16 @@ def filter_datasets(datasets, filt=None):
     
 def findROOTFiles(basedir, regex = ""):
         
-    if ".root" in basedir: return [basedir]
-        
+    if ".root" in basedir: return [basedir] # single file
     if regex != "":
-        
         if basedir[-1] == "/": basedir = basedir[:-1]
         regex = basedir + "/" + regex
 
     files = []
     for root, directories, filenames in os.walk(basedir):
-        
         for f in filenames:
-           
+            if not ".root" in f:
+                continue
             filePath = os.path.join(os.path.abspath(root), f)
             if regex == "" or fnmatch.fnmatch(filePath, regex): files.append(filePath)
                 
