@@ -66,7 +66,7 @@ params = {
     'subsample': 0.5,
     'colsample_bytree': 0.5,
     'seed': 42,
-    'n_estimators': 20, # low number for testing purposes (default 350)
+    'n_estimators': 350, # low number for testing purposes (default 350)
     'early_stopping_rounds': 25,
     'num_rounds': 20,
     'learning_rate': 0.20,

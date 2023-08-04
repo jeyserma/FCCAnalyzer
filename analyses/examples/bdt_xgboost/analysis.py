@@ -9,6 +9,9 @@ parser.add_argument('--maketree', action=argparse.BooleanOptionalAction)
 args = parser.parse_args()
 functions.set_threads(args)
 
+functions.add_include_file("analyses/higgs_mass_xsec/functions.h")
+functions.add_include_file("analyses/higgs_mass_xsec/functions_gen.h")
+
 
 # define histograms
 bins_p_mu = (2000, 0, 200) # 100 MeV bins
@@ -34,8 +37,8 @@ bins_cat = (10, 0, 10)
 bins_resolution = (10000, 0.95, 1.05)
 bins_mva_score = (100, 0, 1)
 
-
-tmva_helper = helper_tmva.TMVAHelper("tmp/bdt_model_example.root", "bdt_model")
+if not args.maketree:
+    tmva_helper = helper_tmva.TMVAHelper("tmp/bdt_model_example.root", "bdt_model")
 
 
 def build_graph(df, dataset):

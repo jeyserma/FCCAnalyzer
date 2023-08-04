@@ -1,14 +1,11 @@
-import analysis, functions
+
+import functions
+import helpers
 import ROOT
 import argparse
 
-parser = argparse.ArgumentParser()
-parser.add_argument("--nThreads", type=int, help="number of threads", default=None)
-parser.add_argument("--maxFiles", type=int, help="Max number of files (per dataset)", default=-1)
-parser.add_argument("--name", type=str, help="Name of process", default='wzp6_ee_mumu_ecm91p2')
-parser.add_argument("--dataset", type=str, help="Name of dataset", default='winter2023/IDEA/wzp6_ee_mumu_ecm91p2')
+parser = functions.make_def_argparser()
 args = parser.parse_args()
-
 functions.set_threads(args)
 
 # define histograms
@@ -25,13 +22,10 @@ bins_charge = (10, -5, 5)
 
 bins_cos = (100, -1, 1)
 
-bins_thrustval = (2000, 0, 2)
-bins_thrustcomp = (2000, -100, 100)
-
-def build_graph_ll(df, dataset):
+def build_graph(df, dataset):
 
     print("build graph", dataset.name)
-    results = []
+    hists = []
 
     df = df.Define("weight", "1.0")
     weightsum = df.Sum("weight")
@@ -49,12 +43,12 @@ def build_graph_ll(df, dataset):
     df = df.Define("gen_muons_phi", "FCCAnalyses::MCParticle::get_phi(gen_muons)")
     df = df.Define("gen_muons_no", "FCCAnalyses::MCParticle::get_n(gen_muons)")
     
-    results.append(df.Histo1D(("gen_muons_p", "", *bins_p_mu), "gen_muons_p"))
-    results.append(df.Histo1D(("gen_muons_theta", "", *bins_theta), "gen_muons_theta"))
-    results.append(df.Histo1D(("gen_muons_phi", "", *bins_phi), "gen_muons_phi"))
-    results.append(df.Histo1D(("gen_muons_no", "", *bins_count), "gen_muons_no"))
+    hists.append(df.Histo1D(("gen_muons_p", "", *bins_p_mu), "gen_muons_p"))
+    hists.append(df.Histo1D(("gen_muons_theta", "", *bins_theta), "gen_muons_theta"))
+    hists.append(df.Histo1D(("gen_muons_phi", "", *bins_phi), "gen_muons_phi"))
+    hists.append(df.Histo1D(("gen_muons_no", "", *bins_count), "gen_muons_no"))
     
-    results.append(df.Histo1D(("evts_initial", "", *bins_count), "weight"))
+    hists.append(df.Histo1D(("evts_initial", "", *bins_count), "weight"))
     
     # get the leptons leptons
     df = df.Define("leps_all", "FCCAnalyses::ReconstructedParticle::get(Lepton0, ReconstructedParticles)")
@@ -74,7 +68,7 @@ def build_graph_ll(df, dataset):
     df = df.Define("leps_gen_tlv", "FCCAnalyses::makeLorentzVectors_gen(leps_all, MCRecoAssociations0, MCRecoAssociations1, ReconstructedParticles, Particle)")
     df = df.Define("lep0_p", "leps_gen_tlv[0].P()")
     
-    results.append(df.Histo1D(("leps_all_gen_p", "", *bins_p_mu), "lep0_p"))
+    hists.append(df.Histo1D(("leps_all_gen_p", "", *bins_p_mu), "lep0_p"))
     
     df = df.Define("missingEnergy_vec", "FCCAnalyses::missingEnergy(91., ReconstructedParticles)")
     df = df.Define("missingEnergy", "missingEnergy_vec[0].energy")
@@ -82,15 +76,15 @@ def build_graph_ll(df, dataset):
     df = df.Define("visibleEnergy", "FCCAnalyses::visibleEnergy(ReconstructedParticles)")
   
     
-    results.append(df.Histo1D(("leps_all_p", "", *bins_p_mu), "leps_all_p"))
-    results.append(df.Histo1D(("leps_all_theta", "", *bins_theta), "leps_all_theta"))
-    results.append(df.Histo1D(("leps_all_phi", "", *bins_phi), "leps_all_phi"))
-    results.append(df.Histo1D(("leps_all_q", "", *bins_charge), "leps_all_q"))
-    results.append(df.Histo1D(("leps_all_no", "", *bins_count), "leps_all_no"))
+    hists.append(df.Histo1D(("leps_all_p", "", *bins_p_mu), "leps_all_p"))
+    hists.append(df.Histo1D(("leps_all_theta", "", *bins_theta), "leps_all_theta"))
+    hists.append(df.Histo1D(("leps_all_phi", "", *bins_phi), "leps_all_phi"))
+    hists.append(df.Histo1D(("leps_all_q", "", *bins_charge), "leps_all_q"))
+    hists.append(df.Histo1D(("leps_all_no", "", *bins_count), "leps_all_no"))
     
-    results.append(df.Histo1D(("m_inv", "", *bins_m_ll), "m_inv"))
-    results.append(df.Histo1D(("missingEnergy", "", *bins_m_ll), "missingEnergy"))
-    results.append(df.Histo1D(("visibleEnergy", "", *bins_m_ll), "visibleEnergy"))
+    hists.append(df.Histo1D(("m_inv", "", *bins_m_ll), "m_inv"))
+    hists.append(df.Histo1D(("missingEnergy", "", *bins_m_ll), "missingEnergy"))
+    hists.append(df.Histo1D(("visibleEnergy", "", *bins_m_ll), "visibleEnergy"))
     
     df = df.Define("theta_plus", "(leps_all_q[0] > 0) ? leps_all_theta[0] : leps_all_theta[1]")
     df = df.Define("theta_minus", "(leps_all_q[0] < 0) ? leps_all_theta[0] : leps_all_theta[1]")
@@ -98,22 +92,21 @@ def build_graph_ll(df, dataset):
     df = df.Define("cos_theta_minus", "cos(theta_minus)")
     df = df.Define("cosThetac", "(sin(theta_plus-theta_minus))/(sin(theta_plus)+sin(theta_minus))")
     
-    results.append(df.Histo1D(("theta_plus", "", *bins_theta), "theta_plus"))
-    results.append(df.Histo1D(("theta_minus", "", *bins_theta), "theta_minus"))
-    results.append(df.Histo1D(("cos_theta_plus", "", *bins_cos), "cos_theta_plus"))
-    results.append(df.Histo1D(("cos_theta_minus", "", *bins_cos), "cos_theta_minus"))
+    hists.append(df.Histo1D(("theta_plus", "", *bins_theta), "theta_plus"))
+    hists.append(df.Histo1D(("theta_minus", "", *bins_theta), "theta_minus"))
+    hists.append(df.Histo1D(("cos_theta_plus", "", *bins_cos), "cos_theta_plus"))
+    hists.append(df.Histo1D(("cos_theta_minus", "", *bins_cos), "cos_theta_minus"))
     
-    results.append(df.Histo1D(("cosThetac", "", *bins_cos), "cosThetac"))
+    hists.append(df.Histo1D(("cosThetac", "", *bins_cos), "cosThetac"))
     
-    results.append(df.Histo1D(("evts_final", "", *bins_count), "weight"))
-    return results, weightsum
+    hists.append(df.Histo1D(("evts_final", "", *bins_count), "weight"))
+    return hists, weightsum
 
 if __name__ == "__main__":
 
     baseDir = functions.get_basedir()
  
-    dataset = {"name": f"{args.name}", "datadir": f"{baseDir}/{args.dataset}", "xsec": 1}
-    print(dataset)
+    wzp6_ee_mumu_ecm91p2 = {"name": f"wzp6_ee_mumu_ecm91p2", "datadir": f"/eos/experiment/fcc/users/j/jaeyserm/sampleProduction/winter2023/wzp6_ee_mumu_ecm91p2/", "xsec": 1}
 
-    datasets = [dataset]
-    result = functions.build_and_run(datasets, build_graph_ll, f"tmp/Zpole_{args.name}.root", maxFiles=args.maxFiles)
+    datasets = [wzp6_ee_mumu_ecm91p2]
+    result = functions.build_and_run(datasets, build_graph, f"tmp/afb.root", args)

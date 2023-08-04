@@ -1,9 +1,4 @@
 import sys,array,ROOT,math,os,copy
-import argparse
-
-parser = argparse.ArgumentParser()
-parser.add_argument("--name", type=str, help="Name of process", default='wzp6_ee_mumu_ecm91p2')
-args = parser.parse_args()
 
 ROOT.gROOT.SetBatch(True)
 ROOT.gStyle.SetOptStat(0)
@@ -12,7 +7,8 @@ ROOT.gStyle.SetOptTitle(0)
 if __name__ == "__main__":
 
     outDir = "/home/submit/paus/public_html/FCCee"
-    fIn = ROOT.TFile(f"tmp/Zpole_{args.name}.root")
+    outDir = "/eos/user/j/jaeyserm/www/FCCee/"
+    fIn = ROOT.TFile(f"tmp/afb.root")
     
     # sample/lumi
     xsec = 1692.4238 # pb
@@ -24,9 +20,9 @@ if __name__ == "__main__":
     costhetac_abs_min, costhetac_abs_max = 0.05, 0.8
     rebin = 1
     
-    h_costhetac = fIn.Get(f"{args.name}/cosThetac")
+    h_costhetac = fIn.Get(f"wzp6_ee_mumu_ecm91p2/cosThetac")
     h_costhetac.Rebin(rebin)
-    h_meta = fIn.Get(f"{args.name}/meta") # meta info: number of events in first bin
+    h_meta = fIn.Get(f"wzp6_ee_mumu_ecm91p2/meta") # meta info: number of events in first bin
     nevents_sim = h_meta.GetBinContent(1) # number of simulated events
     h_costhetac.Scale(xsec*lumi/nevents_sim)
     
@@ -106,7 +102,7 @@ if __name__ == "__main__":
     latex.DrawLatex(0.25, 0.78, "A_{FB} (int.) = %.3e #pm %.3e" % (A_FB, A_FB_err))
     latex.DrawLatex(0.25, 0.72, "A_{FB} (fit) = %.3e #pm %.3e" % (A_FB_fit, A_FB_fit_err))
     
-    c.SaveAs(f"{outDir}/{args.name}_cosThetac.png")
+    c.SaveAs(f"{outDir}/wzp6_ee_mumu_ecm91p2_cosThetac.png")
     
     print("##################")
 
