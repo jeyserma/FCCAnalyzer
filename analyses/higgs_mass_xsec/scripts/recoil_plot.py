@@ -50,7 +50,7 @@ def recoil_plot(outName, files, hists, labels, colors, xMin, xMax, yMin, yMax, x
         'xtitle'            : xTitle,
         'ytitle'            : yTitle,
             
-        'topRight'          : "#sqrt{s} = 240 GeV, 10 ab^{#minus1}", 
+        'topRight'          : "#sqrt{s} = 240 GeV, 7.2 ab^{#minus1}", 
         'topLeft'           : "#bf{FCCee} #scale[0.7]{#it{Simulation}}",
     }
     
@@ -83,8 +83,7 @@ def recoil_plot(outName, files, hists, labels, colors, xMin, xMax, yMin, yMax, x
     canvas.Close()
 
 
-  
-    
+
 if __name__ == "__main__":
 
     outDir = "/eos/user/j/jaeyserm/www/FCCee/ZH_mass/recoil_comparison/"
@@ -93,17 +92,17 @@ if __name__ == "__main__":
     files = ["tmp/output_ZH_mass_mumu_reco.root", "tmp/output_ZH_mass_mumu_mc.root", "tmp/output_ZH_mass_mumu_reco.root", "tmp/output_ZH_mass_mumu_reco.root"]
     hists = ["p_wzp6_ee_mumuH_ecm240/zll_recoil", "p_wzp6_ee_mumuH_ecm240/zll_recoil", "p_wzp6_ee_mumuH_ecm240_3T/zll_recoil", "p_wzp6_ee_mumuH_ecm240_CLD/zll_recoil"]
     labels = ["IDEA", "IDEA perfect resolution", "IDEA 3T", "IDEA CLD silicon tracker"]
-    recoil_plot("IDEA_IDEAL_2T_3T_CLD_mumu", files, hists, labels, colors, 122, 132, 0, 700, "Recoil (GeV)", "Events / 20 MeV", rebin=2, legLabel="Muon final state Z(#mu^{#plus}#mu^{#minus})H")
+    recoil_plot("IDEA_IDEAL_2T_3T_CLD_mumu", files, hists, labels, colors, 122, 132, 0, 500, "Recoil (GeV)", "Events / 20 MeV", rebin=2, legLabel="Muon final state Z(#mu^{#plus}#mu^{#minus})H")
 
     files = ["tmp/output_ZH_mass_ee_reco.root", "tmp/output_ZH_mass_ee_mc.root", "tmp/output_ZH_mass_ee_reco.root", "tmp/output_ZH_mass_ee_reco.root"]
     hists = ["p_wzp6_ee_eeH_ecm240/zll_recoil", "p_wzp6_ee_eeH_ecm240/zll_recoil", "p_wzp6_ee_eeH_ecm240_3T/zll_recoil", "p_wzp6_ee_eeH_ecm240_CLD/zll_recoil"]
     labels = ["IDEA", "IDEA perfect resolution", "IDEA 3T", "IDEA CLD silicon tracker"]
-    recoil_plot("IDEA_IDEAL_2T_3T_CLD_ee", files, hists, labels, colors, 122, 132, 0, 700, "Recoil (GeV)", "Events / 20 MeV", rebin=2, legLabel="Electron final state Z(e^{#plus}e^{#minus})H")
+    recoil_plot("IDEA_IDEAL_2T_3T_CLD_ee", files, hists, labels, colors, 122, 132, 0, 500, "Recoil (GeV)", "Events / 20 MeV", rebin=2, legLabel="Electron final state Z(e^{#plus}e^{#minus})H")
 
     files = ["tmp/output_ZH_mass_mumu_reco.root", "tmp/output_ZH_mass_mumu_reco.root", "tmp/output_ZH_mass_ee_reco.root", "tmp/output_ZH_mass_ee_reco.root"]
     hists = ["p_wzp6_ee_mumuH_ecm240/zll_recoil", "p_wzp6_ee_mumuH_ecm240_CLD/zll_recoil", "p_wzp6_ee_eeH_ecm240/zll_recoil", "p_wzp6_ee_eeH_ecm240_CLD/zll_recoil"]
     labels = ["IDEA 2T (#mu^{#plus}#mu^{#minus})", "CLD 2T (#mu^{#plus}#mu^{#minus})", "IDEA 2T (e^{#plus}e^{#minus})", "CLD 2T (e^{#plus}e^{#minus})"]
-    recoil_plot("IDEA_CLD_mumu_ee", files, hists, labels, colors, 122, 132, 0, 700, "Recoil (GeV)", "Events / 20 MeV", rebin=2)
+    recoil_plot("IDEA_CLD_mumu_ee", files, hists, labels, colors, 122, 132, 0, 500, "Recoil (GeV)", "Events / 20 MeV", rebin=2)
 
 
     files = [f"tmp/output_ZH_mass_mumu_reco.root", f"tmp/output_ZH_mass_ee_reco.root", f"tmp/output_ZH_mass_mumu_mc.root"]
@@ -112,7 +111,7 @@ if __name__ == "__main__":
     colors = [ROOT.kBlack, ROOT.kRed, ROOT.kBlue]
 
     
-    recoil_plot("IDEA_MU_E_IDEAL", files, hists, labels, colors, 122, 132, 0, 700, "Recoil (GeV)", "Events (normalized)", rebin=2)
+    recoil_plot("IDEA_MU_E_IDEAL", files, hists, labels, colors, 122, 132, 0, 500, "Recoil (GeV)", "Events (normalized)", rebin=2)
 
 
 
@@ -125,4 +124,4 @@ if __name__ == "__main__":
     colors = [ROOT.kBlack, ROOT.kRed, ROOT.kBlue]
 
     outDir = "/eos/user/j/jaeyserm/www/FCCee/ZH_mass/recoil_comparison/"
-    recoil_plot("IDEA_MU_3T_CLD", files, hists, labels, colors, 122, 132, 0, 700, "Recoil (GeV)", "Events (normalized)", rebin=2)
+    recoil_plot("IDEA_MU_3T_CLD", files, hists, labels, colors, 122, 132, 0, 500, "Recoil (GeV)", "Events (normalized)", rebin=2)

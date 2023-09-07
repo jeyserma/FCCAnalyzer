@@ -38,8 +38,9 @@ bins_resolution = (10000, 0.95, 1.05)
 bins_mva_score = (100, 0, 1)
 
 if not args.maketree:
-    tmva_helper = helper_tmva.TMVAHelper("tmp/bdt_model_example.root", "bdt_model")
-
+    #tmva_helper = helper_tmva.TMVAHelperXGB("tmp/bdt_model_example.root", "bdt_model")
+    tmva_helper = helper_tmva.TMVAHelperXML("TMVAClassification_BDTG.weights.xml")
+    print(tmva_helper.variables)
 
 def build_graph(df, dataset):
 
@@ -167,6 +168,22 @@ def build_graph(df, dataset):
     hists.append(df.Histo1D(("acoplanarity", "", *bins_aco), "acoplanarity"))
     hists.append(df.Histo1D(("acolinearity", "", *bins_aco), "acolinearity"))
     
+    
+    
+    df = df.Define("HCandPT__div_HCandMass", "lep1_theta")
+    df = df.Define("photon_pt__div_HCandPT", "lep1_theta")
+    df = df.Define("meson_pt__div_HCandPT", "lep1_theta")
+    df = df.Define("photon_eta", "lep1_theta")
+    df = df.Define("photon_mvaID", "lep1_theta")
+    df = df.Define("DeepMETResolutionTune_pt", "lep1_theta")
+    df = df.Define("meson_iso", "lep1_theta")
+    df = df.Define("meson_sipPV", "lep1_theta")
+    df = df.Define("meson_trk1_eta", "lep1_theta")
+    df = df.Define("dPhiGammaMesonCand", "lep1_theta")
+    df = df.Define("dEtaGammaMesonCand__div_HCandMass", "lep1_theta")
+    df = df.Define("nGoodJets", "lep1_theta")
+
+    
     df = tmva_helper.run_inference(df) # by default, makes a new column mva_score
     hists.append(df.Histo1D(("mva", "", *bins_mva_score), "mva_score"))
     
@@ -184,6 +201,7 @@ if __name__ == "__main__":
     p8_ee_WW_mumu_ecm240 = {"name": "p8_ee_WW_mumu_ecm240", "datadir": "/eos/experiment/fcc/ee/generation/DelphesEvents//winter2023/IDEA/p8_ee_WW_mumu_ecm240/",  "xsec": 0.25792}
 
     datasets = [p8_ee_WW_mumu_ecm240, wzp6_ee_mumuH_ecm240]
+    datasets = [wzp6_ee_mumuH_ecm240]
     
     if args.maketree:
         for d in datasets: # run each process consecutively, no support yet for multiprocessing
