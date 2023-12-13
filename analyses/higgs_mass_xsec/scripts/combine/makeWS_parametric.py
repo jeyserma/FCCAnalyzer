@@ -60,8 +60,8 @@ def doSignal(normYields = True):
     recoilmass = w_tmp.var("zll_recoil_m")
     MH = w_tmp.var("MH")
 
-    param_yield, param_mh, param_mean, param_mean_gt, param_mean_gt_offset, param_sigma, param_sigma_gt, param_alpha_1, param_alpha_2, param_n_1, param_n_2, param_cb_1, param_cb_2 = [], [], [], [], [], [], [], [], [], [], [], [], []
-    param_yield_err, param_mean_err, param_sigma_err, param_mean_gt_err, param_mean_gt_offset_err, param_sigma_gt_err, param_alpha_1_err, param_alpha_2_err, param_n_1_err, param_n_2_err, param_cb_1_err, param_cb_2_err  = [], [], [], [], [], [], [], [], [], [], [], []
+    param_yield, param_mh, param_mean, param_mean_offset, param_mean_gt, param_mean_gt_offset, param_sigma, param_sigma_gt, param_alpha_1, param_alpha_2, param_n_1, param_n_2, param_cb_1, param_cb_2 = [], [], [], [], [], [], [], [], [], [], [], [], [], []
+    param_yield_err, param_mean_err, param_mean_offset_err, param_sigma_err, param_mean_gt_err, param_mean_gt_offset_err, param_sigma_gt_err, param_alpha_1_err, param_alpha_2_err, param_n_1_err, param_n_2_err, param_cb_1_err, param_cb_2_err  = [], [], [], [], [], [], [], [], [], [], [], [], []
 
     hist_norm = fIn.Get("%s/%s" % (procs[1], hName))
     hist_norm = hist_norm.ProjectionX("hist_zh_norm", cat_idx_min, cat_idx_max)
@@ -123,29 +123,34 @@ def doSignal(normYields = True):
 
         # IDEA
         if cat == 0 and flavor == 'mumu' and (mode == 'IDEA' or mode == "IDEA_2E" or mode == "IDEA_BES6pct"):
-            mean = ROOT.RooRealVar("mean_%s" % mH_, '', 1.25090e+02, mH-1., mH+1.)
-            #sigma = ROOT.RooRealVar("sigma_%s" % mH_, '', 4.08196e-01, 0, 1)
-            sigma = ROOT.RooRealVar("sigma_%s" % mH_, '', 0.4335) # fixed
-            #alpha_1 = ROOT.RooRealVar("alpha_1_%s" % mH_, '', -2.00592e-01, -10, 0)
-            alpha_1 = ROOT.RooRealVar("alpha_1_%s" % mH_, '', -0.2)
-            #alpha_2 = ROOT.RooRealVar("alpha_2_%s" % mH_, '', 4.05919e+00, 0, 10)
-            alpha_2 = ROOT.RooRealVar("alpha_2_%s" % mH_, '', 3.35)
-            #n_1 = ROOT.RooRealVar("n_1_%s" % mH_, '', 2.48214e+00, -10, 10)
-            n_1 = ROOT.RooRealVar("n_1_%s" % mH_, '', 2.577)
-            #n_2 = ROOT.RooRealVar("n_2_%s" % mH_, '', 0.04, -10, 10)
-            n_2 = ROOT.RooRealVar("n_2_%s" % mH_, '', 1.028)
+            mean_slope = ROOT.RooRealVar("mean_slope_%s" % mH_, '', mH)
+            #mean_offset = ROOT.RooRealVar("mean_offset_%s" % mH_, '', 0.0876, -2, 2)
+            mean_offset = ROOT.RooRealVar("mean_offset_%s" % mH_, '', 0.0916)
+            mean = ROOT.RooFormulaVar("mean_%s" % mH_, "@0+@1", ROOT.RooArgList(mean_slope, mean_offset))
+            #mean = ROOT.RooRealVar("mean_%s" % mH_, '', 1.25090e+02, mH-1., mH+1.)
+            
+            sigma = ROOT.RooRealVar("sigma_%s" % mH_, '', 4.08196e-01, 0, 1)
+            #sigma = ROOT.RooRealVar("sigma_%s" % mH_, '', 0.4335) # fixed
+            alpha_1 = ROOT.RooRealVar("alpha_1_%s" % mH_, '', -2.00592e-01, -10, 0)
+            #alpha_1 = ROOT.RooRealVar("alpha_1_%s" % mH_, '', -0.2)
+            alpha_2 = ROOT.RooRealVar("alpha_2_%s" % mH_, '', 4.05919e+00, 0, 10)
+            #alpha_2 = ROOT.RooRealVar("alpha_2_%s" % mH_, '', 3.35)
+            n_1 = ROOT.RooRealVar("n_1_%s" % mH_, '', 2.48214e+00, -10, 10)
+            #n_1 = ROOT.RooRealVar("n_1_%s" % mH_, '', 2.577)
+            n_2 = ROOT.RooRealVar("n_2_%s" % mH_, '', 0.04, -10, 10)
+            #n_2 = ROOT.RooRealVar("n_2_%s" % mH_, '', 1.028)
 
-            mean_gt_offset = ROOT.RooRealVar("mean_gt_offset_%s" % mH_, '', 0.35)
+            mean_gt_offset = ROOT.RooRealVar("mean_gt_offset_%s" % mH_, '', 0.3)
             #mean_gt_offset = ROOT.RooRealVar("mean_gt_offset_%s" % mH_, '', 0.35, -5, 5)
             mean_gt = ROOT.RooFormulaVar("mean_gt_%s" % mH_, "@0+@1", ROOT.RooArgList(mean, mean_gt_offset))
             
-            #sigma_gt = ROOT.RooRealVar("sigma_gt_%s" % mH_, '', 8.30603e-01, 0, 2)
-            sigma_gt = ROOT.RooRealVar("sigma_gt_%s" % mH_, '', 0.84) # fixed  
+            sigma_gt = ROOT.RooRealVar("sigma_gt_%s" % mH_, '', 8.30603e-01, 0, 2)
+            #sigma_gt = ROOT.RooRealVar("sigma_gt_%s" % mH_, '', 0.84) # fixed  
            
-            #cb_1 = ROOT.RooRealVar("cb_1_%s" % mH_, '', 0.5, 0, 1)
-            cb_1 = ROOT.RooRealVar("cb_1_%s" % mH_, '', 0.479)
-            #cb_2 = ROOT.RooRealVar("cb_2_%s" % mH_, '', 0.4, 0, 1)
-            cb_2 = ROOT.RooRealVar("cb_2_%s" % mH_, '', 0.419)
+            cb_1 = ROOT.RooRealVar("cb_1_%s" % mH_, '', 0.5, 0, 1)
+            #cb_1 = ROOT.RooRealVar("cb_1_%s" % mH_, '', 0.479)
+            cb_2 = ROOT.RooRealVar("cb_2_%s" % mH_, '', 0.4, 0, 1)
+            #cb_2 = ROOT.RooRealVar("cb_2_%s" % mH_, '', 0.419)
 
         if cat == 0 and flavor == 'mumu' and mode == 'IDEA_3T':
             mean = ROOT.RooRealVar("mean_%s" % mH_, '', 1.25090e+02, mH-1., mH+1.)
@@ -251,29 +256,23 @@ def doSignal(normYields = True):
  
  
         if cat == 0 and flavor == 'ee' and (mode == 'IDEA' or mode == "IDEA_BES6pct"):
-            mean = ROOT.RooRealVar("mean_%s" % mH_, '', 1.25090e+02, mH-1., mH+1.)
-            #sigma = ROOT.RooRealVar("sigma_%s" % mH_, '', 4.08196e-01, 0, 1)
-            sigma = ROOT.RooRealVar("sigma_%s" % mH_, '', 0.4594) # fixed
-            #alpha_1 = ROOT.RooRealVar("alpha_1_%s" % mH_, '', -2.00592e-01, -10, 0)
-            alpha_1 = ROOT.RooRealVar("alpha_1_%s" % mH_, '', -0.1674)
-            #alpha_2 = ROOT.RooRealVar("alpha_2_%s" % mH_, '', 4.05919e+00, 0, 10)
-            alpha_2 = ROOT.RooRealVar("alpha_2_%s" % mH_, '', 4.053)
-            #n_1 = ROOT.RooRealVar("n_1_%s" % mH_, '', 3.62, -10, 10)
-            n_1 = ROOT.RooRealVar("n_1_%s" % mH_, '', 3.51)
-            #n_2 = ROOT.RooRealVar("n_2_%s" % mH_, '', 1.25675e-02, -10, 10)
-            n_2 = ROOT.RooRealVar("n_2_%s" % mH_, '', 0.0196)
+            mean_slope = ROOT.RooRealVar("mean_slope_%s" % mH_, '', mH)
+            #mean_offset = ROOT.RooRealVar("mean_offset_%s" % mH_, '', 0.0876, -2, 2)
+            mean_offset = ROOT.RooRealVar("mean_offset_%s" % mH_, '', 0.1256)
+            mean = ROOT.RooFormulaVar("mean_%s" % mH_, "@0+@1", ROOT.RooArgList(mean_slope, mean_offset))
 
-            #mean_gt_offset = ROOT.RooRealVar("mean_gt_offset_%s" % mH_, '', 0.35, -5, 5)
-            mean_gt_offset = ROOT.RooRealVar("mean_gt_offset_%s" % mH_, '', 0.570)
+            sigma = ROOT.RooRealVar("sigma_%s" % mH_, '', 4.08196e-01, 0, 1)
+            alpha_1 = ROOT.RooRealVar("alpha_1_%s" % mH_, '', -2.00592e-01, -10, 0)
+            alpha_2 = ROOT.RooRealVar("alpha_2_%s" % mH_, '', 4.05919e+00, 0, 10)
+            n_1 = ROOT.RooRealVar("n_1_%s" % mH_, '', 3.62, -10, 10)
+            n_2 = ROOT.RooRealVar("n_2_%s" % mH_, '', 1.25675e-02, -10, 10)
+
+            mean_gt_offset = ROOT.RooRealVar("mean_gt_offset_%s" % mH_, '', 0.6)
             mean_gt = ROOT.RooFormulaVar("mean_gt_%s" % mH_, "@0+@1", ROOT.RooArgList(mean, mean_gt_offset))
+            sigma_gt = ROOT.RooRealVar("sigma_gt_%s" % mH_, '', 8.30603e-01, 0, 2)
             
-            #sigma_gt = ROOT.RooRealVar("sigma_gt_%s" % mH_, '', 8.30603e-01, 0, 2)
-            sigma_gt = ROOT.RooRealVar("sigma_gt_%s" % mH_, '', 0.8380) # fixed  
-            
-            #cb_1 = ROOT.RooRealVar("cb_1_%s" % mH_, '', 4.94921e-01 , 0, 1)
-            cb_1 = ROOT.RooRealVar("cb_1_%s" % mH_, '', 0.55094)
-            #cb_2 = ROOT.RooRealVar("cb_2_%s" % mH_, '', 3.86757e-01 , 0, 1)
-            cb_2 = ROOT.RooRealVar("cb_2_%s" % mH_, '', 0.375)
+            cb_1 = ROOT.RooRealVar("cb_1_%s" % mH_, '', 4.94921e-01 , 0, 1)
+            cb_2 = ROOT.RooRealVar("cb_2_%s" % mH_, '', 3.86757e-01 , 0, 1)
 
         if cat == 0 and flavor == 'ee' and mode == 'IDEA_3T':
             mean = ROOT.RooRealVar("mean_%s" % mH_, '', 1.25090e+02, mH-1., mH+1.)
@@ -406,29 +405,34 @@ def doSignal(normYields = True):
 
 
         if cat == 1 and flavor == 'mumu' and (mode == 'IDEA' or mode == "IDEA_2E" or mode == "IDEA_BES6pct"):
-            mean = ROOT.RooRealVar("mean_%s" % mH_, '', 1.25090e+02, mH-1., mH+1.)
-            #sigma = ROOT.RooRealVar("sigma_%s" % mH_, '', 4.08196e-01, 0, 1)
-            sigma = ROOT.RooRealVar("sigma_%s" % mH_, '', 0.415) # fixed
-            #alpha_1 = ROOT.RooRealVar("alpha_1_%s" % mH_, '', -2.00592e-01, -10, 0)
-            alpha_1 = ROOT.RooRealVar("alpha_1_%s" % mH_, '', -0.23)
-            #alpha_2 = ROOT.RooRealVar("alpha_2_%s" % mH_, '', 4.05919e+00, 0, 10)
-            alpha_2 = ROOT.RooRealVar("alpha_2_%s" % mH_, '', 3.89)
-            #n_1 = ROOT.RooRealVar("n_1_%s" % mH_, '', 2.48214e+00, -10, 10)
-            n_1 = ROOT.RooRealVar("n_1_%s" % mH_, '', 2.153)
-            #n_2 = ROOT.RooRealVar("n_2_%s" % mH_, '', 0.04, -10, 10)
-            n_2 = ROOT.RooRealVar("n_2_%s" % mH_, '', 0.302)
+            mean_slope = ROOT.RooRealVar("mean_slope_%s" % mH_, '', mH)
+            #mean_offset = ROOT.RooRealVar("mean_offset_%s" % mH_, '', 0.0876, -2, 2)
+            mean_offset = ROOT.RooRealVar("mean_offset_%s" % mH_, '', 0.0859)
+            mean = ROOT.RooFormulaVar("mean_%s" % mH_, "@0+@1", ROOT.RooArgList(mean_slope, mean_offset))
+            #mean = ROOT.RooRealVar("mean_%s" % mH_, '', 1.25090e+02, mH-1., mH+1.)
 
-            #mean_gt = ROOT.RooRealVar("mean_gt_%s" % mH_, '', 1.25338e+02, recoilMin, recoilMax)
-            mean_gt_offset = ROOT.RooRealVar("mean_gt_offset_%s" % mH_, '', 0.6)
+            sigma = ROOT.RooRealVar("sigma_%s" % mH_, '', 0.415, 0, 1)
+            #sigma = ROOT.RooRealVar("sigma_%s" % mH_, '', 0.415)
+            alpha_1 = ROOT.RooRealVar("alpha_1_%s" % mH_, '', -0.22, -10, 0)
+            #alpha_1 = ROOT.RooRealVar("alpha_1_%s" % mH_, '', -0.22)
+            alpha_2 = ROOT.RooRealVar("alpha_2_%s" % mH_, '', 4.03, 0, 10)
+            #alpha_2 = ROOT.RooRealVar("alpha_2_%s" % mH_, '', 4.03)
+            n_1 = ROOT.RooRealVar("n_1_%s" % mH_, '', 2.22, -10, 10)
+            #n_1 = ROOT.RooRealVar("n_1_%s" % mH_, '', 2.22)
+            n_2 = ROOT.RooRealVar("n_2_%s" % mH_, '', 0.17, -10, 10)
+            #n_2 = ROOT.RooRealVar("n_2_%s" % mH_, '', 0.17)
+
+            mean_gt_offset = ROOT.RooRealVar("mean_gt_offset_%s" % mH_, '', 0.5)
+            #mean_gt_offset = ROOT.RooRealVar("mean_gt_%s" % mH_, '', 0.6, 0, 1)
             mean_gt = ROOT.RooFormulaVar("mean_gt_%s" % mH_, "@0+@1", ROOT.RooArgList(mean, mean_gt_offset))
-            
-            #sigma_gt = ROOT.RooRealVar("sigma_gt_%s" % mH_, '', 8.30603e-01, 0, 2)
-            sigma_gt = ROOT.RooRealVar("sigma_gt_%s" % mH_, '', 0.66) # fixed  
-            
-            #cb_1 = ROOT.RooRealVar("cb_1_%s" % mH_, '', 0.5, 0, 1)
-            cb_1 = ROOT.RooRealVar("cb_1_%s" % mH_, '', 0.5085)
-            #cb_2 = ROOT.RooRealVar("cb_2_%s" % mH_, '', 0.4, 0, 1)
-            cb_2 = ROOT.RooRealVar("cb_2_%s" % mH_, '', 0.4417)
+
+            sigma_gt = ROOT.RooRealVar("sigma_gt_%s" % mH_, '', 0.672, 0, 2)
+            #sigma_gt = ROOT.RooRealVar("sigma_gt_%s" % mH_, '', 0.66)
+
+            cb_1 = ROOT.RooRealVar("cb_1_%s" % mH_, '', 0.5054, 0, 1)
+            #cb_1 = ROOT.RooRealVar("cb_1_%s" % mH_, '', 0.5085)
+            cb_2 = ROOT.RooRealVar("cb_2_%s" % mH_, '', 0.4454, 0, 1)
+            #cb_2 = ROOT.RooRealVar("cb_2_%s" % mH_, '', 0.4417)
             
         if cat == 1 and flavor == 'mumu' and mode == 'IDEA_3T':
             mean = ROOT.RooRealVar("mean_%s" % mH_, '', 1.25090e+02, mH-1., mH+1.)
@@ -695,30 +699,34 @@ def doSignal(normYields = True):
        
        
         if cat == 2 and flavor == 'mumu' and (mode == 'IDEA' or mode == "IDEA_2E" or mode == "IDEA_BES6pct"):
-            mean = ROOT.RooRealVar("mean_%s" % mH_, '', 1.25090e+02, mH-1., mH+1.)
-            #sigma = ROOT.RooRealVar("sigma_%s" % mH_, '', 4.08196e-01, 0, 1)
-            sigma = ROOT.RooRealVar("sigma_%s" % mH_, '', 0.4455) # fixed
-            #alpha_1 = ROOT.RooRealVar("alpha_1_%s" % mH_, '', -2.00592e-01, -10, 0)
-            alpha_1 = ROOT.RooRealVar("alpha_1_%s" % mH_, '', -0.17713)
-            #alpha_2 = ROOT.RooRealVar("alpha_2_%s" % mH_, '', 4.05919e+00, 0, 10)
-            alpha_2 = ROOT.RooRealVar("alpha_2_%s" % mH_, '', 3.49)
-            #n_1 = ROOT.RooRealVar("n_1_%s" % mH_, '', 2.48214e+00, -10, 10)
-            n_1 = ROOT.RooRealVar("n_1_%s" % mH_, '', 3.887)
-            #n_2 = ROOT.RooRealVar("n_2_%s" % mH_, '', 0.04, -10, 10)
-            n_2 = ROOT.RooRealVar("n_2_%s" % mH_, '', 0.851)
+            mean_slope = ROOT.RooRealVar("mean_slope_%s" % mH_, '', mH)
+            #mean_offset = ROOT.RooRealVar("mean_offset_%s" % mH_, '', 0.0876, -2, 2)
+            mean_offset = ROOT.RooRealVar("mean_offset_%s" % mH_, '', 0.0926)
+            mean = ROOT.RooFormulaVar("mean_%s" % mH_, "@0+@1", ROOT.RooArgList(mean_slope, mean_offset))
+            #mean = ROOT.RooRealVar("mean_%s" % mH_, '', 1.25090e+02, mH-1., mH+1.)
 
-            #mean_gt = ROOT.RooRealVar("mean_gt_%s" % mH_, '', 1.25338e+02, recoilMin, recoilMax)
-            mean_gt_offset = ROOT.RooRealVar("mean_gt_offset_%s" % mH_, '', 0.35)
+            sigma = ROOT.RooRealVar("sigma_%s" % mH_, '', 4.08196e-01, 0, 1)
+            #sigma = ROOT.RooRealVar("sigma_%s" % mH_, '', 0.4455) # fixed
+            alpha_1 = ROOT.RooRealVar("alpha_1_%s" % mH_, '', -2.00592e-01, -10, 0)
+            #alpha_1 = ROOT.RooRealVar("alpha_1_%s" % mH_, '', -0.17713)
+            alpha_2 = ROOT.RooRealVar("alpha_2_%s" % mH_, '', 4.05919e+00, 0, 10)
+            #alpha_2 = ROOT.RooRealVar("alpha_2_%s" % mH_, '', 3.49)
+            n_1 = ROOT.RooRealVar("n_1_%s" % mH_, '', 2.48214e+00, -10, 10)
+            #n_1 = ROOT.RooRealVar("n_1_%s" % mH_, '', 3.887)
+            n_2 = ROOT.RooRealVar("n_2_%s" % mH_, '', 0.04, -10, 10)
+            #n_2 = ROOT.RooRealVar("n_2_%s" % mH_, '', 0.851)
+
             #mean_gt_offset = ROOT.RooRealVar("mean_gt_offset_%s" % mH_, '', 0.281, recoilMin, recoilMax)
+            mean_gt_offset = ROOT.RooRealVar("mean_gt_offset_%s" % mH_, '', 0.35)
             mean_gt = ROOT.RooFormulaVar("mean_gt_%s" % mH_, "@0+@1", ROOT.RooArgList(mean, mean_gt_offset))
-            
-            #sigma_gt = ROOT.RooRealVar("sigma_gt_%s" % mH_, '', 8.30603e-01, 0, 2)
-            sigma_gt = ROOT.RooRealVar("sigma_gt_%s" % mH_, '', 0.860) # fixed  
-            
-            #cb_1 = ROOT.RooRealVar("cb_1_%s" % mH_, '', 0.5, 0, 1)
-            cb_1 = ROOT.RooRealVar("cb_1_%s" % mH_, '', 0.4541)
-            #cb_2 = ROOT.RooRealVar("cb_2_%s" % mH_, '', 0.4, 0, 1)
-            cb_2 = ROOT.RooRealVar("cb_2_%s" % mH_, '', 0.4310)     
+
+            sigma_gt = ROOT.RooRealVar("sigma_gt_%s" % mH_, '', 8.30603e-01, 0, 2)
+            #sigma_gt = ROOT.RooRealVar("sigma_gt_%s" % mH_, '', 0.860)
+
+            cb_1 = ROOT.RooRealVar("cb_1_%s" % mH_, '', 0.5, 0, 1)
+            #cb_1 = ROOT.RooRealVar("cb_1_%s" % mH_, '', 0.4541)
+            cb_2 = ROOT.RooRealVar("cb_2_%s" % mH_, '', 0.4, 0, 1)
+            #cb_2 = ROOT.RooRealVar("cb_2_%s" % mH_, '', 0.4310)
 
         if cat == 2 and flavor == 'mumu' and mode == 'IDEA_3T':
             mean = ROOT.RooRealVar("mean_%s" % mH_, '', 1.25090e+02, mH-1., mH+1.)
@@ -987,30 +995,33 @@ def doSignal(normYields = True):
 
 
         if cat == 3 and flavor == 'mumu' and (mode == 'IDEA' or mode == "IDEA_2E" or mode == "IDEA_BES6pct"):
-            mean = ROOT.RooRealVar("mean_%s" % mH_, '', 1.25090e+02, mH-1., mH+1.)
-            #sigma = ROOT.RooRealVar("sigma_%s" % mH_, '', 4.08196e-01, 0, 1)
-            sigma = ROOT.RooRealVar("sigma_%s" % mH_, '', 0.5) # fixed
-            #alpha_1 = ROOT.RooRealVar("alpha_1_%s" % mH_, '', -2.00592e-01, -10, 0)
-            alpha_1 = ROOT.RooRealVar("alpha_1_%s" % mH_, '', -0.3368)
-            #alpha_2 = ROOT.RooRealVar("alpha_2_%s" % mH_, '', 4.05919e+00, 0, 10)
-            alpha_2 = ROOT.RooRealVar("alpha_2_%s" % mH_, '', 3.8)
-            #n_1 = ROOT.RooRealVar("n_1_%s" % mH_, '', 2.48214e+00, -10, 10)
-            n_1 = ROOT.RooRealVar("n_1_%s" % mH_, '', 1.705)
-            #n_2 = ROOT.RooRealVar("n_2_%s" % mH_, '', 0.04, -10, 10)
-            n_2 = ROOT.RooRealVar("n_2_%s" % mH_, '', 0.38)
+            mean_slope = ROOT.RooRealVar("mean_slope_%s" % mH_, '', mH)
+            mean_offset = ROOT.RooRealVar("mean_offset_%s" % mH_, '', 0, -2, 2)
+            mean_offset = ROOT.RooRealVar("mean_offset_%s" % mH_, '', 0.1163)
 
-            #mean_gt = ROOT.RooRealVar("mean_gt_%s" % mH_, '', 1.25338e+02, recoilMin, recoilMax)
-            #mean_gt_offset = ROOT.RooRealVar("mean_gt_offset_%s" % mH_, '', 0.3, recoilMin, recoilMax)
-            mean_gt_offset = ROOT.RooRealVar("mean_gt_offset_%s" % mH_, '', 0.05)
+            mean = ROOT.RooFormulaVar("mean_%s" % mH_, "@0+@1", ROOT.RooArgList(mean_slope, mean_offset))
+            sigma = ROOT.RooRealVar("sigma_%s" % mH_, '', 0.4948, 0, 1)
+            #sigma = ROOT.RooRealVar("sigma_%s" % mH_, '', 0.4949)
+            alpha_1 = ROOT.RooRealVar("alpha_1_%s" % mH_, '', -0.33, -10, 0)
+            #alpha_1 = ROOT.RooRealVar("alpha_1_%s" % mH_, '', -0.33377)
+            alpha_2 = ROOT.RooRealVar("alpha_2_%s" % mH_, '', 3.09, 0, 10)
+            #alpha_2 = ROOT.RooRealVar("alpha_2_%s" % mH_, '', 3.153)
+            n_1 = ROOT.RooRealVar("n_1_%s" % mH_, '', 1.678, -10, 10)
+            #n_1 = ROOT.RooRealVar("n_1_%s" % mH_, '', 1.672)
+            n_2 = ROOT.RooRealVar("n_2_%s" % mH_, '', 1.31, -10, 10)
+            #n_2 = ROOT.RooRealVar("n_2_%s" % mH_, '', 1.2)
+
+            #mean_gt_offset = ROOT.RooRealVar("mean_gt_offset_%s" % mH_, '', 0.11, -5, 5)
+            mean_gt_offset = ROOT.RooRealVar("mean_gt_offset_%s" % mH_, '', 0.11)
             mean_gt = ROOT.RooFormulaVar("mean_gt_%s" % mH_, "@0+@1", ROOT.RooArgList(mean, mean_gt_offset))
-            
-            #sigma_gt = ROOT.RooRealVar("sigma_gt_%s" % mH_, '', 8.30603e-01, 0, 2)
-            sigma_gt = ROOT.RooRealVar("sigma_gt_%s" % mH_, '', 0.958) # fixed  
-            
-            #cb_1 = ROOT.RooRealVar("cb_1_%s" % mH_, '', 0.5, 0, 1)
-            cb_1 = ROOT.RooRealVar("cb_1_%s" % mH_, '', 0.5634)
-            #cb_2 = ROOT.RooRealVar("cb_2_%s" % mH_, '', 0.4, 0, 1)
-            cb_2 = ROOT.RooRealVar("cb_2_%s" % mH_, '', 0.3403)               
+
+            sigma_gt = ROOT.RooRealVar("sigma_gt_%s" % mH_, '', 0.924, 0, 2)
+            #sigma_gt = ROOT.RooRealVar("sigma_gt_%s" % mH_, '', 0.931)
+
+            cb_1 = ROOT.RooRealVar("cb_1_%s" % mH_, '', 0.55, 0, 1)
+            #cb_1 = ROOT.RooRealVar("cb_1_%s" % mH_, '', 0.5562)
+            cb_2 = ROOT.RooRealVar("cb_2_%s" % mH_, '', 0.33, 0, 1)
+            #cb_2 = ROOT.RooRealVar("cb_2_%s" % mH_, '', 0.3311)
 
         if cat == 3 and flavor == 'mumu' and mode == 'IDEA_3T':
             mean = ROOT.RooRealVar("mean_%s" % mH_, '', 1.25090e+02, mH-1., mH+1.)
@@ -1433,7 +1444,8 @@ def doSignal(normYields = True):
         
         
         param_mh.append(mH)
-        param_mean.append(mean.getVal())
+        #param_mean.append(mean.getVal())
+        param_mean_offset.append(mean_offset.getVal())
         param_sigma.append(sigma.getVal())
         param_mean_gt.append(mean_gt.getVal())
         param_mean_gt_offset.append(mean_gt_offset.getVal())
@@ -1446,9 +1458,10 @@ def doSignal(normYields = True):
         param_cb_1.append(cb_1.getVal())
         param_cb_2.append(cb_2.getVal())
         
-        param_mean_err.append(mean.getError())
+        #param_mean_err.append(mean.getError())
+        param_mean_offset_err.append(mean_offset.getError())
         param_sigma_err.append(sigma.getError())
-        param_mean_gt_err.append(mean.getError())
+        param_mean_gt_err.append(0)
         param_mean_gt_offset_err.append(mean_gt_offset.getError())
         param_sigma_gt_err.append(sigma.getError())
         param_alpha_1_err.append(alpha_1.getError())
@@ -1507,7 +1520,8 @@ def doSignal(normYields = True):
 
     # make splines, to connect the fit parameters a function of the Higgs mass
     # plot them afterwards
-    spline_mean = ROOT.RooSpline1D("spline_mean", "spline_mean", MH, len(param_mh), array.array('d', param_mh), array.array('d', param_mean))
+    #spline_mean = ROOT.RooSpline1D("spline_mean", "spline_mean", MH, len(param_mh), array.array('d', param_mh), array.array('d', param_mean))
+    spline_mean_offset = ROOT.RooSpline1D("spline_mean_offset", "spline_mean_offset", MH, len(param_mh), array.array('d', param_mh), array.array('d', param_mean_offset))
     spline_sigma = ROOT.RooSpline1D("spline_sigma", "spline_sigma", MH, len(param_mh), array.array('d', param_mh), array.array('d', param_sigma))
     spline_mean_gt = ROOT.RooSpline1D("spline_mean_gt", "spline_mean_gt", MH, len(param_mh), array.array('d', param_mh), array.array('d', param_mean_gt))
     spline_mean_gt_offset = ROOT.RooSpline1D("spline_mean_gt_offset", "spline_mean_gt_offset", MH, len(param_mh), array.array('d', param_mh), array.array('d', param_mean_gt_offset))
@@ -1523,6 +1537,7 @@ def doSignal(normYields = True):
     
     
     # export values
+    '''
     coeff_mean = np.polyfit(param_mh, param_mean, 1)
     coeff_mean_gt = np.polyfit(param_mh, param_mean_gt, 1)
     fOut = open("%s/coeff.txt" % outDir, "w")
@@ -1540,11 +1555,29 @@ def doSignal(normYields = True):
     fOut.write(str(np.average(param_cb_1)) + "\n")
     fOut.write(str(np.average(param_cb_2)) + "\n")
     fOut.close()
+    '''
     
+    coeff_mean = np.polyfit(param_mh, param_mean_offset, 1)
+    coeff_mean_gt = np.polyfit(param_mh, param_mean_gt, 1)
+    fOut = open("%s/coeff.txt" % outDir, "w")
+    fOut.write(str("1.0\n"))
+    fOut.write(str(np.average(param_mean_offset)) + "\n")
+    fOut.write(str("1.0\n"))
+    fOut.write(str(np.average(param_mean_offset)) + "\n")
+    fOut.write(str(np.average(param_mean_gt_offset)) + "\n")
+    fOut.write(str(np.average(param_sigma)) + "\n")
+    fOut.write(str(np.average(param_sigma_gt)) + "\n")
+    fOut.write(str(np.average(param_alpha_1)) + "\n")
+    fOut.write(str(np.average(param_alpha_2)) + "\n")
+    fOut.write(str(np.average(param_n_1)) + "\n")
+    fOut.write(str(np.average(param_n_2)) + "\n")
+    fOut.write(str(np.average(param_cb_1)) + "\n")
+    fOut.write(str(np.average(param_cb_2)) + "\n")
+    fOut.close()
     ##################################
     # mean
     ##################################
-    graph_mean = ROOT.TGraphErrors(len(param_mh), array.array('d', param_mh), array.array('d', param_mean), array.array('d', [0]*len(param_mean_err)), array.array('d', param_mean_err))
+    graph_mean_offset = ROOT.TGraphErrors(len(param_mh), array.array('d', param_mh), array.array('d', param_mean_offset), array.array('d', [0]*len(mHs)), array.array('d', param_mean_offset_err))
     
     cfg = {
 
@@ -1553,8 +1586,8 @@ def doSignal(normYields = True):
     
         'xmin'              : 124.85,
         'xmax'              : 125.15,
-        'ymin'              : 0.999*min(param_mean),
-        'ymax'              : 1.001*max(param_mean),
+        'ymin'              : 0.999*min(param_mean_offset),
+        'ymax'              : 1.001*max(param_mean_offset),
         
         'xtitle'            : "m_{h} (GeV)",
         'ytitle'            : "#mu (GeV)",
@@ -1570,11 +1603,11 @@ def doSignal(normYields = True):
     dummy.Draw("HIST")
 
     plt = MH.frame()
-    spline_mean.plotOn(plt)    
-    graph_mean.SetMarkerStyle(8)
-    graph_mean.SetMarkerColor(ROOT.kBlack)
-    graph_mean.SetMarkerSize(1.5)
-    graph_mean.Draw("SAME P")
+    spline_mean_offset.plotOn(plt)    
+    graph_mean_offset.SetMarkerStyle(8)
+    graph_mean_offset.SetMarkerColor(ROOT.kBlack)
+    graph_mean_offset.SetMarkerSize(1.5)
+    graph_mean_offset.Draw("SAME P")
     
     latex.DrawLatex(0.2, 0.92, label)
     plt.Draw("SAME")
@@ -1585,13 +1618,13 @@ def doSignal(normYields = True):
     ROOT.gPad.SetTicky()
     ROOT.gPad.RedrawAxis()
     canvas.Draw()
-    canvas.SaveAs("%s/fit_mean.png" % (outDir))
-    canvas.SaveAs("%s/fit_mean.pdf" % (outDir))
+    canvas.SaveAs("%s/fit_mean_offset.png" % (outDir))
+    canvas.SaveAs("%s/fit_mean_offset.pdf" % (outDir))
     
     ##################################
     # mean_gt_offset
     ##################################
-    graph_mean_gt = ROOT.TGraphErrors(len(param_mh), array.array('d', param_mh), array.array('d', param_mean_gt_offset), array.array('d', [0]*len(param_mean_gt_offset_err)), array.array('d', param_mean_gt_offset_err))
+    graph_mean_gt = ROOT.TGraphErrors(len(param_mh), array.array('d', param_mh), array.array('d', param_mean_gt_offset), array.array('d', [0]*len(mHs)), array.array('d', param_mean_gt_offset_err))
     
     cfg = {
 
@@ -1639,7 +1672,7 @@ def doSignal(normYields = True):
     ##################################
     # signal yield
     ##################################
-    graph_yield = ROOT.TGraphErrors(len(param_mh), array.array('d', param_mh), array.array('d', param_yield), array.array('d', [0]*len(param_mean_err)), array.array('d', param_yield_err))
+    graph_yield = ROOT.TGraphErrors(len(param_mh), array.array('d', param_mh), array.array('d', param_yield), array.array('d', [0]*len(mHs)), array.array('d', param_yield_err))
     
     cfg = {
 
@@ -1687,7 +1720,7 @@ def doSignal(normYields = True):
     ##################################
     # sigma 
     ##################################
-    graph_sigma = ROOT.TGraphErrors(len(param_mh), array.array('d', param_mh), array.array('d', param_sigma), array.array('d', [0]*len(param_sigma_err)), array.array('d', param_sigma_err))
+    graph_sigma = ROOT.TGraphErrors(len(param_mh), array.array('d', param_mh), array.array('d', param_sigma), array.array('d', [0]*len(mHs)), array.array('d', param_sigma_err))
     
     cfg = {
 
@@ -1734,7 +1767,7 @@ def doSignal(normYields = True):
     ##################################
     # sigma_gt
     ##################################
-    graph_sigma_gt = ROOT.TGraphErrors(len(param_mh), array.array('d', param_mh), array.array('d', param_sigma_gt), array.array('d', [0]*len(param_sigma_gt_err)), array.array('d', param_sigma_gt_err))
+    graph_sigma_gt = ROOT.TGraphErrors(len(param_mh), array.array('d', param_mh), array.array('d', param_sigma_gt), array.array('d', [0]*len(mHs)), array.array('d', param_sigma_gt_err))
     
     cfg = {
 
@@ -1781,7 +1814,7 @@ def doSignal(normYields = True):
     ##################################
     # alpha_1
     ##################################
-    graph_alpha_1 = ROOT.TGraphErrors(len(param_mh), array.array('d', param_mh), array.array('d', param_alpha_1), array.array('d', [0]*len(param_alpha_1_err)), array.array('d', param_alpha_1_err))
+    graph_alpha_1 = ROOT.TGraphErrors(len(param_mh), array.array('d', param_mh), array.array('d', param_alpha_1), array.array('d', [0]*len(mHs)), array.array('d', param_alpha_1_err))
     
     cfg = {
 
@@ -1828,7 +1861,7 @@ def doSignal(normYields = True):
     ##################################
     # alpha_2
     ##################################
-    graph_alpha_2 = ROOT.TGraphErrors(len(param_mh), array.array('d', param_mh), array.array('d', param_alpha_2), array.array('d', [0]*len(param_alpha_2_err)), array.array('d', param_alpha_2_err))
+    graph_alpha_2 = ROOT.TGraphErrors(len(param_mh), array.array('d', param_mh), array.array('d', param_alpha_2), array.array('d', [0]*len(mHs)), array.array('d', param_alpha_2_err))
     
     cfg = {
 
@@ -1876,7 +1909,7 @@ def doSignal(normYields = True):
     ##################################
     # n_1
     ##################################
-    graph_n_1 = ROOT.TGraphErrors(len(param_mh), array.array('d', param_mh), array.array('d', param_n_1), array.array('d', [0]*len(param_n_1_err)), array.array('d', param_n_1_err))
+    graph_n_1 = ROOT.TGraphErrors(len(param_mh), array.array('d', param_mh), array.array('d', param_n_1), array.array('d', [0]*len(mHs)), array.array('d', param_n_1_err))
     
     cfg = {
 
@@ -1923,7 +1956,7 @@ def doSignal(normYields = True):
     ##################################
     # n_2
     ##################################
-    graph_n_2 = ROOT.TGraphErrors(len(param_mh), array.array('d', param_mh), array.array('d', param_n_2), array.array('d', [0]*len(param_n_2_err)), array.array('d', param_n_2_err))
+    graph_n_2 = ROOT.TGraphErrors(len(param_mh), array.array('d', param_mh), array.array('d', param_n_2), array.array('d', [0]*len(mHs)), array.array('d', param_n_2_err))
     
     cfg = {
 
@@ -1970,7 +2003,7 @@ def doSignal(normYields = True):
     ##################################
     # cb_1
     ##################################
-    graph_cb_1 = ROOT.TGraphErrors(len(param_mh), array.array('d', param_mh), array.array('d', param_cb_1), array.array('d', [0]*len(param_cb_1_err)), array.array('d', param_cb_1_err))
+    graph_cb_1 = ROOT.TGraphErrors(len(param_mh), array.array('d', param_mh), array.array('d', param_cb_1), array.array('d', [0]*len(mHs)), array.array('d', param_cb_1_err))
     
     cfg = {
 
@@ -2017,7 +2050,7 @@ def doSignal(normYields = True):
     ##################################
     # cb_2
     ##################################
-    graph_cb_2 = ROOT.TGraphErrors(len(param_mh), array.array('d', param_mh), array.array('d', param_cb_2), array.array('d', [0]*len(param_cb_2_err)), array.array('d', param_cb_2_err))
+    graph_cb_2 = ROOT.TGraphErrors(len(param_mh), array.array('d', param_mh), array.array('d', param_cb_2), array.array('d', [0]*len(mHs)), array.array('d', param_cb_2_err))
     
     cfg = {
 
@@ -2064,7 +2097,7 @@ def doSignal(normYields = True):
     
     
     ##################################
-    getattr(w_tmp, 'import')(spline_mean)
+    getattr(w_tmp, 'import')(spline_mean_offset)
     getattr(w_tmp, 'import')(spline_sigma)
     getattr(w_tmp, 'import')(spline_yield)
     getattr(w_tmp, 'import')(spline_alpha_1)

@@ -19,6 +19,7 @@ parser = argparse.ArgumentParser()
 parser.add_argument("--flavor", type=str, help="Flavor (mumu or ee)", default="mumu")
 parser.add_argument("--mode", type=str, help="Detector mode", choices=["IDEA", "IDEA_MC", "IDEA_3T", "CLD", "IDEA_noBES", "IDEA_2E", "IDEA_BES6pct"], default="IDEA")
 parser.add_argument("--cat", type=str, help="Category (0, 1, 2 or 3)", choices=["0", "1", "2", "3"], default="0")
+parser.add_argument("--lumi", type=str, help="Luminosity (2p5, 5, 7p2, 10 or 15)", choices=["2p5", "5", "7p2", "10", "15"], default="7p2")
 args = parser.parse_args()
 
 sumw2err = ROOT.kTRUE
@@ -71,6 +72,7 @@ def doSignal(normYields = True):
     param_yield_err, param_mean_err, param_sigma_err, param_mean_gt_err, param_sigma_gt_err, param_alpha_1_err, param_alpha_2_err, param_n_1_err, param_n_2_err, param_cb_1_err, param_cb_2_err  = [], [], [], [], [], [], [], [], [], [], []
 
     hist_norm = fIn.Get("%s/%s" % (procs[1], hName))
+    hist_norm.Scale(lumiscale)
     hist_norm = hist_norm.ProjectionX("hist_zh_norm", cat_idx_min, cat_idx_max)
     yield_nom = hist_norm.Integral()
 
@@ -112,7 +114,7 @@ def doSignal(normYields = True):
     ## constants for all the rest
 
     # import values
-    coeff = np.loadtxt("%s/coeff.txt" % outDir)
+    coeff = np.loadtxt("%s/coeff.txt" % outDir.replace(lumi_suffix, "")) # take the coefficients from the 7.2 ab-1
 
     param_mean0_ = float(coeff[0])
     param_mean1_ = float(coeff[1])
@@ -139,6 +141,7 @@ def doSignal(normYields = True):
     alpha2_argl, n2_argl, cb2_argl = ROOT.RooArgList("alpha2_argl"), ROOT.RooArgList("n2_argl"), ROOT.RooArgList("cb2_argl")
 
     mean0 = ROOT.RooRealVar("mean0", "", param_mean0_, 0.5, 1.5) # slope
+    mean0.setConstant(ROOT.kTRUE)
     mean1 = ROOT.RooRealVar("mean1", "", param_mean1_, -20, 20) # offset
     #mean1.setConstant(ROOT.kTRUE)
     mean_argl.add(mean0)
@@ -150,31 +153,31 @@ def doSignal(normYields = True):
     mean_gt_offset_argl.add(mean_gt_offset)
 
     sigma0 = ROOT.RooRealVar("sigma0", "", param_sigma_, 0, 10) # 0.4335
-    sigma0.setConstant(ROOT.kTRUE)
+    #sigma0.setConstant(ROOT.kTRUE)
     sigma_argl.add(sigma0)
 
     sigma_gt0 = ROOT.RooRealVar("sigma_gt0", "", param_sigma_gt_, 0, 10)
-    sigma_gt0.setConstant(ROOT.kTRUE)
+    #sigma_gt0.setConstant(ROOT.kTRUE)
     sigma_gt_argl.add(sigma_gt0)
 
     alpha10 = ROOT.RooRealVar("alpha10", "", param_alpha_1_, -10, 10)
     #alpha10.setConstant(ROOT.kTRUE)
     alpha1_argl.add(alpha10)
     n10 = ROOT.RooRealVar("n10", "", param_n_1_, -2, 10)
-    n10.setConstant(ROOT.kTRUE)
+    #n10.setConstant(ROOT.kTRUE)
     n1_argl.add(n10)
     cb10 = ROOT.RooRealVar("cb10", "", param_cb_1_, 0, 1)
-    cb10.setConstant(ROOT.kTRUE)
+    #cb10.setConstant(ROOT.kTRUE)
     cb1_argl.add(cb10)
 
     alpha20 = ROOT.RooRealVar("alpha20", "", param_alpha_2_, -10, 10)
     #alpha20.setConstant(ROOT.kTRUE)
     alpha2_argl.add(alpha20)
     n20 = ROOT.RooRealVar("n20", "", param_n_2_,  -2, 10)
-    n20.setConstant(ROOT.kTRUE)
+    #n20.setConstant(ROOT.kTRUE)
     n2_argl.add(n20)
     cb20 = ROOT.RooRealVar("cb20", "", param_cb_2_, 0, 1)
-    cb20.setConstant(ROOT.kTRUE)
+    #cb20.setConstant(ROOT.kTRUE)
     cb2_argl.add(cb20)
 
     cats = ROOT.RooCategory("category", "") # for each mass bin, define category
@@ -199,6 +202,7 @@ def doSignal(normYields = True):
         print("Do mH=%.2f" % mH)
 
         hist_zh = fIn.Get("%s/%s" % (proc, hName))
+        hist_zh.Scale(lumiscale)
         hist_zh = hist_zh.ProjectionX("hist_zh_%s" % mH_, cat_idx_min, cat_idx_max)
         if normYields: hist_zh.Scale(yield_nom/hist_zh.Integral())
 
@@ -240,7 +244,7 @@ def doSignal(normYields = True):
         norms_argl.setName("norms_argl_%s"%mH_)
         sig = ROOT.RooAddPdf("sig_%s"%mH_, '', argl, norms_argl) # half of both CB functions
         sig_norm = ROOT.RooRealVar("sig_norm_%s"%mH_, '', yield_zh, 0, 1e8) # fix normalization
-        #sig_norm.setConstant(ROOT.kTRUE)
+        sig_norm.setConstant(ROOT.kTRUE)
 
         sig_argl = ROOT.RooArgList(sig)
         sig_argl.setName("sig_argl_%s"%mH_)
@@ -526,6 +530,10 @@ def doSignal(normYields = True):
     spline_n_2 = ROOT.RooSpline1D("spline_n_2", "spline_n_2", MH, len(param_mh), array.array('d', param_mh), array.array('d', param_n_2))
     spline_cb_1 = ROOT.RooSpline1D("spline_cb_1", "spline_cb_1", MH, len(param_mh), array.array('d', param_mh), array.array('d', param_cb_1))
     spline_cb_2 = ROOT.RooSpline1D("spline_cb_2", "spline_cb_2", MH, len(param_mh), array.array('d', param_mh), array.array('d', param_cb_2))
+
+    form_mean = ROOT.RooFormulaVar("form_mean", "@0*@1 + @2", ROOT.RooArgList(mean0, MH, mean1))
+    form_mean.Print()
+    quit()
 
     ##################################
     # mean
@@ -1059,6 +1067,9 @@ def doSignal(normYields = True):
     getattr(w_tmp, 'import')(spline_cb_2)
     getattr(w_tmp, 'import')(spline_mean_gt)
     getattr(w_tmp, 'import')(spline_sigma_gt)
+    
+    
+    quit()
 
     return param_mh, param_yield
 
@@ -1080,6 +1091,7 @@ def doBackgrounds():
     for proc in procs:
 
         hist = fIn.Get("%s/%s" % (proc, hName))
+        hist.Scale(lumiscale)
         hist = hist.ProjectionX("hist_%s" % proc, cat_idx_min, cat_idx_max)   
         rdh = ROOT.RooDataHist("rdh_%s" % proc, "rdh", ROOT.RooArgList(recoilmass), ROOT.RooFit.Import(hist))
 
@@ -1302,6 +1314,7 @@ def doBES():
                 proc = "p_wzp6_ee_eeH_noBES_ecm240"
 
         hist_zh = fIn.Get("%s/%s" % (proc, hName))
+        hist_zh.Scale(lumiscale)
         hist_zh = hist_zh.ProjectionX("hist_zh_%s_BES%s" % (mH_, s), cat_idx_min, cat_idx_max)
         hist_zh.SetName("hist_zh_%s_BES%s" % (mH_, s))
         hist_zh.Scale(yield_nom/hist_zh.Integral())
@@ -1537,6 +1550,7 @@ def doSQRTS():
         if s == "Down": s_ = "dw"
 
         hist_zh = fIn.Get("%s/%s" % (proc, hName + "_sqrts%s"%s_))
+        hist_zh.Scale(lumiscale)
         hist_zh = hist_zh.ProjectionX("hist_zh_%s_SQRTS%s" % (mH_, s), cat_idx_min, cat_idx_max)
         hist_zh.SetName("hist_zh_%s_BES%s" % (mH_, s))
         hist_zh.Scale(yield_nom/hist_zh.Integral())
@@ -1773,6 +1787,7 @@ def doLEPSCALE():
         if s == "Down": s_ = "dw"
 
         hist_zh = fIn.Get("%s/%s" % (proc, hName + "_scale%s"%s_))
+        hist_zh.Scale(lumiscale)
         hist_zh = hist_zh.ProjectionX("hist_zh_%s_LEPSCALE%s" % (mH_, s), cat_idx_min, cat_idx_max)   
         hist_zh.SetName("hist_zh_%s_LEPSCALE%s" % (mH_, s))
         hist_zh.Scale(yield_nom/hist_zh.Integral())
@@ -1976,6 +1991,7 @@ def doISR_old():
     proc = "wzp6_ee_mumuH_ISRnoRecoil_ecm240"
     fIn = ROOT.TFile("%s/%s_hists.root" % (histDir, proc))
     hist_zh = copy.deepcopy(fIn.Get("zed_leptonic_recoil_m_%s" % sel))
+    hist_zh.Scale(lumiscale)
     hist_zh.Scale(lumi*ds.datasets[proc]['xsec']*1e6/ds.datasets[proc]['nevents'])
     hist_zh.SetName("hist_zh_%s_ISR" % mH_)
     hist_zh = hist_zh.Rebin(rebin)
@@ -2149,24 +2165,25 @@ def doISR_old():
  
 if __name__ == "__main__":
 
+    lumiDict = {"2p5": 2.5/7.2, "5": 5.0/7.2, "7p2": 7.2/7.2, "10": 10.0/7.2, "15": 15.0/7.2}
     mode = args.mode
     flavor = args.flavor
     cat = int(args.cat)
+    lumi = args.lumi
+    lumiscale = lumiDict[lumi]
+    lumi_suffix =  "" if args.lumi == "7p2" else "_LUMI_%s"%args.lumi
     
-    topRight = "#sqrt{s} = 240 GeV, 7.2 ab^{#minus1}"
+    topRight = "#sqrt{s} = 240 GeV, %s ab^{#minus1}" % args.lumi.replace('p', '.')
     topLeft = "#bf{FCC-ee} #scale[0.7]{#it{Internal}}"
     label = "#mu^{#plus}#mu^{#minus}, category %d" % (cat) if flavor == "mumu" else "e^{#plus}e^{#minus}, category %d" % (cat)
     fIn = ROOT.TFile("tmp/output_ZH_mass_%s_%s.root"%(flavor, "mc" if mode == "IDEA_MC" else "reco"))
-    outDir = "/eos/user/j/jaeyserm/www/FCCee/ZH_mass/combine/%s_cat%d/" % (flavor, cat)
-    outDir = "/eos/user/j/jaeyserm/www/FCCee/ZH_mass/combine/%s/%s_cat%d/" % (mode, flavor, cat)
+    outDir = "/eos/user/j/jaeyserm/www/FCCee/ZH_mass/combine/%s%s/%s_cat%d/" % (mode, lumi_suffix, flavor, cat)
     hName = "zll_recoil_m"
     
     if cat == 0: cat_idx_min, cat_idx_max = 0, 5
     else: cat_idx_min, cat_idx_max = cat, cat
-    
 
-    runDir = "combine/run/%s_cat%s" % (flavor, cat)
-    runDir = "combine/run/%s/%s_cat%s" % (mode, flavor, cat)
+    runDir = "combine/run/%s%s/%s_cat%s" % (mode, lumi_suffix, flavor, cat)
     if not os.path.exists(runDir): os.makedirs(runDir)
     if not os.path.exists(outDir): os.makedirs(outDir)
 

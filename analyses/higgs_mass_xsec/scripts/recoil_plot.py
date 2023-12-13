@@ -125,3 +125,12 @@ if __name__ == "__main__":
 
     outDir = "/eos/user/j/jaeyserm/www/FCCee/ZH_mass/recoil_comparison/"
     recoil_plot("IDEA_MU_3T_CLD", files, hists, labels, colors, 122, 132, 0, 500, "Recoil (GeV)", "Events (normalized)", rebin=2)
+
+
+    files = [f"tmp/output_ZH_mass_mumu_reco.root", f"tmp/output_ZH_mass_ee_reco.root", f"tmp/output_ZH_mass_ee_reco.root"]
+    hists = [f"p_wzp6_ee_mumuH_ecm240/zll_recoil", f"p_wzp6_ee_eeH_ecm240/zll_recoil", f"p_wzp6_ee_eeH_ecm240_E2/zll_recoil"]
+    labels = ["IDEA 2T (#mu^{#plus}#mu^{#minus})", "IDEA 2T (e^{#plus}e^{#minus})", "IDEA 2T (e^{#plus}e^{#minus} 2E)"]
+    colors = [ROOT.kBlack, ROOT.kRed, ROOT.kBlue]
+
+    outDir = "/eos/user/j/jaeyserm/www/FCCee/ZH_mass/recoil_comparison/"
+    recoil_plot("IDEA_MU_E_2E", files, hists, labels, colors, 122, 132, 0, 500, "Recoil (GeV)", "Events (normalized)", rebin=2)

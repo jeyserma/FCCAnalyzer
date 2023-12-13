@@ -321,11 +321,8 @@ def build_graph(df, dataset):
     if dataset.name in sigProcs: 
         results.append(df.Histo1D(("higgs_decay_cut5", "", *bins_count), "daughter_higgs_collapsed")) 
         results.append(df.Histo1D(("zll_leps_from_higgs_cut5", "", *bins_count), "zll_leps_from_higgs"))
-        
-    
-    
-   
-    
+
+
     #########
     ### CUT 6: cosThetaMiss, for mass analysis
     #########  
@@ -335,36 +332,31 @@ def build_graph(df, dataset):
         results.append(df.Histo1D(("higgs_decay_cut6", "", *bins_count), "daughter_higgs_collapsed")) 
         results.append(df.Histo1D(("zll_leps_from_higgs_cut6", "", *bins_count), "zll_leps_from_higgs"))
     results.append(df.Histo1D(("cutFlow", "", *bins_count), "cut6"))
-    
-    
+
     # final histograms
-    
-   
+
     results.append(df.Histo1D(("leps_p", "", *bins_p_mu), "leps_p"))
     results.append(df.Histo1D(("zll_p", "", *bins_p_mu), "zll_p"))
     results.append(df.Histo1D(("zll_m", "", *bins_m_ll), "zll_m"))
-    results.append(df.Histo1D(("zll_recoil", "", *bins_recoil), "zll_recoil_m"))    
+    results.append(df.Histo1D(("zll_recoil", "", *bins_recoil), "zll_recoil_m"))
 
     results.append(df.Histo1D(("cosThetaMiss", "", *bins_cosThetaMiss), "cosTheta_miss"))
     results.append(df.Histo1D(("acoplanarity", "", *bins_aco), "acoplanarity"))
     results.append(df.Histo1D(("acolinearity", "", *bins_aco), "acolinearity"))
-    
+
     results.append(df.Histo1D(("photons_p", "", *bins_p_mu), "photons_p"))
     results.append(df.Histo1D(("photons_theta", "", *bins_theta), "photons_theta"))
     results.append(df.Histo1D(("photons_phi", "", *bins_phi), "photons_phi"))
-    results.append(df.Histo1D(("photons_no", "", *bins_count), "photons_no"))    
+    results.append(df.Histo1D(("photons_no", "", *bins_count), "photons_no"))
     
-    
+    results.append(df.Histo2D(("leps_reso_p", "", *(bins_resolution + bins_cat)), "leps_reso_p", "zll_category"))
 
-   
-        
+
     ########################
     # Final histograms
     ########################
     results.append(df.Histo2D(("zll_recoil_m", "", *(bins_recoil_fine + bins_cat)), "zll_recoil_m", "zll_category"))
-    
-   
-    ########################
+###################
     # Systematics
     ########################
 
@@ -403,14 +395,14 @@ def build_graph(df, dataset):
 
 if __name__ == "__main__":
 
-    datasets = []
+    datasets_to_run = []
 
     baseDir = functions.get_basedir() # get base directory of samples, depends on the cluster hostname (mit, cern, ...)
-    import FCCee_winter2023_IDEA_ecm240
-    datasets_preproduction_IDEA = FCCee_winter2023_IDEA_ecm240.get_datasets(baseDir=baseDir) # list of all datasets
+    import datasets.FCCee_winter2023_IDEA_ecm240
+    datasets_preproduction_IDEA = datasets.FCCee_winter2023_IDEA_ecm240.get_datasets(baseDir=baseDir) # list of all datasets
 
-    import FCCee_winter2023_IDEA_ecm240_PRIV
-    datasets_preproduction_IDEA_PRIV = FCCee_winter2023_IDEA_ecm240_PRIV.get_datasets(baseDir=baseDir) # list of all datasets
+    import datasets.FCCee_winter2023_IDEA_ecm240_PRIV
+    datasets_preproduction_IDEA_PRIV = datasets.FCCee_winter2023_IDEA_ecm240_PRIV.get_datasets(baseDir=baseDir) # list of all datasets
     
     if args.flavor == "mumu": 
 
@@ -443,6 +435,6 @@ if __name__ == "__main__":
         
         select_priv = ["p_wzp6_ee_eeH_ecm240", "p_wzp6_ee_eeH_mH-lower-50MeV_ecm240", "p_wzp6_ee_eeH_mH-lower-100MeV_ecm240", "p_wzp6_ee_eeH_mH-higher-100MeV_ecm240", "p_wzp6_ee_eeH_mH-higher-50MeV_ecm240", "p_wzp6_ee_eeH_noBES_ecm240","p_wzp6_ee_eeH_mH-lower-50MeV_noBES_ecm240", "p_wzp6_ee_eeH_mH-lower-100MeV_noBES_ecm240", "p_wzp6_ee_eeH_mH-higher-100MeV_noBES_ecm240", "p_wzp6_ee_eeH_mH-higher-50MeV_noBES_ecm240", "p_wzp6_ee_eeH_BES-lower-1pc_ecm240", "p_wzp6_ee_eeH_BES-higher-1pc_ecm240", "p_wzp6_ee_eeH_BES-lower-6pc_ecm240", "p_wzp6_ee_eeH_BES-higher-6pc_ecm240", "p_wzp6_ee_eeH_ecm240_3T", "p_wzp6_ee_eeH_mH-lower-50MeV_ecm240_3T", "p_wzp6_ee_eeH_mH-lower-100MeV_ecm240_3T", "p_wzp6_ee_eeH_mH-higher-100MeV_ecm240_3T", "p_wzp6_ee_eeH_mH-higher-50MeV_ecm240_3T", "p_wzp6_ee_eeH_ecm240_E2", "p_wzp6_ee_eeH_mH-lower-50MeV_ecm240_E2", "p_wzp6_ee_eeH_mH-lower-100MeV_ecm240_E2", "p_wzp6_ee_eeH_mH-higher-100MeV_ecm240_E2", "p_wzp6_ee_eeH_mH-higher-50MeV_ecm240_E2", "p_wzp6_ee_eeH_ecm240_CLD", "p_wzp6_ee_eeH_mH-lower-50MeV_ecm240_CLD", "p_wzp6_ee_eeH_mH-lower-100MeV_ecm240_CLD", "p_wzp6_ee_eeH_mH-higher-100MeV_ecm240_CLD", "p_wzp6_ee_eeH_mH-higher-50MeV_ecm240_CLD"]
         
-    datasets += functions.filter_datasets(datasets_preproduction_IDEA, select_bkgs)
-    datasets += functions.filter_datasets(datasets_preproduction_IDEA_PRIV, select_priv)
-    result = functions.build_and_run(datasets, build_graph, "tmp/output_ZH_%s_%s.root" % (args.type, args.flavor), maxFiles=args.maxFiles, norm=True, lumi=7200000)
+    datasets_to_run += functions.filter_datasets(datasets_preproduction_IDEA, select_bkgs)
+    datasets_to_run += functions.filter_datasets(datasets_preproduction_IDEA_PRIV, select_priv)
+    result = functions.build_and_run(datasets_to_run, build_graph, "tmp/output_ZH_%s_%s.root" % (args.type, args.flavor), maxFiles=args.maxFiles, norm=True, lumi=7200000)

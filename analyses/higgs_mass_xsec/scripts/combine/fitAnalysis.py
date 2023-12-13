@@ -83,7 +83,7 @@ def analyzeMass(runDir, outDir, xMin=-1, xMax=-1, yMin=0, yMax=2, label="label")
         'xtitle'            : "m_{h} (GeV)",
         'ytitle'            : "-2#DeltaNLL",
             
-        'topRight'          : "#sqrt{s} = 240 GeV, 7.2 ab^{#minus1}", 
+        'topRight'          : topRight, 
         'topLeft'           : "#bf{FCC-ee} #scale[0.7]{#it{Internal}}",
         }
         
@@ -180,7 +180,7 @@ def analyzeXsec(runDir, outDir, xMin=-1, xMax=-1, yMin=0, yMax=2, label="label")
         'xtitle'            : "#sigma(ZH, Z#rightarrow#mu#mu)/#sigma_{ref}",
         'ytitle'            : "-2#DeltaNLL",
             
-        'topRight'          : "#sqrt{s} = 240 GeV, 7.2 ab^{#minus1}", 
+        'topRight'          : topRight, 
         'topLeft'           : "#bf{FCCee} #scale[0.7]{#it{Internal}}",
     }
         
@@ -299,7 +299,7 @@ def plotMultiple(tags, labels, fOut, xMin=-1, xMax=-1, yMin=0, yMax=2, legLabel=
         'xtitle'            : "m_{h} (GeV)",
         'ytitle'            : "-2#DeltaNLL",
             
-        'topRight'          : "#sqrt{s} = 240 GeV, 7.2 ab^{#minus1}", 
+        'topRight'          : topRight, 
         'topLeft'           : "#bf{FCC-ee} #scale[0.7]{#it{Simulation}}",
         }
         
@@ -380,7 +380,7 @@ def plotMultiple_xsec(tags, labels, fOut, xMin=-1, xMax=-1, yMin=0, yMax=2):
         'xtitle'            : "#sigma(ZH#rightarrowl^{#plus}l^{#minus})/#sigma_{ref}",
         'ytitle'            : "-2#DeltaNLL",
             
-        'topRight'          : "#sqrt{s} = 240 GeV, 7.2 ab^{#minus1}", 
+        'topRight'          : topRight, 
         'topLeft'           : "#bf{FCC-ee} #scale[0.7]{#it{Simulation}}",
         }
         
@@ -575,7 +575,7 @@ def breakDown(fitCfg):
     latex.SetTextColor(1)
     latex.SetTextFont(42)
     latex.SetTextAlign(30) # 0 special vertical aligment with subscripts
-    latex.DrawLatex(0.95, 0.925, "#sqrt{s} = 240 GeV, 7.2 ab^{#minus1}")
+    latex.DrawLatex(0.95, 0.925, topRight)
 
     latex.SetTextAlign(13)
     latex.SetTextFont(42)
@@ -607,9 +607,15 @@ def combineCards(runDir, input_=[]):
   
 if __name__ == "__main__":
 
-    mode = "IDEA_noBES"
-    combineDir = "combine/run/%s" % mode
-    outDir = "/eos/user/j/jaeyserm/www/FCCee/ZH_mass/combine/%s/" % mode
+    mode = "IDEA"
+    lumi = "7p2" 
+
+    lumi_suffix =  "" if lumi == "7p2" else "_LUMI_%s"%lumi
+    combineDir = "combine/run/%s%s" % (mode, lumi_suffix)
+    outDir = "/eos/user/j/jaeyserm/www/FCCee/ZH_mass/combine/%s%s/" % (mode, lumi_suffix)
+    topRight = "#sqrt{s} = 240 GeV, %s ab^{#minus1}" % lumi.replace('p', '.')
+    lumiDict = {"2p5": 1.0001, "5": 1, "7p2": 1, "10": 1, "15": 1}
+    sf = lumiDict[lumi]
 
     combineOptions = ""
     freezeParameters = []
@@ -685,7 +691,7 @@ if __name__ == "__main__":
 
         tag, label = "mumu_cat0", "#mu^{#plus}#mu^{#minus}, inclusive"
         mhMin, mhMax = 124.99, 125.01
-        rMin, rMax = 0.98, 1.02
+        rMin, rMax = 0.98/sf, 1.02*sf
         doFit_mass("%s/%s" % (combineDir, tag), mhMin=mhMin, mhMax=mhMax, npoints=50, combineOptions=combineOptions)
         analyzeMass("%s/%s" % (combineDir, tag), "%s/%s/" % (outDir, tag), label=label, xMin=mhMin, xMax=mhMax)
         #doFit_xsec("%s/%s" % (combineDir, tag), rMin=rMin, rMax=rMax, npoints=50, combineOptions=combineOptions)
@@ -693,22 +699,22 @@ if __name__ == "__main__":
         #doFitDiagnostics_mass("%s/%s" % (combineDir, tag), mhMin=mhMin, mhMax=mhMax, combineOptions=combineOptions)
 
         tag, label = "mumu_cat1", "#mu^{#plus}#mu^{#minus}, central-central"
-        mhMin, mhMax = 124.99, 125.01
+        mhMin, mhMax = 124.99/sf, 125.01*sf
         doFit_mass("%s/%s" % (combineDir, tag), mhMin=mhMin, mhMax=mhMax, npoints=50, combineOptions=combineOptions)
         analyzeMass("%s/%s" % (combineDir, tag), "%s/%s/" % (outDir, tag), label=label, xMin=mhMin, xMax=mhMax)
 
         tag, label = "mumu_cat2", "#mu^{#plus}#mu^{#minus}, central-forward"
-        mhMin, mhMax = 124.98, 125.02
+        mhMin, mhMax = 124.98/sf, 125.02*sf
         doFit_mass("%s/%s" % (combineDir, tag), mhMin=mhMin, mhMax=mhMax, npoints=50, combineOptions=combineOptions)
         analyzeMass("%s/%s" % (combineDir, tag), "%s/%s/" % (outDir, tag), label=label, xMin=mhMin, xMax=mhMax)
 
         tag, label = "mumu_cat3", "#mu^{#plus}#mu^{#minus}, forward-forward"
-        mhMin, mhMax = 124.975, 125.025
+        mhMin, mhMax = 124.975/sf, 125.025*sf
         doFit_mass("%s/%s" % (combineDir, tag), mhMin=mhMin, mhMax=mhMax, npoints=50, combineOptions=combineOptions)
         analyzeMass("%s/%s" % (combineDir, tag), "%s/%s/" % (outDir, tag), label=label, xMin=mhMin, xMax=mhMax)
 
         tag, label = "mumu_combined", "#mu^{#plus}#mu^{#minus}, combined"
-        mhMin, mhMax = 124.99, 125.01
+        mhMin, mhMax = 124.99/sf, 125.01*sf
         combineCards("%s/%s" % (combineDir, tag), [combineDir+"/mumu_cat1/datacard_parametric.txt", combineDir+"/mumu_cat2/datacard_parametric.txt", combineDir+"/mumu_cat3/datacard_parametric.txt"])
         doFit_mass("%s/%s" % (combineDir, tag), mhMin=mhMin, mhMax=mhMax, npoints=50, combineOptions=combineOptions)
         analyzeMass("%s/%s" % (combineDir, tag), "%s/%s/" % (outDir, tag), label=label, xMin=mhMin, xMax=mhMax)
@@ -718,29 +724,29 @@ if __name__ == "__main__":
     if True:
 
         tag, label = "ee_cat0", "e^{#plus}e^{#minus}, inclusive"
-        mhMin, mhMax = 124.98, 125.02
+        mhMin, mhMax = 124.98/sf, 125.02*sf
         rMin, rMax = 0.98, 1.02
         doFit_mass("%s/%s" % (combineDir, tag), mhMin=mhMin, mhMax=mhMax, npoints=50, combineOptions=combineOptions)
         analyzeMass("%s/%s" % (combineDir, tag), "%s/%s/" % (outDir, tag), label=label, xMin=mhMin, xMax=mhMax)
 
         tag, label = "ee_cat1", "e^{#plus}e^{#minus}, central-central"
-        mhMin, mhMax = 124.98, 125.02
+        mhMin, mhMax = 124.98/sf, 125.02*sf
         doFit_mass("%s/%s" % (combineDir, tag), mhMin=mhMin, mhMax=mhMax, npoints=50, combineOptions=combineOptions)
         analyzeMass("%s/%s" % (combineDir, tag), "%s/%s/" % (outDir, tag), label=label, xMin=mhMin, xMax=mhMax)
 
         tag, label = "ee_cat2", "e^{#plus}e^{#minus}, central-forward"
-        mhMin, mhMax = 124.98, 125.02
+        mhMin, mhMax = 124.98/sf, 125.02*sf
         #mhMin, mhMax = 124.95, 125.05 # 2E
         doFit_mass("%s/%s" % (combineDir, tag), mhMin=mhMin, mhMax=mhMax, npoints=50, combineOptions=combineOptions)
         analyzeMass("%s/%s" % (combineDir, tag), "%s/%s/" % (outDir, tag), label=label, xMin=mhMin, xMax=mhMax)
 
         tag, label = "ee_cat3", "e^{#plus}e^{#minus}, forward-forward"
-        mhMin, mhMax = 124.975, 125.025
+        mhMin, mhMax = 124.975/sf, 125.025*sf
         doFit_mass("%s/%s" % (combineDir, tag), mhMin=mhMin, mhMax=mhMax, npoints=50, combineOptions=combineOptions)
         analyzeMass("%s/%s" % (combineDir, tag), "%s/%s/" % (outDir, tag), label=label, xMin=mhMin, xMax=mhMax)
 
         tag, label = "ee_combined", "e^{#plus}e^{#minus}, combined"
-        mhMin, mhMax = 124.99, 125.01
+        mhMin, mhMax = 124.99/sf, 125.01*sf
         #mhMin, mhMax = 124.98, 125.02 # 2E
         combineCards("%s/%s" % (combineDir, tag), [combineDir+"/ee_cat1/datacard_parametric.txt", combineDir+"/ee_cat2/datacard_parametric.txt", combineDir+"/ee_cat3/datacard_parametric.txt"])
         doFit_mass("%s/%s" % (combineDir, tag), mhMin=mhMin, mhMax=mhMax, npoints=50, combineOptions=combineOptions)
@@ -751,14 +757,14 @@ if __name__ == "__main__":
     if True:
 
         tag, label = "mumu_ee_combined_inclusive", "#mu^{#plus}#mu^{#minus}+e^{#plus}e^{#minus}, inclusive"
-        mhMin, mhMax = 124.99, 125.01
+        mhMin, mhMax = 124.99/sf, 125.01*sf
         combineCards("%s/%s" % (combineDir, tag), [combineDir+"/mumu_cat0/datacard_parametric.txt", combineDir+"/ee_cat0/datacard_parametric.txt"])
         doFit_mass("%s/%s" % (combineDir, tag), mhMin=mhMin, mhMax=mhMax, npoints=50, combineOptions=combineOptions)
         analyzeMass("%s/%s" % (combineDir, tag), "%s/%s/" % (outDir, tag), label=label, xMin=mhMin, xMax=mhMax)
    
 
         tag, label = "mumu_ee_combined_categorized", "#mu^{#plus}#mu^{#minus}+e^{#plus}e^{#minus}, categorized"
-        mhMin, mhMax = 124.99, 125.01
+        mhMin, mhMax = 124.99/sf, 125.01*sf
         combineCards("%s/%s" % (combineDir, tag), [combineDir+"/mumu_combined/datacard.txt", combineDir+"/ee_combined/datacard.txt"])
         doFit_mass("%s/%s" % (combineDir, tag), mhMin=mhMin, mhMax=mhMax, npoints=50, combineOptions=combineOptions)
         analyzeMass("%s/%s" % (combineDir, tag), "%s/%s/" % (outDir, tag), label=label, xMin=mhMin, xMax=mhMax)

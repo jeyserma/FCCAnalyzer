@@ -1,5 +1,5 @@
 
-import sys,array,ROOT,math,os,copy
+import sys,array,ROOT,math,os,copy,random
 
 ROOT.gROOT.SetBatch(True)
 ROOT.gStyle.SetOptStat(0)
@@ -15,7 +15,8 @@ import plotter
 def getHist(f, p, h):
 
     fIn = ROOT.TFile(f)
-    fIn.ls()
+    fIn.cd(p)
+    #fIn.ls()
     hist = copy.deepcopy(fIn.Get("%s/%s" % (p, h)))
     fIn.Close()
     return hist
@@ -151,25 +152,25 @@ def resolution(outName, hName, xMin, xMax, yMin, yMax, xTitle, yTitle, rebin=1, 
         'topLeft'           : "#bf{FCCee} #scale[0.7]{#it{Simulation}}",
     }
     
-    a = h1.GetBinCenter(h1.FindFirstBinAbove(h1.GetMaximum()/2))
-    b = h1.GetBinCenter(h1.FindLastBinAbove(h1.GetMaximum()/2))
+    a = h1.GetBinCenter(h1.FindFirstBinAbove(h1.GetMaximum()/3))
+    b = h1.GetBinCenter(h1.FindLastBinAbove(h1.GetMaximum()/3))
     #a, b = 0.98, 1.02
     gauss1 = ROOT.TF1("gauss1", "gaus", a, b)
     h1.Fit("gauss1", "R")
     
-    a = h2.GetBinCenter(h2.FindFirstBinAbove(h2.GetMaximum()/2))
-    b = h2.GetBinCenter(h2.FindLastBinAbove(h2.GetMaximum()/2))    
+    a = h2.GetBinCenter(h2.FindFirstBinAbove(h2.GetMaximum()/3))
+    b = h2.GetBinCenter(h2.FindLastBinAbove(h2.GetMaximum()/3))
     #a, b = 0.98, 1.02
     gauss2 = ROOT.TF1("gauss2", "gaus", a, b)
-    h2.Fit("gauss2", "R")                  
+    h2.Fit("gauss2", "R")
                 
     sigma1 = gauss1.GetParameter(2)
     sigma2 = gauss2.GetParameter(2)
     sigma1_err = gauss1.GetParError(2)
     sigma2_err = gauss2.GetParError(2)
     
-    leg.AddEntry(h1, "%s, RMS=%.2f #pm %.2f, #sigma=%.2f #pm %.2f" % (l1, h1.GetRMS()*1000., h1.GetRMSError()*1000., sigma1*1000., sigma1_err*1000.), "L")
-    leg.AddEntry(h2, "%s, RMS=%.2f #pm %.2f, #sigma=%.2f #pm %.2f" % (l2, h2.GetRMS()*1000., h2.GetRMSError()*1000., sigma2*1000., sigma2_err*1000.), "L")
+    leg.AddEntry(h1, "%s, RMS=%.2f#pm%.2f, #sigma=%.2f#pm%.2f" % (l1, h1.GetRMS()*1000., h1.GetRMSError()*1000., sigma1*1000., sigma1_err*1000.), "L")
+    leg.AddEntry(h2, "%s, RMS=%.2f#pm%.2f, #sigma=%.2f#pm%.2f" % (l2, h2.GetRMS()*1000., h2.GetRMSError()*1000., sigma2*1000., sigma2_err*1000.), "L")
 
     plotter.cfg = cfg
     canvas = plotter.canvas()
@@ -196,6 +197,132 @@ def resolution(outName, hName, xMin, xMax, yMin, yMax, xTitle, yTitle, rebin=1, 
     canvas.SaveAs("%s/%s.pdf" % (outDir, outName))
     canvas.Close()
 
+
+def resolutionMultiple(outName, hName, xMin, xMax, yMin, yMax, xTitle, yTitle, rebin=1, logy=False):
+
+    leg = ROOT.TLegend(.2, 0.75, 0.85, .90)
+    leg.SetBorderSize(0)
+    leg.SetFillStyle(0)
+    leg.SetNColumns(1)
+    leg.SetTextSize(0.035)
+    leg.SetMargin(0.1)
+
+    cfg = {
+
+        'logy'              : logy,
+        'logx'              : False,
+
+        'xmin'              : xMin,
+        'xmax'              : xMax,
+        'ymin'              : yMin,
+        'ymax'              : yMax,
+
+        'xtitle'            : xTitle,
+        'ytitle'            : yTitle,
+
+        'topRight'          : "#sqrt{s} = 240 GeV", 
+        'topLeft'           : "#bf{FCCee} #scale[0.7]{#it{Simulation}}",
+    }
+
+    plotter.cfg = cfg
+    canvas = plotter.canvas()
+    dummy = plotter.dummy()
+    dummy.Draw("HIST")
+
+    hists = []
+    for file,proc,label,color,ax in zip(files, procs, labels, colors, axes):
+        n = str(int(100000*random.random()))
+        h = getHist(file, proc, hName)
+        h = h.ProjectionX(f"hist_{n}", ax, ax)
+        h.Rebin(rebin)
+        h.SetLineColor(color)
+        h.SetLineWidth(2)
+        h.Scale(1./h.Integral())
+        hists.append(h)
+        
+        a = h.GetBinCenter(h.FindFirstBinAbove(h.GetMaximum()/2))
+        b = h.GetBinCenter(h.FindLastBinAbove(h.GetMaximum()/2))
+        gauss = ROOT.TF1(f"gauss_{n}", "gaus", a, b)
+        h.Fit(f"gauss_{n}", "R0")
+
+        sigma = gauss.GetParameter(2)
+        sigma_err = gauss.GetParError(2)
+
+        h.Draw("SAME HIST")
+        gauss.SetLineColor(ROOT.kBlack)
+        gauss.Draw("L SAME")
+        hists.append(gauss)
+        leg.AddEntry(h, "%s, RMS=%.2f#pm%.2f, #sigma=%.2f#pm%.2f" % (label, h.GetRMS()*1000., h.GetRMSError()*1000., sigma*1000., sigma_err*1000.), "L")
+    
+    leg.Draw("SAME") 
+    plotter.aux()
+    canvas.SetGrid()
+    ROOT.gPad.SetTickx()
+    ROOT.gPad.SetTicky()
+    ROOT.gPad.RedrawAxis()
+
+    canvas.SaveAs(f"{outDir}/{outName}.png")
+    canvas.SaveAs(f"{outDir}/{outName}.pdf")
+    canvas.Close()
+
+
+
+
+def recoilMultiple(outName, hName, xMin, xMax, yMin, yMax, xTitle, yTitle, rebin=1, logy=False):
+
+    leg = ROOT.TLegend(.2, 0.75, 0.85, .90)
+    leg.SetBorderSize(0)
+    leg.SetFillStyle(0)
+    leg.SetNColumns(1)
+    leg.SetTextSize(0.035)
+    leg.SetMargin(0.1)
+
+    cfg = {
+
+        'logy'              : logy,
+        'logx'              : False,
+
+        'xmin'              : xMin,
+        'xmax'              : xMax,
+        'ymin'              : yMin,
+        'ymax'              : yMax,
+
+        'xtitle'            : xTitle,
+        'ytitle'            : yTitle,
+
+        'topRight'          : "#sqrt{s} = 240 GeV", 
+        'topLeft'           : "#bf{FCCee} #scale[0.7]{#it{Simulation}}",
+    }
+
+    plotter.cfg = cfg
+    canvas = plotter.canvas()
+    dummy = plotter.dummy()
+    dummy.Draw("HIST")
+
+    hists = []
+    for file,proc,label,color,ax in zip(files, procs, labels, colors, axes):
+        n = str(int(100000*random.random()))
+        h = getHist(file, proc, hName)
+        h = h.ProjectionX(f"hist_{n}", ax, ax)
+        h.Rebin(rebin)
+        h.SetLineColor(color)
+        h.SetLineWidth(2)
+        h.Scale(1./h.Integral())
+        hists.append(h)
+
+        h.Draw("SAME HIST C")
+        leg.AddEntry(h, "%s" % (label), "L")
+    
+    leg.Draw("SAME") 
+    plotter.aux()
+    canvas.SetGrid()
+    ROOT.gPad.SetTickx()
+    ROOT.gPad.SetTicky()
+    ROOT.gPad.RedrawAxis()
+
+    canvas.SaveAs(f"{outDir}/{outName}.png")
+    canvas.SaveAs(f"{outDir}/{outName}.pdf")
+    canvas.Close()
 
 def resolutionVsTheta(xMin, xMax, yMin, yMax, xTitle, yTitle, logy=False):
 
@@ -468,6 +595,31 @@ if __name__ == "__main__":
 
     outDir = "/eos/user/j/jaeyserm/www/FCCee/ZH_mass/resolution/"
 
+    files = ["tmp/output_ZH_mass_mumu_reco.root"]*3
+    procs = ["p_wzp6_ee_mumuH_ecm240"]*3
+    labels = ["Cat 1", "Cat 2", "Cat 3"]
+    axes = [1, 2, 3]
+    colors = [ROOT.kRed, ROOT.kBlue, ROOT.kGreen+1]
+    resolutionMultiple("IDEA_mumu_categories", "leps_reso_p", 0.99, 1.01, 0, 0.035, "Resolution (p_{reco}/p_{gen})", "Events (normalized)", rebin=10)
+    recoilMultiple("IDEA_mumu_categories_recoil", "zll_recoil_m", 122, 132, 0, 0.015, "Recoil (GeV)", "Events (normalized)", rebin=20)
+
+    files = ["tmp/output_ZH_mass_ee_reco.root"]*3
+    procs = ["p_wzp6_ee_eeH_ecm240"]*3
+    labels = ["Cat 1", "Cat 2", "Cat 3"]
+    axes = [1, 2, 3]
+    colors = [ROOT.kRed, ROOT.kBlue, ROOT.kGreen+1]
+    resolutionMultiple("IDEA_ee_categories", "leps_reso_p", 0.99, 1.01, 0, 0.035, "Resolution (p_{reco}/p_{gen})", "Events (normalized)", rebin=10)
+    recoilMultiple("IDEA_ee_categories_recoil", "zll_recoil_m", 122, 132, 0, 0.015, "Recoil (GeV)", "Events (normalized)", rebin=20)
+    
+    files = ["tmp/output_ZH_mass_ee_reco.root"]*3
+    procs = ["p_wzp6_ee_eeH_ecm240_E2"]*3
+    labels = ["Cat 1", "Cat 2", "Cat 3"]
+    axes = [1, 2, 3]
+    colors = [ROOT.kRed, ROOT.kBlue, ROOT.kGreen+1]
+    resolutionMultiple("IDEA_ee_2e_categories", "leps_reso_p", 0.99, 1.01, 0, 0.035, "Resolution (p_{reco}/p_{gen})", "Events (normalized)", rebin=10)
+    recoilMultiple("IDEA_ee_2e_categories_recoil", "zll_recoil_m", 122, 132, 0, 0.015, "Recoil (GeV)", "Events (normalized)", rebin=20)
+    quit()
+
     f1, p1, l1 = "tmp/output_ZH_mass_mumu_reco.root", "p_wzp6_ee_mumuH_ecm240", "2T"
     f2, p2, l2 = "tmp/output_ZH_mass_mumu_reco.root", "p_wzp6_ee_mumuH_ecm240_3T", "3T"
     resolution("IDEAL_2T_3T_mumu", "leps_reso_p_cut0", 0.98, 1.02, 0, -1, "Resolution (p_{reco}/p_{gen})", "Events (normalized)", rebin=10)
@@ -483,6 +635,14 @@ if __name__ == "__main__":
     f1, p1, l1 = "tmp/output_ZH_mass_ee_reco.root", "p_wzp6_ee_eeH_ecm240", "IDEA"
     f2, p2, l2 = "tmp/output_ZH_mass_ee_reco.root", "p_wzp6_ee_eeH_ecm240_CLD", "CLD"
     resolution("IDEA_CLD_ee", "leps_reso_p_cut0", 0.98, 1.02, 0, -1, "Resolution (p_{reco}/p_{gen})", "Events (normalized)", rebin=10)
+    
+    f1, p1, l1 = "tmp/output_ZH_mass_mumu_reco.root", "p_wzp6_ee_mumuH_ecm240", "IDEA #mu^{#pm}"
+    f2, p2, l2 = "tmp/output_ZH_mass_ee_reco.root", "p_wzp6_ee_eeH_ecm240", "IDEA e^{#pm}, 1.2#times#mu^{#pm}"
+    resolution("IDEA_mumu_ee", "leps_reso_p_cut0", 0.98, 1.02, 0, -1, "Resolution (p_{reco}/p_{gen})", "Events (normalized)", rebin=10)
+    
+    f1, p1, l1 = "tmp/output_ZH_mass_mumu_reco.root", "p_wzp6_ee_mumuH_ecm240", "IDEA #mu^{#pm}"
+    f2, p2, l2 = "tmp/output_ZH_mass_ee_reco.root", "p_wzp6_ee_eeH_ecm240_E2", "IDEA e^{#pm}, 2.0#times#mu^{#pm}"
+    resolution("IDEA_mumu_ee_2E", "leps_reso_p_cut0", 0.98, 1.02, 0, -1, "Resolution (p_{reco}/p_{gen})", "Events (normalized)", rebin=10)
     
     quit()
     
