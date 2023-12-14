@@ -420,4 +420,4 @@ if __name__ == "__main__":
     datasets = []
     datasets += functions.filter_datasets(datasets_preproduction_IDEA, select_bkgs)
     datasets += functions.filter_datasets(datasets_preproduction_IDEA_PRIV, select_priv)
-    functions.build_and_run(datasets, build_graph, f"tmp/output_ZH_{args.type}_{args.flavor}.root", args, norm=True, lumi=7200000)
+    functions.build_and_run(datasets, build_graph, f"output_ZH_{args.type}_{args.flavor}.root", args, norm=True, lumi=7200000)

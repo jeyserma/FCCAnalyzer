@@ -35,7 +35,7 @@ ROOT.TH1.SetDefaultSumw2(True)
 
 
 def build_and_run(datadict, build_function, outfile, args, norm=False, lumi=1., treeName="events"):
-    
+
     time0 = time.time()
 
     results = []
@@ -290,7 +290,7 @@ def get_hostname():
 def get_basedir(sel=None):
 
     basedirs = {}
-    basedirs['mit'] = "/data/submit/cms/store/fccee"
+    basedirs['mit'] = "/scratch/submit/cms/fcc/samples/"
     basedirs['cmswmass2'] = "/data/shared/jaeyserm/fccee/"
     basedirs['fcc_eos'] = "/eos/experiment/fcc/ee/generation/DelphesEvents/"
     

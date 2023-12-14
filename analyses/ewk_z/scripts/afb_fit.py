@@ -1,17 +1,22 @@
+
 import sys,array,ROOT,math,os,copy
+import argparse
 
 ROOT.gROOT.SetBatch(True)
 ROOT.gStyle.SetOptStat(0)
 ROOT.gStyle.SetOptTitle(0)
 
+parser = argparse.ArgumentParser()
+parser.add_argument("-o", "--outDir", type=str, default="/home/submit/jaeyserm/public_html/fccee/afb/", help="Output directory")
+parser.add_argument("-p", "--proc", type=str, default="wzp6_ee_mumu_ecm91p2", choices=["wzp6_ee_mumu_ecm91p2", "kkmc_ee_mumu_ecm91p2"], help="MC process")
+args = parser.parse_args()
+
 if __name__ == "__main__":
 
-    outDir = "/home/submit/paus/public_html/FCCee"
-    outDir = "/eos/user/j/jaeyserm/www/FCCee/"
-    fIn = ROOT.TFile(f"tmp/afb.root")
+    fIn = ROOT.TFile(f"afb.root")
     
     # sample/lumi
-    xsec = 1692.4238 # pb
+    #xsec = 1692.4238 # pb
     lumi_lep = 35 # /pb
     lumi_fccee = 150e6 # /pb
     lumi = lumi_fccee
@@ -20,11 +25,11 @@ if __name__ == "__main__":
     costhetac_abs_min, costhetac_abs_max = 0.05, 0.8
     rebin = 1
     
-    h_costhetac = fIn.Get(f"wzp6_ee_mumu_ecm91p2/cosThetac")
-    h_costhetac.Rebin(rebin)
-    h_meta = fIn.Get(f"wzp6_ee_mumu_ecm91p2/meta") # meta info: number of events in first bin
-    nevents_sim = h_meta.GetBinContent(1) # number of simulated events
-    h_costhetac.Scale(xsec*lumi/nevents_sim)
+    #h_costhetac = fIn.Get(f"{args.proc}/cosThetac")
+    #h_costhetac.Rebin(rebin)
+    #h_meta = fIn.Get(f"{args.proc}/meta") # meta info: number of events in first bin
+    #nevents_sim = h_meta.GetBinContent(1) # number of simulated events
+    #h_costhetac.Scale(xsec*lumi/nevents_sim)
     
     # construct TGraph with errors sqrt(s) of the bin content
     N_F, N_B = 0, 0
@@ -102,7 +107,7 @@ if __name__ == "__main__":
     latex.DrawLatex(0.25, 0.78, "A_{FB} (int.) = %.3e #pm %.3e" % (A_FB, A_FB_err))
     latex.DrawLatex(0.25, 0.72, "A_{FB} (fit) = %.3e #pm %.3e" % (A_FB_fit, A_FB_fit_err))
     
-    c.SaveAs(f"{outDir}/wzp6_ee_mumu_ecm91p2_cosThetac.png")
+    c.SaveAs(f"{args.outDir}/{args.proc}_cosThetac.png")
     
     print("##################")
 

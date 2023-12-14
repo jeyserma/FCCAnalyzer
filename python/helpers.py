@@ -33,3 +33,14 @@ class TMVAHelper():
         df = df.Define(self.var_col, f"ROOT::VecOps::RVec<float>{{{vars_str}}}")
         df = df.Define(col_name, self.tmva_helper, [self.var_col])
         return df
+
+
+
+class JetClusteringHelper():
+    
+    def __init__(self, arg_radius, arg_exclusive, arg_cut, arg_sorted, arg_recombination, arg_exponent):
+        self.clustering_helper = ROOT.FCCAnalyses.clustering_helper(arg_radius, arg_exclusive, arg_cut, arg_sorted, arg_recombination, arg_exponent, ROOT.GetThreadPoolSize())
+
+    def run_clustering(self, df, input_col_name="pseudo_jets", output_col_name="clustered_jets"):
+        df = df.Define(output_col_name, self.clustering_helper, [input_col_name])
+        return df

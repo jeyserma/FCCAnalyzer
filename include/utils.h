@@ -4,7 +4,30 @@
 #include "defines.h"
 
 namespace FCCAnalyses {
-	
+
+// make Lorentz vectors for a given RECO particle collection
+Vec_tlv makeLorentzVectors(Vec_rp in) {
+    Vec_tlv result;
+    for (auto & p: in) {
+        TLorentzVector tlv;
+        tlv.SetXYZM(p.momentum.x, p.momentum.y, p.momentum.z, p.mass);
+        result.push_back(tlv);
+    }
+    return result;
+}
+
+
+// make Lorentz vectors for a given MC particle collection
+Vec_tlv makeLorentzVectors(Vec_mc in) {
+    Vec_tlv result;
+    for (auto & p: in) {
+        TLorentzVector tlv;
+        tlv.SetXYZM(p.momentum.x, p.momentum.y, p.momentum.z, p.mass);
+        result.push_back(tlv);
+    }
+    return result;
+}
+
 
 // select the hadronic Z decays in ZH(Za), second Z)
 bool hadronicDecays(Vec_mc mc_particles, Vec_i daughters) {
@@ -139,17 +162,7 @@ TLorentzVector sum4Vectors(Vec_mc in) {
 	return ret;
 }
   
-// make Lorentz vectors for a given collections
-Vec_tlv makeLorentzVectors(Vec_rp in) {
-	
-	Vec_tlv result;
-	for (auto & p: in) {
-		TLorentzVector tlv;
-		tlv.SetXYZM(p.momentum.x, p.momentum.y, p.momentum.z, p.mass);
-		result.push_back(tlv);
-	}
-	return result;
-}
+
 
 // computes longitudinal and transversal energy balance of all particles
 Vec_f energy_imbalance(Vec_rp in) {

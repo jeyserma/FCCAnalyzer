@@ -4,8 +4,7 @@
 def get_datasets(baseDir = ""):
 
     datasets = []
-    subDir = "/winter2023/IDEA/"
-    baseDir = f"{baseDir}/{subDir}"
+    baseDir += "/winter2023/IDEA/"
 
     ## muon signal samples
     datasets.append({"name": "wzp6_ee_mumuH_ecm240",                    "datadir": f"{baseDir}/wzp6_ee_mumuH_ecm240",                           "xsec": 0.0067643})

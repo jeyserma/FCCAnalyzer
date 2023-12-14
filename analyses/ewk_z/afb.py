@@ -106,7 +106,9 @@ if __name__ == "__main__":
 
     baseDir = functions.get_basedir()
  
-    wzp6_ee_mumu_ecm91p2 = {"name": f"wzp6_ee_mumu_ecm91p2", "datadir": f"/eos/experiment/fcc/users/j/jaeyserm/sampleProduction/winter2023/wzp6_ee_mumu_ecm91p2/", "xsec": 1}
+    wzp6_ee_mumu_ecm91p2 = {"name": f"wzp6_ee_mumu_ecm91p2", "datadir": f"{baseDir}/winter2023/IDEA/wzp6_ee_mumu_ecm91p2", "xsec": 1717.8522}
+    kkmc_ee_mumu_ecm91p2 = {"name": f"kkmc_ee_mumu_ecm91p2", "datadir": f"{baseDir}/winter2023/IDEA/kkmc_ee_mumu_ecm91p2", "xsec": 1717.8522}
 
-    datasets = [wzp6_ee_mumu_ecm91p2]
-    result = functions.build_and_run(datasets, build_graph, f"tmp/afb.root", args)
+
+    datasets = [wzp6_ee_mumu_ecm91p2, kkmc_ee_mumu_ecm91p2]
+    result = functions.build_and_run(datasets, build_graph, f"afb.root", args, norm=True, lumi=150000000)
