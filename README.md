@@ -1,47 +1,15 @@
 # FCCAnalyzer
 Analysis framework integrated with the FCC analysis software.
 
-This FCCAnalyzer framework relies on class definitions, functions and modules of the main FCC analysis framework, as described here: https://github.com/HEP-FCC/FCCAnalyses. This is necessary to read the official edm4hep Monte Carlo samples and to make use of the latest developments in terms of jet clusterin and flavour tagging.
+This FCCAnalyzer framework relies on class definitions, functions and modules of the main FCC analysis framework, as described here: https://github.com/HEP-FCC/FCCAnalyses. This is necessary to read the official edm4hep Monte Carlo samples and to make use of the latest developments in terms of jet clustering and flavour tagging.
 
-It must be noted that the main FCC analysis framework (FCCAnalyses) has to be compiled only once. The code the current analysis framework (FCCAnalyzer) is compiled in-time, no need for compilation.
+To start using this framework, first fork this repository: https://github.com/jeyserma/FCCAnalyzer. Open a shell and clone this repository:
 
-By default the analysis runs on lxplus at CERN, where all the samples are available through EOS. A large part has been copied to MIT, but the directory paths have to be updated.
-
-# Examples
-
-Few examples are available:
-
-- Higgs mass and cross-section at 240 GeV: `analyses/higgs_mass_xsec/analysis.py`
-- Train a simple BDT using XGBoost and apply it: `analyses/examples/bdt_xgboost` (training, application)
-- Forward-Backward analysis at the Z-pole using dimuon events: `analyses/ewk_z/afb.py`
-
-
-## Setup
-Fork FCC analysis repo: https://github.com/HEP-FCC/FCCAnalyses
-
-Fork this repo https://github.com/jeyserma/FCCAnalyzer
-
-Clone the repository with the FCCAnalyses as submodule:
 
 ```shell
-git clone --recurse-submodules git@github.com:jeyserma/FCCAnalyzer.git
+git clone git@github.com:{my_git_username}/FCCAnalyzer.git
 cd FCCAnalyzer
-mkdir tmp
 ```
-
-The FCC analysis software has to be compiled once at the first time (or when any changes have been done in that actual code) as explained in the FCCAnalyses readme.
-
-```shell
-cd FCCAnalyses
-source ./setup.sh
-mkdir build install
-cd build
-cmake .. -DCMAKE_INSTALL_PREFIX=../install
-make install
-cd ../../
-```
-
-Note: by default the newest Key4Hep release is loaded, therefore sometimes one needs to re-compile FCCAnalyses framework scripts according to the steps above.
 
 To use the FCCAnalyzer, just source the setup bash script (to be done at each fresh shell):
 
@@ -49,7 +17,52 @@ To use the FCCAnalyzer, just source the setup bash script (to be done at each fr
 source setup.sh
 ```
 
-## Setup an analysis
+The underlying `key4hep` stack version (loaded during `setup.sh` is appended to the `stack_history` file. To fix a `key4hep` release, add the path to the setup script to `stack`, and it will be loaded by default.
+
+# Examples
+
+Few examples are available:
+
+- Higgs mass and cross-section at 240 GeV: `analyses/higgs_mass_xsec/analysis.py`
+- Train a simple BDT using XGBoost and apply it: `analyses/examples/bdt_xgboost` (training, application)
+- Forward-Backward analysis at the Z-pole using dimuon events: `analyses/ewk_z/afb.py` (see below)
+
+## Forward-Backward asymmetry
+To run the forward-backward asymmetry analysis, run the following script from the main `FCCAnalyzer` directory (to quickly run over a few files, add the option `maxFiles 50`)
+
+```shell
+python analyses/ewk_z/afb.py
+```
+
+
+
+This produces a ROOT file `afb.root` that contains the histograms. To plot and fit the forward-backward asymmetry, run the following command:
+
+```shell
+analyses/ewk_z/scripts/plots_xsec.ipynb
+```
+
+Also a standalone script written in ROOT is available to extract the forward-backward asymmetry:
+
+```shell
+python analyses/ewk_z/scripts/afb_fit.py -o /directory/output/path
+```
+
+## Simple cross-section at the Z-pole
+To run the forward-backward asymmetry analysis, run the following script from the main:
+
+```shell
+python analyses/ewk_z/afb.py --flavor mumu,ee,qq
+```
+
+where the flavor is either mumu (dimuon), ee (di-electron) or qq (hadronic) final states. Note that the hadronic final state takes some time to run as the jet clustering is slow. To make basic plots of the Z peak(s), a Jupyter notebook is made available that contains instructions on how to read the histogram file etc:
+
+```shell
+analyses/ewk_z/scripts/plots_xsec.ipynb
+```
+
+
+# Setting up a new analysis
 This framework supports multiple FCC analyses. Each analysis has its own working directory, which conventionally should be in the `analyses` directory.
 
 A typical analysis consists of a python file containing the logic of the analysis (event selection etc), and one or more header files containing C++ code snippets (for more complicated calculations).
@@ -61,7 +74,7 @@ The analysis structure should be defined in a `build_graph()` function, that can
 
 An example of both modes with a BDT is given in `analyses/examples/bdt_xgboost/analysis.py`.
 
-## Combine environment
+# Combine environment
 Combine requires either CMSSW or can be compiled standalone, but is not compatible with the newest ROOT version, as required for the main analysis with RDataFrame. Therefore, in order to run Combine, one has to load a different environment.
 
 To install Combine (in the FCCAnalyzer directory), execute the following steps:
