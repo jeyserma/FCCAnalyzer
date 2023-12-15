@@ -19,7 +19,7 @@ class tmva_helper_xgb {
         }
 
         Vec_f operator()(const Vec_f vars) {
-			
+
             auto const tbb_slot = std::max(tbb::this_task_arena::current_thread_index(), 0);
 
             if (tbb_slot >= interpreters_.size()) {

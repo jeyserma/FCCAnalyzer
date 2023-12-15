@@ -31,8 +31,8 @@ print("Parse inputs")
 # configuration of signal, background, variables, files, ...
 variables = ['lep1_p', 'lep2_p', 'lep1_theta', 'lep2_theta', 'zll_p', 'acoplanarity', 'acolinearity', 'zll_recoil_m', 'cosTheta_miss']
 weight_sf = 1e9
-sig_df = load_process("tmp/test_tree_wzp6_ee_mumuH_ecm240.root", variables, weight_sf=weight_sf, target=1)
-bkg_df = load_process("tmp/test_tree_p8_ee_WW_mumu_ecm240.root", variables, weight_sf=weight_sf)
+sig_df = load_process("test_tree_wzp6_ee_mumuH_ecm240.root", variables, weight_sf=weight_sf, target=1)
+bkg_df = load_process("test_tree_p8_ee_WW_mumu_ecm240.root", variables, weight_sf=weight_sf)
 
 
 
@@ -85,7 +85,7 @@ bdt.fit(train_data, train_labels, verbose=True, eval_set=eval_set, sample_weight
 
 # export model (to ROOT and pkl)
 print("Export model")
-fOutName = "tmp/bdt_model_example.root"
+fOutName = "bdt_model_example.root"
 ROOT.TMVA.Experimental.SaveXGBoost(bdt, "bdt_model", fOutName, num_inputs=len(variables))
 
 # append the variables
@@ -103,4 +103,4 @@ save['test_data'] = test_data
 save['train_labels'] = train_labels
 save['test_labels'] = test_labels
 save['variables'] = variables
-pickle.dump(save, open("tmp/bdt_model_example.pkl", "wb"))
+pickle.dump(save, open("bdt_model_example.pkl", "wb"))

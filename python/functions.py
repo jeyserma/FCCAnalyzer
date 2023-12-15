@@ -6,15 +6,19 @@ import ROOT
 from dataset import Dataset
 import argparse
 import pathlib
+import json
+import logging
 
+logging.basicConfig(format='%(levelname)s: %(message)s')
+logger = logging.getLogger("fcclogger")
+logger.setLevel(logging.INFO)
 
 
 ROOT.gROOT.SetBatch()
 ROOT.gInterpreter.ProcessLine(".O3")
-sys.path.insert(0, "analysis/datasets/")
 
 # load fcc libraries
-print ("Load default cxx analyzers ... ")
+logger.info("Load default cxx analyzers and libraries")
 ROOT.gSystem.Load("libedm4hep")
 ROOT.gSystem.Load("libpodio")
 ROOT.gSystem.Load("libFCCAnalyses")
@@ -30,11 +34,10 @@ ROOT.gInterpreter.Declare('#include "include/defines.h"')
 ROOT.gInterpreter.Declare('#include "include/utils.h"')
 ROOT.gInterpreter.Declare('#include "include/gen.h"')
 
-
 ROOT.TH1.SetDefaultSumw2(True)
 
 
-def build_and_run(datadict, build_function, outfile, args, norm=False, lumi=1., treeName="events"):
+def build_and_run(datadict, datasets_to_run, build_function, outfile, args, norm=False, lumi=1., treeName="events"):
 
     time0 = time.time()
 
@@ -44,15 +47,18 @@ def build_and_run(datadict, build_function, outfile, args, norm=False, lumi=1., 
     chains = []
     datasets = []
 
-    for val in datadict:
-    
-        if not os.path.exists(val['datadir']):
-            print(f"WARNING: directory {val['datadir']} does not exist, skipping dataset {val['name']}")
+    for datasetName in datasets_to_run:
+        if not datasetName in datadict:
+            logger.warning(f"Cannot find dataset {datasetName} in the datadict, skipping")
+
+        xsec = datadict[datasetName]['xsec']
+        path = f"{datadict['basePath']}/{datadict[datasetName]['path']}"
+        if not os.path.exists(path):
+            logger.warning(f"directory {path} does not exist, skipping")
             continue
 
-        dataset = Dataset(val)
+        dataset = Dataset(datasetName, path, xsec)
         datasets.append(dataset)
-        print(f"Read {dataset.name}")
 
         chain = ROOT.TChain(treeName)
         nFiles = 0
@@ -60,15 +66,11 @@ def build_and_run(datadict, build_function, outfile, args, norm=False, lumi=1., 
             chain.Add(fpath)
             nFiles += 1
             if args.maxFiles > 0 and nFiles >= args.maxFiles: break
-        print(f"Import {dataset.name} with {nFiles} files from directory {dataset.datadir}")
+        logger.info(f"Imported dataset {datasetName} with {nFiles} files from directory {dataset.path}")
 
-        # black magic why this needs to be protected from gc
         chains.append(chain)
-
         df = ROOT.ROOT.RDataFrame(chain)
-
         evtcount = df.Count()
-
         res, hweight = build_function(df, dataset)
 
         results.append(res)
@@ -77,15 +79,15 @@ def build_and_run(datadict, build_function, outfile, args, norm=False, lumi=1., 
 
     time_built = time.time()
 
-    print("Begin event loop")
+    logger.info("Begin event loop")
     ROOT.ROOT.RDF.RunGraphs(evtcounts)
-    print("Done event loop")
+    logger.info("Done event loop")
     time_done_event = time.time()
-    
-    print("Write output")
+
+    logger.info("Write output")
     fOut = ROOT.TFile(outfile, "RECREATE")
     for dataset, res, hweight, evtcount in zip (datasets, results, hweights, evtcounts):
-        
+
         fOut.cd()
         fOut.mkdir(dataset.name)
         fOut.cd(dataset.name)
@@ -98,54 +100,56 @@ def build_and_run(datadict, build_function, outfile, args, norm=False, lumi=1., 
                 histsToWrite[hName].Add(hist)
             else:
                 histsToWrite[hName] = hist
-        
+
         for hist in histsToWrite.values():
             if norm:
                 hist.Scale(dataset.xsec*lumi/evtcount.GetValue())
             hist.Write()
-            
+
         h_meta = ROOT.TH1D("meta", "", 10, 0, 1)
         h_meta.SetBinContent(1, hweight.GetValue())
         h_meta.SetBinContent(2, evtcount.GetValue())
         h_meta.SetBinContent(3, dataset.xsec)
         h_meta.Write()
-        print(f" -> {dataset.name}, number of events = {evtcount.GetValue()}, event weights = {hweight.GetValue()}, cross-section = {dataset.xsec}")
+        logger.info(f"Processed {dataset.name}, number of events = {evtcount.GetValue()}, event weights = {hweight.GetValue()}, cross-section = {dataset.xsec}")
 
     time_done = time.time()
-    
+
     fOut.cd()
     fOut.Close()
-    
-    print("Done")
 
-    print("build graphs:", time_built - time0)
-    print("event loop:", time_done_event - time_built)
-    print("build results:", time_done - time_done_event)
-    print("write results:", time.time() - time_done)
-    print("total time:", time.time() - time_built)
-    
-    print("Output written to %s" % outfile)
+    logger.info("Done. Timing statistics:")
+    logger.info(f"  Build graphs:     {time_built-time0}")
+    logger.info(f"  Event loop:       {time_done_event-time_built}")
+    logger.info(f"  Build results:    {time_done-time_done_event}")
+    logger.info(f"  Write results:    {time.time()-time_done}")
+    logger.info(f"  Total time:       {time.time()-time0}")
+    logger.info(f"Output written to {outfile}")
 
 
 
-def build_and_run_snapshot(datadict, build_function, outfile, args, treeName="events"):
+def build_and_run_snapshot(datadict, datasets_to_run, build_function, outfile, args, treeName="events"):
 
     time0 = time.time()
-    
+
     dataframes = []
     columns = []
     datasets = []
     eventCounts = []
     snapshots = []
-    for val in datadict:
-    
-        if not os.path.exists(val['datadir']):
-            print(f"WARNING: directory {val['datadir']} does not exist, skipping dataset {val['name']}")
+
+    for datasetName in datasets_to_run:
+        if not datasetName in datadict:
+            logger.warning(f"Cannot find dataset {datasetName} in the datadict, skipping")
+
+        xsec = datadict[datasetName]['xsec']
+        path = f"{datadict['basePath']}/{datadict[datasetName]['path']}"
+        if not os.path.exists(path):
+            logger.warning(f"directory {path} does not exist, skipping")
             continue
 
-        dataset = Dataset(val)
+        dataset = Dataset(datasetName, path, xsec)
         datasets.append(dataset)
-        print(f"Read {dataset.name}")
 
         chain = ROOT.TChain(treeName)
         nFiles = 0
@@ -153,12 +157,12 @@ def build_and_run_snapshot(datadict, build_function, outfile, args, treeName="ev
             chain.Add(fpath)
             nFiles += 1
             if args.maxFiles > 0 and nFiles >= args.maxFiles: break
-        print(f"Import {dataset.name} with {nFiles} files from directory {dataset.datadir}")
+        logger.info(f"Imported dataset {datasetName} with {nFiles} files from directory {dataset.path}")
 
         df = ROOT.ROOT.RDataFrame(chain)
         evtcount = df.Count()
         df, cols = build_function(df, dataset)
-        
+
         opts = ROOT.RDF.RSnapshotOptions()
         opts.fLazy = True # do not trigger the loop yet
         snapshot = df.Snapshot(treeName, outfile.format(datasetName=dataset.name), cols, opts)
@@ -166,33 +170,33 @@ def build_and_run_snapshot(datadict, build_function, outfile, args, treeName="ev
         dataframes.append(df)
         columns.append(cols)
         eventCounts.append(evtcount)
-        
+
     time_built = time.time()
-    
-    print("Begin event loop")
+
+    logger.info("Begin event loop")
     ROOT.ROOT.RDF.RunGraphs(snapshots)
-    print("Done event loop")
+    logger.info("Done event loop")
     time_done_event = time.time()
 
-    print("Write meta information")
+    logger.info("Write meta information")
     for dataset, df, cols, evtcount in zip (datasets, dataframes, columns, eventCounts):
-    
-        print(f" -> {dataset.name} done, number of events = {evtcount.GetValue()}, cross-section = {dataset.xsec}")
-        
-        fIn = ROOT.TFile(outfile.format(datasetName=dataset.name), "UPDATE")
+        outfile_f = outfile.format(datasetName=dataset.name)
+        logger.info(f"Processed {dataset.name}, number of events = {evtcount.GetValue()}, cross-section = {dataset.xsec}, output {outfile_f}")
+
+        fIn = ROOT.TFile(outfile_f, "UPDATE")
         h_meta = ROOT.TH1D("meta", "", 10, 0, 1)
         h_meta.SetBinContent(2, evtcount.GetValue())
         h_meta.SetBinContent(3, dataset.xsec)
         h_meta.Write()
         fIn.Close()
-    
+
     time_done = time.time()
-    print("Done")
-    print("build graphs:", time_built - time0)
-    print("event loop:", time_done_event - time_built)
-    print("write meta info:", time.time() - time_done)
-    print("total time:", time.time() - time0)
-    
+    logger.info("Done. Timing statistics:")
+    logger.info(f"  Build graphs:     {time_built-time0}")
+    logger.info(f"  Event loop:       {time_done_event-time_built}")
+    logger.info(f"  Write meta info:  {time.time()-time_done}")
+    logger.info(f"  Total time:       {time.time()-time0}")
+
 
 
 def build_and_run_snapshot_mt(datadict, build_function, outfile, maxFiles=-1, treeName="events"):
@@ -273,24 +277,20 @@ def add_include_file(fIn):
     ROOT.gInterpreter.Declare(f'#include "{fIn}"')
  
 def set_threads(args):
-
     ROOT.EnableImplicitMT()
     if args.nThreads: 
         ROOT.DisableImplicitMT()
         ROOT.EnableImplicitMT(int(args.nThreads))
-    print("Run over %d threads" % ROOT.GetThreadPoolSize())
-    
-    
-def get_hostname():
+    logger.info(f"Run over {ROOT.GetThreadPoolSize()} threads")
 
+def get_hostname():
     import socket
     return socket.gethostname()
-    
-    
+
 def get_basedir(sel=None):
 
     basedirs = {}
-    basedirs['mit'] = "/scratch/submit/cms/fcc/samples/"
+    basedirs['mit'] = "/data/submit/cms/store/fccee/" # "/scratch/submit/cms/fcc/samples/"
     basedirs['cmswmass2'] = "/data/shared/jaeyserm/fccee/"
     basedirs['fcc_eos'] = "/eos/experiment/fcc/ee/generation/DelphesEvents/"
     
@@ -331,3 +331,14 @@ def findROOTFiles(basedir, regex = ""):
                 
     return files
 
+def get_datadicts(campaign="winter2023"):
+    basedirs = {}
+    basedirs['mit'] = "/data/submit/cms/store/fccee/samples/"
+
+    hostname = get_hostname()
+    if "mit.edu" in hostname: basedir = basedirs['mit']
+    catalog = f'{basedir}/{campaign}/catalog.json'
+    f = open(catalog)
+    datadict = json.load(f)
+    datadict['basePath'] = os.path.dirname(catalog)
+    return datadict

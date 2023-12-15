@@ -3,12 +3,12 @@ import os
 
 class Dataset:
 
-    def __init__(self, dataset):
+    def __init__(self, name, path, xsec):
 
-        self.name = dataset['name']
-        self.datadir = dataset['datadir']
-        self.xsec = dataset['xsec']
-        self.rootfiles = self.findROOTFiles(self.datadir)
+        self.name = name
+        self.path = path
+        self.xsec = xsec
+        self.rootfiles = self.findROOTFiles(self.path)
 
     def findROOTFiles(self, basedir, regex = ""):
         if ".root" in basedir: return [basedir]

@@ -3,6 +3,9 @@ import functions
 import helper_tmva
 import ROOT
 import argparse
+import logging
+
+logger = logging.getLogger("fcclogger")
 
 parser = functions.make_def_argparser()
 parser.add_argument('--maketree', action=argparse.BooleanOptionalAction)
@@ -38,26 +41,25 @@ bins_resolution = (10000, 0.95, 1.05)
 bins_mva_score = (100, 0, 1)
 
 if not args.maketree:
-    #tmva_helper = helper_tmva.TMVAHelperXGB("tmp/bdt_model_example.root", "bdt_model")
-    tmva_helper = helper_tmva.TMVAHelperXML("TMVAClassification_BDTG.weights.xml")
+    tmva_helper = helper_tmva.TMVAHelperXGB("bdt_model_example.root", "bdt_model") # read the XGBoost training
+    #tmva_helper = helper_tmva.TMVAHelperXML("TMVAClassification_BDTG.weights.xml") # to read an XML file from TMVA
     print(tmva_helper.variables)
 
 def build_graph(df, dataset):
 
-    print("build graph", dataset.name)
+    logger.info(f"Build graph {dataset.name}")
     hists, cols = [], []
-    
+
     df = df.Define("weight", "1.0")
     weightsum = df.Sum("weight")
-    
+
     df = df.Alias("Particle0", "Particle#0.index")
     df = df.Alias("Particle1", "Particle#1.index")
     df = df.Alias("MCRecoAssociations0", "MCRecoAssociations#0.index")
     df = df.Alias("MCRecoAssociations1", "MCRecoAssociations#1.index")
     df = df.Alias("Photon0", "Photon#0.index")
     df = df.Alias("Lepton0", "Muon#0.index")
-     
-   
+
     # all leptons (bare)
     df = df.Define("leps_all", "FCCAnalyses::ReconstructedParticle::get(Lepton0, ReconstructedParticles)")
     df = df.Define("leps_all_p", "FCCAnalyses::ReconstructedParticle::get_p(leps_all)")
@@ -67,11 +69,10 @@ def build_graph(df, dataset):
     df = df.Define("leps_all_no", "FCCAnalyses::ReconstructedParticle::get_n(leps_all)")
     df = df.Define("leps_all_iso", "FCCAnalyses::coneIsolation(0.01, 0.5)(leps_all, ReconstructedParticles)") 
     df = df.Define("leps_all_p_gen", "FCCAnalyses::gen_p_from_reco(leps_all, MCRecoAssociations0, MCRecoAssociations1, ReconstructedParticles, Particle)")
-    
+
     # cuts on leptons
     df = df.Define("leps", "FCCAnalyses::ReconstructedParticle::sel_p(20)(leps_all)")
-    
-    
+
     df = df.Define("leps_p", "FCCAnalyses::ReconstructedParticle::get_p(leps)")
     df = df.Define("leps_theta", "FCCAnalyses::ReconstructedParticle::get_theta(leps)")
     df = df.Define("leps_phi", "FCCAnalyses::ReconstructedParticle::get_phi(leps)")
@@ -86,12 +87,12 @@ def build_graph(df, dataset):
     ### CUT 1: at least a lepton with at least 1 isolated one
     #########
     df = df.Filter("leps_no >= 1 && leps_sel_iso.size() > 0")
-    
+
     #########
     ### CUT 2 :at least 2 OS leptons, and build the resonance
     #########
     df = df.Filter("leps_no >= 2 && abs(Sum(leps_q)) < leps_q.size()")
-    
+
     # build the Z resonance based on the available leptons. Returns the best lepton pair compatible with the Z mass and recoil at 125 GeV
     # technically, it returns a ReconstructedParticleData object with index 0 the di-lepton system, index and 2 the leptons of the pair
     df = df.Define("zbuilder_result", "FCCAnalyses::resonanceBuilder_mass_recoil(91.2, 125, 0.4, 240, false)(leps, MCRecoAssociations0, MCRecoAssociations1, ReconstructedParticles, Particle, Particle0, Particle1)")
@@ -101,49 +102,46 @@ def build_graph(df, dataset):
     df = df.Define("zll_p", "FCCAnalyses::ReconstructedParticle::get_p(zll)[0]")
     df = df.Define("zll_recoil", "FCCAnalyses::ReconstructedParticle::recoilBuilder(240)(zll)")
     df = df.Define("zll_recoil_m", "FCCAnalyses::ReconstructedParticle::get_mass(zll_recoil)[0]")
-    
+
     df = df.Define("zll_leps_p", "FCCAnalyses::ReconstructedParticle::get_p(zll_leps)")
     df = df.Define("lep1_p", "zll_leps_p[0]")
     df = df.Define("lep2_p", "zll_leps_p[1]")
     df = df.Define("zll_leps_theta", "FCCAnalyses::ReconstructedParticle::get_theta(zll_leps)")
     df = df.Define("lep1_theta", "zll_leps_theta[0]")
     df = df.Define("lep2_theta", "zll_leps_theta[1]")
-     
-    
+
+
     df = df.Define("missingEnergy", "FCCAnalyses::missingEnergy(240., ReconstructedParticles)")
     df = df.Define("cosTheta_miss", "FCCAnalyses::get_cosTheta_miss(missingEnergy)")
     #df = df.Define("cosTheta_miss", "FCCAnalyses::get_cosTheta_miss(MissingET)")
-    
+
     df = df.Define("acoplanarity", "FCCAnalyses::acoplanarity(leps)")
     df = df.Define("acolinearity", "FCCAnalyses::acolinearity(leps)")
-   
-    
+
     #########
     ### CUT 3: Z mass window
     #########  
     df = df.Filter("zll_m > 86 && zll_m < 96")
-        
-    
+
+
     #########
     ### CUT 4: Z momentum
     #########  
     df = df.Filter("zll_p > 20 && zll_p < 70")   
-        
+
+
     #########
     ### CUT 5: recoil cut
     #########  
     df = df.Filter("zll_recoil_m < 140 && zll_recoil_m > 120")
-    
-    
-   
-    
+
+
     #########
     ### CUT 6: cosThetaMiss, for mass analysis
     #########  
     df = df.Filter("cosTheta_miss < 0.98")
 
- 
-    
+
     # columns for BDT
     cols.append("lep1_p")
     cols.append("lep2_p")
@@ -156,8 +154,8 @@ def build_graph(df, dataset):
     cols.append("cosTheta_miss")
     if args.maketree:
         return df, cols
-    
-    
+
+
     # histograms
     hists.append(df.Histo1D(("leps_p", "", *bins_p_mu), "leps_p"))
     hists.append(df.Histo1D(("zll_p", "", *bins_p_mu), "zll_p"))
@@ -167,9 +165,8 @@ def build_graph(df, dataset):
     hists.append(df.Histo1D(("cosThetaMiss", "", *bins_cosThetaMiss), "cosTheta_miss"))
     hists.append(df.Histo1D(("acoplanarity", "", *bins_aco), "acoplanarity"))
     hists.append(df.Histo1D(("acolinearity", "", *bins_aco), "acolinearity"))
-    
-    
-    
+
+
     df = df.Define("HCandPT__div_HCandMass", "lep1_theta")
     df = df.Define("photon_pt__div_HCandPT", "lep1_theta")
     df = df.Define("meson_pt__div_HCandPT", "lep1_theta")
@@ -183,30 +180,22 @@ def build_graph(df, dataset):
     df = df.Define("dEtaGammaMesonCand__div_HCandMass", "lep1_theta")
     df = df.Define("nGoodJets", "lep1_theta")
 
-    
+
     df = tmva_helper.run_inference(df) # by default, makes a new column mva_score
     hists.append(df.Histo1D(("mva", "", *bins_mva_score), "mva_score"))
-    
+
     return hists, weightsum
-    
-    
-    
-    
-    
-   
+
 
 if __name__ == "__main__":
 
-    wzp6_ee_mumuH_ecm240 = {"name": "wzp6_ee_mumuH_ecm240", "datadir": "/eos/experiment/fcc/users/j/jaeyserm/sampleProduction/winter2023/wzp6_ee_mumuH_ecm240/",  "xsec": 0.0067643}
-    p8_ee_WW_mumu_ecm240 = {"name": "p8_ee_WW_mumu_ecm240", "datadir": "/eos/experiment/fcc/ee/generation/DelphesEvents//winter2023/IDEA/p8_ee_WW_mumu_ecm240/",  "xsec": 0.25792}
+    datadict = functions.get_datadicts() # get default datasets
+    datasets_to_run = ["wzp6_ee_mumuH_ecm240", "p8_ee_WW_mumu_ecm240"]
 
-    datasets = [p8_ee_WW_mumu_ecm240, wzp6_ee_mumuH_ecm240]
-    datasets = [wzp6_ee_mumuH_ecm240]
-    
     if args.maketree:
-        for d in datasets: # run each process consecutively, no support yet for multiprocessing
-            functions.build_and_run_snapshot([d], build_graph, "tmp/test_tree_{datasetName}.root", args)
+        for d in datasets_to_run: # run each process consecutively, no support yet for multiprocessing
+            functions.build_and_run_snapshot(datadict, [d], build_graph, "test_tree_{datasetName}.root", args)
 
     else:
-        functions.build_and_run(datasets, build_graph, "tmp/test_bdt.root", args, norm=True, lumi=7200000)
+        functions.build_and_run(datadict, datasets_to_run, build_graph, "test_bdt.root", args, norm=True, lumi=7200000)
     

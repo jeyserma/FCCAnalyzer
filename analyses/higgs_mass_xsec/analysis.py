@@ -1,9 +1,10 @@
 
 import functions
 import helpers
-import helper_tmva
-import ROOT
 import argparse
+import logging
+
+logger = logging.getLogger("fcclogger")
 
 parser = functions.make_def_argparser()
 parser.add_argument("--flavor", type=str, help="Flavor (mumu or ee)", choices=["mumu", "ee"], default="mumu")
@@ -41,7 +42,7 @@ bins_resolution = (10000, 0.95, 1.05)
 
 def build_graph(df, dataset):
 
-    print("build graph", dataset.name)
+    logger.info(f"Build graph {dataset.name}")
     results = []
     sigProcs = ["wzp6_ee_mumuH_ecm240", "wzp6_ee_eeH_ecm240"]
 
@@ -379,45 +380,23 @@ def build_graph(df, dataset):
 
 if __name__ == "__main__":
 
-    baseDir = functions.get_basedir() # get base directory of samples, depends on the cluster hostname (mit, cern, ...)
-    import datasets.FCCee_winter2023_IDEA_ecm240
-    datasets_preproduction_IDEA = datasets.FCCee_winter2023_IDEA_ecm240.get_datasets(baseDir=baseDir) # list of all datasets
+    datadict = functions.get_datadicts() # get default datasets
+    datasets_to_run = []
 
-    import datasets.FCCee_winter2023_IDEA_ecm240_PRIV
-    datasets_preproduction_IDEA_PRIV = datasets.FCCee_winter2023_IDEA_ecm240_PRIV.get_datasets(baseDir=baseDir) # list of all datasets
-    
     if args.flavor == "mumu": 
-
-        signal = ["wzp6_ee_mumuH_ecm240"]
-        signal_mass = ["wzp6_ee_mumuH_mH-higher-100MeV_ecm240", "wzp6_ee_mumuH_mH-higher-50MeV_ecm240", "wzp6_ee_mumuH_mH-lower-100MeV_ecm240", "wzp6_ee_mumuH_mH-lower-50MeV_ecm240"]
-        signal_syst = ["wzp6_ee_mumuH_BES-higher-1pc_ecm240", "wzp6_ee_mumuH_BES-lower-1pc_ecm240"]
         bkgs = ["p8_ee_WW_ecm240", "p8_ee_ZZ_ecm240", "wzp6_ee_mumu_ecm240", "wzp6_ee_tautau_ecm240"]
         bkgs_rare = ["wzp6_egamma_eZ_Zmumu_ecm240", "wzp6_gammae_eZ_Zmumu_ecm240", "wzp6_gaga_mumu_60_ecm240", "wzp6_gaga_tautau_60_ecm240", "wzp6_ee_nuenueZ_ecm240"]
-   
-        select = signal + signal_mass + bkgs + bkgs_rare + signal_syst
-        select_bkgs = bkgs + bkgs_rare
-        #select = ["p8_ee_WW_mumu_ecm240", "p8_ee_WW_ecm240"]
-        
-        select_priv = ["p_wzp6_ee_mumuH_ecm240", "p_wzp6_ee_mumuH_mH-lower-50MeV_ecm240", "p_wzp6_ee_mumuH_mH-lower-100MeV_ecm240", "p_wzp6_ee_mumuH_mH-higher-100MeV_ecm240", "p_wzp6_ee_mumuH_mH-higher-50MeV_ecm240", "p_wzp6_ee_mumuH_noBES_ecm240","p_wzp6_ee_mumuH_mH-lower-50MeV_noBES_ecm240", "p_wzp6_ee_mumuH_mH-lower-100MeV_noBES_ecm240", "p_wzp6_ee_mumuH_mH-higher-100MeV_noBES_ecm240", "p_wzp6_ee_mumuH_mH-higher-50MeV_noBES_ecm240", "p_wzp6_ee_mumuH_BES-lower-1pc_ecm240", "p_wzp6_ee_mumuH_BES-higher-1pc_ecm240", "p_wzp6_ee_mumuH_BES-lower-6pc_ecm240", "p_wzp6_ee_mumuH_BES-higher-6pc_ecm240", "p_wzp6_ee_mumuH_ecm240_3T", "p_wzp6_ee_mumuH_mH-lower-50MeV_ecm240_3T", "p_wzp6_ee_mumuH_mH-lower-100MeV_ecm240_3T", "p_wzp6_ee_mumuH_mH-higher-100MeV_ecm240_3T", "p_wzp6_ee_mumuH_mH-higher-50MeV_ecm240_3T", "p_wzp6_ee_mumuH_ecm240_CLD", "p_wzp6_ee_mumuH_mH-lower-50MeV_ecm240_CLD", "p_wzp6_ee_mumuH_mH-lower-100MeV_ecm240_CLD", "p_wzp6_ee_mumuH_mH-higher-100MeV_ecm240_CLD", "p_wzp6_ee_mumuH_mH-higher-50MeV_ecm240_CLD", "p_wzp6_ee_mumuH_BES-lower-1pc_ecm240_CLD", "p_wzp6_ee_mumuH_BES-higher-1pc_ecm240_CLD", "p_wzp6_ee_mumuH_BES-lower-1pc_ecm240_3T", "p_wzp6_ee_mumuH_BES-higher-1pc_ecm240_3T"]
 
+        signal = ["wzp6_ee_mumuH_ecm240", "wzp6_ee_mumuH_mH-lower-50MeV_ecm240", "wzp6_ee_mumuH_mH-lower-100MeV_ecm240", "wzp6_ee_mumuH_mH-higher-100MeV_ecm240", "wzp6_ee_mumuH_mH-higher-50MeV_ecm240", "wzp6_ee_mumuH_noBES_ecm240","wzp6_ee_mumuH_mH-lower-50MeV_noBES_ecm240", "wzp6_ee_mumuH_mH-lower-100MeV_noBES_ecm240", "wzp6_ee_mumuH_mH-higher-100MeV_noBES_ecm240", "wzp6_ee_mumuH_mH-higher-50MeV_noBES_ecm240", "wzp6_ee_mumuH_BES-lower-1pc_ecm240", "wzp6_ee_mumuH_BES-higher-1pc_ecm240", "wzp6_ee_mumuH_BES-lower-6pc_ecm240", "wzp6_ee_mumuH_BES-higher-6pc_ecm240", "wzp6_ee_mumuH_ecm240_3T", "wzp6_ee_mumuH_mH-lower-50MeV_ecm240_3T", "wzp6_ee_mumuH_mH-lower-100MeV_ecm240_3T", "wzp6_ee_mumuH_mH-higher-100MeV_ecm240_3T", "wzp6_ee_mumuH_mH-higher-50MeV_ecm240_3T", "wzp6_ee_mumuH_ecm240_CLD", "wzp6_ee_mumuH_mH-lower-50MeV_ecm240_CLD", "wzp6_ee_mumuH_mH-lower-100MeV_ecm240_CLD", "wzp6_ee_mumuH_mH-higher-100MeV_ecm240_CLD", "wzp6_ee_mumuH_mH-higher-50MeV_ecm240_CLD", "wzp6_ee_mumuH_BES-lower-1pc_ecm240_CLD", "wzp6_ee_mumuH_BES-higher-1pc_ecm240_CLD", "wzp6_ee_mumuH_BES-lower-1pc_ecm240_3T", "wzp6_ee_mumuH_BES-higher-1pc_ecm240_3T"]
 
-    
+        datasets_to_run = signal + bkgs + bkgs_rare
+
     if args.flavor == "ee":
-    
-        signal = ["wzp6_ee_eeH_ecm240"]
-        signal_mass = ["wzp6_ee_eeH_mH-higher-100MeV_ecm240", "wzp6_ee_eeH_mH-higher-50MeV_ecm240", "wzp6_ee_eeH_mH-lower-100MeV_ecm240", "wzp6_ee_eeH_mH-lower-50MeV_ecm240"]
-        signal_syst = ["wzp6_ee_eeH_BES-higher-1pc_ecm240", "wzp6_ee_eeH_BES-lower-1pc_ecm240"]
         bkgs = ["p8_ee_WW_ecm240", "p8_ee_ZZ_ecm240", "wzp6_ee_ee_Mee_30_150_ecm240", "wzp6_ee_tautau_ecm240"]
         bkgs_rare = ["wzp6_egamma_eZ_Zee_ecm240", "wzp6_gammae_eZ_Zee_ecm240", "wzp6_gaga_ee_60_ecm240", "wzp6_gaga_tautau_60_ecm240", "wzp6_ee_nuenueZ_ecm240"]
-        
-        select = signal + signal_mass + bkgs + bkgs_rare + signal_syst
-        select_bkgs = bkgs + bkgs_rare
-        #select = ["wzp6_ee_eeH_ecm240"]
-        
-        
-        select_priv = ["p_wzp6_ee_eeH_ecm240", "p_wzp6_ee_eeH_mH-lower-50MeV_ecm240", "p_wzp6_ee_eeH_mH-lower-100MeV_ecm240", "p_wzp6_ee_eeH_mH-higher-100MeV_ecm240", "p_wzp6_ee_eeH_mH-higher-50MeV_ecm240", "p_wzp6_ee_eeH_noBES_ecm240","p_wzp6_ee_eeH_mH-lower-50MeV_noBES_ecm240", "p_wzp6_ee_eeH_mH-lower-100MeV_noBES_ecm240", "p_wzp6_ee_eeH_mH-higher-100MeV_noBES_ecm240", "p_wzp6_ee_eeH_mH-higher-50MeV_noBES_ecm240", "p_wzp6_ee_eeH_BES-lower-1pc_ecm240", "p_wzp6_ee_eeH_BES-higher-1pc_ecm240", "p_wzp6_ee_eeH_BES-lower-6pc_ecm240", "p_wzp6_ee_eeH_BES-higher-6pc_ecm240", "p_wzp6_ee_eeH_ecm240_3T", "p_wzp6_ee_eeH_mH-lower-50MeV_ecm240_3T", "p_wzp6_ee_eeH_mH-lower-100MeV_ecm240_3T", "p_wzp6_ee_eeH_mH-higher-100MeV_ecm240_3T", "p_wzp6_ee_eeH_mH-higher-50MeV_ecm240_3T", "p_wzp6_ee_eeH_ecm240_E2", "p_wzp6_ee_eeH_mH-lower-50MeV_ecm240_E2", "p_wzp6_ee_eeH_mH-lower-100MeV_ecm240_E2", "p_wzp6_ee_eeH_mH-higher-100MeV_ecm240_E2", "p_wzp6_ee_eeH_mH-higher-50MeV_ecm240_E2", "p_wzp6_ee_eeH_ecm240_CLD", "p_wzp6_ee_eeH_mH-lower-50MeV_ecm240_CLD", "p_wzp6_ee_eeH_mH-lower-100MeV_ecm240_CLD", "p_wzp6_ee_eeH_mH-higher-100MeV_ecm240_CLD", "p_wzp6_ee_eeH_mH-higher-50MeV_ecm240_CLD"]
-        
-    datasets = []
-    datasets += functions.filter_datasets(datasets_preproduction_IDEA, select_bkgs)
-    datasets += functions.filter_datasets(datasets_preproduction_IDEA_PRIV, select_priv)
-    functions.build_and_run(datasets, build_graph, f"output_ZH_{args.type}_{args.flavor}.root", args, norm=True, lumi=7200000)
+
+        signal = ["p_wzp6_ee_eeH_ecm240", "p_wzp6_ee_eeH_mH-lower-50MeV_ecm240", "p_wzp6_ee_eeH_mH-lower-100MeV_ecm240", "p_wzp6_ee_eeH_mH-higher-100MeV_ecm240", "p_wzp6_ee_eeH_mH-higher-50MeV_ecm240", "p_wzp6_ee_eeH_noBES_ecm240","p_wzp6_ee_eeH_mH-lower-50MeV_noBES_ecm240", "p_wzp6_ee_eeH_mH-lower-100MeV_noBES_ecm240", "p_wzp6_ee_eeH_mH-higher-100MeV_noBES_ecm240", "p_wzp6_ee_eeH_mH-higher-50MeV_noBES_ecm240", "p_wzp6_ee_eeH_BES-lower-1pc_ecm240", "p_wzp6_ee_eeH_BES-higher-1pc_ecm240", "p_wzp6_ee_eeH_BES-lower-6pc_ecm240", "p_wzp6_ee_eeH_BES-higher-6pc_ecm240", "p_wzp6_ee_eeH_ecm240_3T", "p_wzp6_ee_eeH_mH-lower-50MeV_ecm240_3T", "p_wzp6_ee_eeH_mH-lower-100MeV_ecm240_3T", "p_wzp6_ee_eeH_mH-higher-100MeV_ecm240_3T", "p_wzp6_ee_eeH_mH-higher-50MeV_ecm240_3T", "p_wzp6_ee_eeH_ecm240_E2", "p_wzp6_ee_eeH_mH-lower-50MeV_ecm240_E2", "p_wzp6_ee_eeH_mH-lower-100MeV_ecm240_E2", "p_wzp6_ee_eeH_mH-higher-100MeV_ecm240_E2", "p_wzp6_ee_eeH_mH-higher-50MeV_ecm240_E2", "p_wzp6_ee_eeH_ecm240_CLD", "p_wzp6_ee_eeH_mH-lower-50MeV_ecm240_CLD", "p_wzp6_ee_eeH_mH-lower-100MeV_ecm240_CLD", "p_wzp6_ee_eeH_mH-higher-100MeV_ecm240_CLD", "p_wzp6_ee_eeH_mH-higher-50MeV_ecm240_CLD"]\
+
+        datasets_to_run = signal + bkgs + bkgs_rare
+
+    functions.build_and_run(datadict, datasets_to_run, build_graph, f"output_ZH_{args.type}_{args.flavor}.root", args, norm=True, lumi=7200000)

@@ -8,9 +8,9 @@
 
 #include "FCCAnalyses/JetClusteringUtils.h"
 
-#include "fastjet/JetDefinition.hh"
-#include "fastjet/PseudoJet.hh"
-#include "fastjet/Selector.hh"
+#include "fastjet/install/include/fastjet/JetDefinition.hh"
+#include "fastjet/install/include/fastjet/PseudoJet.hh"
+#include "fastjet/install/include/fastjet/Selector.hh"
 
 namespace FCCAnalyses {
     

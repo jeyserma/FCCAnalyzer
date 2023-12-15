@@ -3,6 +3,9 @@ import functions
 import helpers
 import ROOT
 import argparse
+import logging
+
+logger = logging.getLogger("fcclogger")
 
 parser = functions.make_def_argparser()
 parser.add_argument("--flavor", type=str, choices=["ee", "mumu", "qq"], help="Flavor (ee, mumu, qq)", default="mumu")
@@ -10,7 +13,8 @@ parser.add_argument("--jetAlgo", type=str, choices=["kt", "valencia", "genkt"], 
 args = parser.parse_args()
 functions.set_threads(args)
 
-#functions.add_include_file("include/helper_jetclustering.h")
+functions.add_include_file("analyses/ewk_z/functions.h")
+functions.add_include_file("include/helper_jetclustering.h")
 
 # define histograms
 bins_p_mu = (2000, 0, 200) # 100 MeV bins
@@ -44,7 +48,7 @@ bins_thrustcomp = (2000, -100, 100)
 
 def build_graph_ll(df, dataset):
 
-    print("build graph", dataset.name)
+    logger.info(f"Build graph {dataset.name}")
     results = []
 
     df = df.Define("weight", "1.0")
@@ -152,7 +156,7 @@ def build_graph_ll(df, dataset):
 
 def build_graph_qq(df, dataset):
 
-    print("build graph", dataset.name)
+    logger.info(f"Build graph {dataset.name}")
     results = []
 
     df = df.Define("weight", "1.0")
@@ -185,8 +189,8 @@ def build_graph_qq(df, dataset):
         df = df.Define("clustered_jets", "JetClustering::clustering_valencia(0.5, 1, 2, 0, 0, 1., 1.)(pseudo_jets)")
     elif args.jetAlgo == "genkt":
         #df = jetcluster_helper.run_clustering(df)
-        #df = df.Define("clustered_jets", "FCCAnalyses::clustering_ee_genkt(1.5, 0, 0, 0, 0, -1)(pseudo_jets)")
-        df = df.Define("clustered_jets", "JetClustering::clustering_ee_genkt(1.5, 0, 0, 0, 0, -1)(pseudo_jets)")
+        df = df.Define("clustered_jets", "FCCAnalyses::clustering_ee_genkt(1.5, 0, 0, 0, 0, -1)(pseudo_jets)")
+        #df = df.Define("clustered_jets", "JetClustering::clustering_ee_genkt(1.5, 0, 0, 0, 0, -1)(pseudo_jets)")
 
 
     df = df.Define("jets", "FCCAnalyses::JetClusteringUtils::get_pseudoJets(clustered_jets)")
@@ -244,22 +248,17 @@ def build_graph_qq(df, dataset):
 
 if __name__ == "__main__":
 
-    baseDir = functions.get_basedir() # get base directory of samples, depends on the cluster hostname (mit, cern, ...)
-
-    wzp6_ee_mumu_ecm91p2 = {"name": f"wzp6_ee_mumu_ecm91p2", "datadir": f"{baseDir}/winter2023/IDEA/wzp6_ee_mumu_ecm91p2", "xsec": 1717.8522}
-    wzp6_ee_ee_Mee_5_150_ecm91p2 = {"name": f"wzp6_ee_ee_Mee_5_150_ecm91p2", "datadir": f"{baseDir}/winter2023/IDEA/wzp6_ee_ee_Mee_5_150_ecm91p2", "xsec": 3624.6287}
-    wzp6_ee_tautau_ecm91p2 = {"name": f"wzp6_ee_tautau_ecm91p2", "datadir": f"{baseDir}/winter2023/IDEA/wzp6_ee_tautau_ecm91p2", "xsec": 1716.1346}
-    wzp6_ee_qq_ecm91p2 = {"name": f"wzp6_ee_qq_ecm91p2", "datadir": f"{baseDir}/winter2023/IDEA/wzp6_ee_qq_ecm91p2", "xsec": 34457.344}
+    datadict = functions.get_datadicts() # get default datasets
 
     if args.flavor == "mumu": 
-        datasets = [wzp6_ee_mumu_ecm91p2, wzp6_ee_tautau_ecm91p2, wzp6_ee_qq_ecm91p2]
-        result = functions.build_and_run(datasets, build_graph_ll, f"output_z_xsec_mumu.root", args, norm=True, lumi=150000000)
+        datasets_to_run = ["wzp6_ee_mumu_ecm91p2", "wzp6_ee_tautau_ecm91p2", "wzp6_ee_qq_ecm91p2"]
+        result = functions.build_and_run(datadict, datasets_to_run,  build_graph_ll, f"output_z_xsec_mumu.root", args, norm=True, lumi=150000000)
 
     if args.flavor == "ee":
-        datasets = [wzp6_ee_ee_Mee_5_150_ecm91p2, wzp6_ee_tautau_ecm91p2, wzp6_ee_qq_ecm91p2]
-        result = functions.build_and_run(datasets, build_graph_ll, f"output_z_xsec_ee.root", args, norm=True, lumi=150000000)
+        datasets_to_run = ["wzp6_ee_ee_Mee_5_150_ecm91p2", "wzp6_ee_tautau_ecm91p2", "wzp6_ee_qq_ecm91p2"]
+        result = functions.build_and_run(datadict, datasets_to_run, build_graph_ll, f"output_z_xsec_ee.root", args, norm=True, lumi=150000000)
  
     if args.flavor == "qq":
-        datasets = [wzp6_ee_qq_ecm91p2]
-        result = functions.build_and_run(datasets, build_graph_qq, f"output_z_xsec_qq.root", args, norm=True, lumi=150000000)
+        datasets_to_run = ["wzp6_ee_qq_ecm91p2"]
+        result = functions.build_and_run(datadict, datasets_to_run, build_graph_qq, f"output_z_xsec_qq.root", args, norm=True, lumi=150000000)
 

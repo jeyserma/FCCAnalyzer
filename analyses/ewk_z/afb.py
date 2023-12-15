@@ -3,10 +3,15 @@ import functions
 import helpers
 import ROOT
 import argparse
+import logging
+
+logger = logging.getLogger("fcclogger")
 
 parser = functions.make_def_argparser()
 args = parser.parse_args()
 functions.set_threads(args)
+
+functions.add_include_file("analyses/ewk_z/functions.h")
 
 # define histograms
 bins_p_mu = (20000, 0, 200) # 10 MeV bins
@@ -24,7 +29,7 @@ bins_cos = (100, -1, 1)
 
 def build_graph(df, dataset):
 
-    print("build graph", dataset.name)
+    logger.info(f"Build graph {dataset.name}")
     hists = []
 
     df = df.Define("weight", "1.0")
@@ -104,11 +109,7 @@ def build_graph(df, dataset):
 
 if __name__ == "__main__":
 
-    baseDir = functions.get_basedir()
- 
-    wzp6_ee_mumu_ecm91p2 = {"name": f"wzp6_ee_mumu_ecm91p2", "datadir": f"{baseDir}/winter2023/IDEA/wzp6_ee_mumu_ecm91p2", "xsec": 1717.8522}
-    kkmc_ee_mumu_ecm91p2 = {"name": f"kkmc_ee_mumu_ecm91p2", "datadir": f"{baseDir}/winter2023/IDEA/kkmc_ee_mumu_ecm91p2", "xsec": 1717.8522}
+    datadict = functions.get_datadicts() # get default datasets
+    datasets_to_run = ["wzp6_ee_mumu_ecm91p2", "kkmc_ee_mumu_ecm91p2"]
 
-
-    datasets = [wzp6_ee_mumu_ecm91p2, kkmc_ee_mumu_ecm91p2]
-    result = functions.build_and_run(datasets, build_graph, f"afb.root", args, norm=True, lumi=150000000)
+    functions.build_and_run(datadict, datasets_to_run, build_graph, f"afb.root", args, norm=True, lumi=150000000)
