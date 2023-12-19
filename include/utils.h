@@ -8,7 +8,7 @@ namespace FCCAnalyses {
 // make Lorentz vectors for a given RECO particle collection
 Vec_tlv makeLorentzVectors(Vec_rp in) {
     Vec_tlv result;
-    for (auto & p: in) {
+    for(auto & p: in) {
         TLorentzVector tlv;
         tlv.SetXYZM(p.momentum.x, p.momentum.y, p.momentum.z, p.mass);
         result.push_back(tlv);
@@ -20,13 +20,25 @@ Vec_tlv makeLorentzVectors(Vec_rp in) {
 // make Lorentz vectors for a given MC particle collection
 Vec_tlv makeLorentzVectors(Vec_mc in) {
     Vec_tlv result;
-    for (auto & p: in) {
+    for(auto & p: in) {
         TLorentzVector tlv;
         tlv.SetXYZM(p.momentum.x, p.momentum.y, p.momentum.z, p.mass);
         result.push_back(tlv);
     }
     return result;
 }
+
+// make Lorentzvectors from pseudojets
+Vec_tlv makeLorentzVectors(Vec_f jets_px, Vec_f jets_py, Vec_f jets_pz, Vec_f jets_e) {
+    Vec_tlv result;
+    for(int i=0; i<jets_px.size(); i++) {
+        TLorentzVector tlv;
+        tlv.SetPxPyPzE(jets_px[i], jets_py[i], jets_pz[i], jets_e[i]);
+        result.push_back(tlv);
+    }
+    return result;
+}
+
 
 
 // select the hadronic Z decays in ZH(Za), second Z)
