@@ -187,7 +187,7 @@ def build_graph_qq(df, dataset):
         df = df.Define("clustered_jets", "JetClustering::clustering_valencia(0.5, 1, 2, 0, 0, 1., 1.)(pseudo_jets)")
     elif args.jetAlgo == "genkt":
         #df = jetcluster_helper.run_clustering(df)
-        df = df.Define("clustered_jets", "FCCAnalyses::clustering_ee_genkt(1.5, 0, 0, 0, 0, -1)(pseudo_jets)")
+        df = df.Define("clustered_jets", "JetClustering::clustering_ee_genkt(1.5, 0, 0, 0, 0, -1)(pseudo_jets)")
         #df = df.Define("clustered_jets", "JetClustering::clustering_ee_genkt(1.5, 0, 0, 0, 0, -1)(pseudo_jets)")
 
 
