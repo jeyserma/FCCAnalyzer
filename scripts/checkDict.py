@@ -4,9 +4,19 @@ import glob
 import json
 
 
-def export(datadict):
+def get_directory_size(path='.'):
+    total_size = 0
+    for dirpath, dirnames, filenames in os.walk(path):
+        for filename in filenames:
+            filepath = os.path.join(dirpath, filename)
+            total_size += os.path.getsize(filepath)
+    return total_size
+
+
+def export(datadict, basePath):
 
     table_rows = ""
+    size_tot = 0.
     for d in datadict:
         tmp = [entry for entry in d.split("_") if entry.startswith("ecm")][0]
         ecm = float(tmp.replace("p", ".").replace("ecm", ""))
@@ -18,7 +28,10 @@ def export(datadict):
             cat = "Higgs"
         else:
             cat = "Top"
-        table_rows += "<tr><td>{}</td><td>{}</td><td>{}</td><td>{}</td></tr>".format(d, cat, datadict[d]['xsec'], datadict[d]['path'])
+        size = get_directory_size(basePath + datadict[d]['path']) / 1024.0 / 1024.0 / 1024.0 # GB
+        size_tot += size
+
+        table_rows += "<tr><td>{}</td><td>{}</td><td>{}</td><td>{}</td><td>{}</td></tr>".format(d, cat, datadict[d]['xsec'], size, datadict[d]['path'])
 
     # HTML template with the dynamic table rows
     html_content = """
@@ -61,13 +74,15 @@ def export(datadict):
     </head>
     <body>
         <h1>FCCee samples at SubMIT</h1>
-        Storage path: /data/submit/cms/store/fccee/samples/winter2023/
+        Storage path: /data/submit/cms/store/fccee/samples/winter2023/ <br />
+        Total size: {} TB
         <table id="myTable" class="tablesorter">
             <thead>
                 <tr>
                     <th data-placeholder="Name">Name</th>
                     <th data-placeholder="Name">Category</th>
                     <th data-placeholder="Cross-section (pb)">Cross-section (pb)</th>
+                    <th data-placeholder="Size">Size (GB)</th>
                     <th data-placeholder="Path">Path</th>
                 </tr>
             </thead>
@@ -77,7 +92,7 @@ def export(datadict):
         </table>
     </body>
     </html>
-    """.format(table_rows)
+    """.format(size_tot/1024., table_rows)
 
     # Write the HTML content to a file
     with open('/home/submit/jaeyserm/public_html/fccee/samples.html', 'w') as file:
@@ -103,7 +118,7 @@ def main():
         if not s in datadict:
             print(f"Datadict entry {s} does not exist")
 
-    export(datadict)
+    export(datadict, basePath)
 
 if __name__ == '__main__':
     main()

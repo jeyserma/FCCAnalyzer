@@ -14,7 +14,6 @@ args = parser.parse_args()
 functions.set_threads(args)
 
 functions.add_include_file("analyses/ewk_z/functions.h")
-functions.add_include_file("include/helper_jetclustering.h")
 
 # define histograms
 bins_p_mu = (2000, 0, 200) # 100 MeV bins
@@ -44,7 +43,6 @@ bins_cos = (100, -1, 1)
 bins_thrustval = (2000, 0, 2)
 bins_thrustcomp = (2000, -100, 100)
 
-#jetcluster_helper = helpers.JetClusteringHelper(1.5, 0, 0, 0, 0, -1)
 
 def build_graph_ll(df, dataset):
 
