@@ -20,5 +20,7 @@ class Dataset:
         for root, directories, filenames in os.walk(basedir):
             for f in filenames:
                 filePath = os.path.join(os.path.abspath(root), f)
+                if not ".root" in filePath:
+                    continue
                 if regex == "" or fnmatch.fnmatch(filePath, regex): files.append(filePath)
         return files
