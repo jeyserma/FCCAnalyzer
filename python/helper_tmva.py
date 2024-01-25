@@ -35,7 +35,7 @@ class TMVAHelperXGB():
             if not var in cols:
                 raise Exception(f"Variable {var} not defined in dataframe.")
 
-        vars_str = ', '.join(self.variables)
+        vars_str = ', (float)'.join(self.variables)
         df = df.Define(self.var_col, f"ROOT::VecOps::RVec<float>{{{vars_str}}}")
         df = df.Define(col_name, self.tmva_helper, [self.var_col])
         return df

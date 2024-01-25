@@ -2,23 +2,37 @@
 import os
 import glob
 import json
+import ROOT
+from concurrent.futures import ThreadPoolExecutor
 
-
-def get_directory_size(path='.'):
+def analyze(datasetName, dataDict, basePath):
+    print(datasetName)
+    path = f"{basePath}/{dataDict['path']}"
     total_size = 0
+    total_files = 0
+    chain = ROOT.TChain("events")
     for dirpath, dirnames, filenames in os.walk(path):
         for filename in filenames:
             filepath = os.path.join(dirpath, filename)
+            if not ".root" in filepath:
+                continue
             total_size += os.path.getsize(filepath)
-    return total_size
+            total_files += 1
+            chain.Add(filepath)
+    df = ROOT.ROOT.RDataFrame(chain)
+    dataDict['total_size'] = total_size / 1024.0 / 1024.0 / 1024.0 # GB
+    dataDict['total_files'] = total_files
+    dataDict['total_events'] = df.Count().GetValue() #chain.GetEntries()
+    return datasetName, dataDict
 
 
-def export(datadict, basePath):
+def export(datadict):
 
     table_rows = ""
     size_tot = 0.
     for d in datadict:
-        tmp = [entry for entry in d.split("_") if entry.startswith("ecm")][0]
+        name, ddict = d[0], d[1]
+        tmp = [entry for entry in name.split("_") if entry.startswith("ecm")][0]
         ecm = float(tmp.replace("p", ".").replace("ecm", ""))
         if ecm < 100:
             cat = "Z"
@@ -28,10 +42,10 @@ def export(datadict, basePath):
             cat = "Higgs"
         else:
             cat = "Top"
-        size = get_directory_size(basePath + datadict[d]['path']) / 1024.0 / 1024.0 / 1024.0 # GB
+        size, nfiles, nevents = ddict['total_size'], ddict['total_files'], ddict['total_events']
         size_tot += size
 
-        table_rows += "<tr><td>{}</td><td>{}</td><td>{}</td><td>{}</td><td>{}</td></tr>".format(d, cat, datadict[d]['xsec'], size, datadict[d]['path'])
+        table_rows += "<tr><td>{}</td><td>{}</td><td>{}</td><td>{}</td><td>{}</td><td>{}</td><td>{}</td></tr>".format(name, cat, ddict['xsec'], size, nfiles, nevents, ddict['path'])
 
     # HTML template with the dynamic table rows
     html_content = """
@@ -83,6 +97,8 @@ def export(datadict, basePath):
                     <th data-placeholder="Name">Category</th>
                     <th data-placeholder="Cross-section (pb)">Cross-section (pb)</th>
                     <th data-placeholder="Size">Size (GB)</th>
+                    <th data-placeholder="Size">Number of files</th>
+                    <th data-placeholder="Size">Number of events</th>
                     <th data-placeholder="Path">Path</th>
                 </tr>
             </thead>
@@ -108,17 +124,12 @@ def main():
     
     samples = glob.glob(f"{basePath}/IDEA/*") + glob.glob(f"{basePath}/IDEA_2E/*") + glob.glob(f"{basePath}/IDEA_3T/*") + glob.glob(f"{basePath}/CLD/*")
     
-    
-    for datasetName in datadict:
-        if not os.path.isdir(f"{basePath}/{datadict[datasetName]['path']}"):
-            print(f"Directory {datadict[datasetName]['path']} does not exist")
-    
-    samples = [s.split("/")[-1] for s in samples]
-    for s in samples:
-        if not s in datadict:
-            print(f"Datadict entry {s} does not exist")
+    with ThreadPoolExecutor(max_workers=64) as executor:
+        futures = [executor.submit(analyze, d, datadict[d], basePath) for d in datadict.keys()]
+        results = [future.result() for future in futures]
 
-    export(datadict, basePath)
+    export(results)
+
 
 if __name__ == '__main__':
     main()

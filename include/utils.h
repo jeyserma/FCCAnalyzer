@@ -5,6 +5,16 @@
 
 namespace FCCAnalyses {
 
+
+Vec_f calculate_cos_theta(Vec_f thetas, bool abs=true) {
+    Vec_f ret; 
+    for(auto & theta: thetas) {
+        if(abs) ret.push_back(std::abs(cos(theta)));
+        else ret.push_back(cos(theta));
+    }
+    return ret;
+}
+
 // make Lorentz vectors for a given RECO particle collection
 Vec_tlv makeLorentzVectors(Vec_rp in) {
     Vec_tlv result;

@@ -4,7 +4,38 @@
 #include "defines.h"
 
 namespace FCCAnalyses {
-    
+
+
+Vec_i yfsww_w_decay_mode(Vec_mc mc, Vec_i ind) {
+   Vec_i res; // returns vector of 4 indices (first two PDG of W+ daughters, second two PDG of W-)
+   res.push_back(-99);
+   res.push_back(-99);
+   res.push_back(-99);
+   res.push_back(-99);
+   for(size_t i = 0; i < mc.size(); ++i) {
+        auto & p = mc[i];
+        if(std::abs(p.PDG) != 24) continue;
+
+        int ds = p.daughters_begin;
+        int de = p.daughters_end;
+        int idx_ds = ind[ds];
+        int idx_de = ind[de-1];
+        int pdg_d1 = mc[idx_ds].PDG;
+        int pdg_d2 = mc[idx_de].PDG;
+
+        if(std::abs(pdg_d1) == 24 or std::abs(pdg_d2) == 24) continue;
+        if(p.PDG == 24) {
+            res[0] = pdg_d1;
+            res[1] = pdg_d2;
+        }
+        else {
+            res[2] = pdg_d1;
+            res[3] = pdg_d2;
+        }
+   }
+   cout << "-------------- " << res[0] << " " << res[1] << " " << res[2] << " " << res[3] << endl;
+   return res;
+}
 
 Vec_tlv makeLorentzVectors_gen(Vec_rp in, ROOT::VecOps::RVec<int> recind, ROOT::VecOps::RVec<int> mcind, ROOT::VecOps::RVec<edm4hep::ReconstructedParticleData> reco, ROOT::VecOps::RVec<edm4hep::MCParticleData> mc) {
 	
@@ -26,13 +57,14 @@ Vec_tlv makeLorentzVectors_gen(Vec_rp in, ROOT::VecOps::RVec<int> recind, ROOT::
 	return result;
 }
 
-Vec_mc get_gen_pdg(Vec_mc mc, int pdgId, bool abs= true) {
-
+Vec_mc get_gen_pdg(Vec_mc mc, int pdgId, bool abs=true, bool stable=true) {
    Vec_mc result;
    for(size_t i = 0; i < mc.size(); ++i) {
-       
         auto & p = mc[i];
-        if((abs and std::abs(p.PDG) == pdgId) or (not abs and p.PDG == pdgId)) result.emplace_back(p);
+        if(!((abs and std::abs(p.PDG) == pdgId) or (not abs and p.PDG == pdgId))) continue;
+        if(stable && p.generatorStatus != 1) continue;
+        result.emplace_back(p);
+        //if((abs and std::abs(p.PDG) == pdgId) or (not abs and p.PDG == pdgId)) result.emplace_back(p);
    }
    return result;
 }

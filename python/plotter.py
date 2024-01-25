@@ -8,10 +8,9 @@ ROOT.gStyle.SetOptTitle(0)
 #ROOT.gStyle.SetImageScaling(2.)
 
 def getProc(fIn, hName, procs):
-
     h = None
-    for i,proc in enumerate(procs): 
-        h_ = fIn.Get("%s/%s" % (proc, hName))
+    for i,proc in enumerate(procs):
+        h_ = fIn.Get(f"{proc}/{hName}")
         if h == None: h = h_.Clone()
         else: h.Add(h_)
     return h
