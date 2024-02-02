@@ -337,6 +337,7 @@ def get_datadicts(campaign="winter2023"):
 
     hostname = get_hostname()
     if "mit.edu" in hostname: basedir = basedirs['mit']
+    else: basedir = ""
     catalog = f'{basedir}/{campaign}/catalog.json'
     f = open(catalog)
     datadict = json.load(f)

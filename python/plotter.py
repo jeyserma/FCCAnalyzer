@@ -180,7 +180,7 @@ def dummyRatio(nbins = 1, rline=1):
     dummyB.GetXaxis().SetLabelFont(43)
     dummyB.GetXaxis().SetLabelSize(28)
 
-    dummyB.GetXaxis().SetTitleOffset(4.0*dummyB.GetXaxis().GetTitleOffset())
+    dummyB.GetXaxis().SetTitleOffset(1.0*dummyB.GetXaxis().GetTitleOffset())
     dummyB.GetXaxis().SetLabelOffset(3.0*dummyB.GetXaxis().GetLabelOffset())
 
     # y-axis

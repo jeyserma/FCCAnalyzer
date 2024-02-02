@@ -85,12 +85,30 @@ def build_graph(df, dataset):
     df = df.Define("muons_gen_theta", "FCCAnalyses::MCParticle::get_theta(muons_gen)")
     df = df.Define("muons_gen_charge", "FCCAnalyses::MCParticle::get_charge(muons_gen)")
     df = df.Define("muons_gen_costheta", "FCCAnalyses::calculate_cos_theta(muons_gen_theta, true)")
+    df = df.Define("muons_gen_idx_leading", "if(muons_gen_p[0] > muons_gen_p[1]) return 0; else return 1;")
+    df = df.Define("muons_gen_idx_subleading", "if(muons_gen_p[0] > muons_gen_p[1]) return 1; else return 0;")
+    df = df.Define("muons_gen_theta_leading", "muons_gen_theta[muons_gen_idx_leading]")
+    df = df.Define("muons_gen_theta_subleading", "muons_gen_theta[muons_gen_idx_subleading]")
+    df = df.Define("muons_gen_p_leading", "muons_gen_p[muons_gen_idx_leading]")
+    df = df.Define("muons_gen_p_subleading", "muons_gen_p[muons_gen_idx_subleading]")
+    df = df.Define("muons_gen_costheta_leading", "abs(cos(muons_gen_theta_leading))")
+    df = df.Define("muons_gen_costheta_subleading", "abs(cos(muons_gen_theta_subleading))")
 
     results.append(df.Histo1D(("muons_gen_no", "", *bins_count), "muons_gen_no"))
     results.append(df.Histo1D(("muons_gen_p", "", *bins_p), "muons_gen_p"))
     results.append(df.Histo1D(("muons_gen_theta", "", *bins_theta), "muons_gen_theta"))
     results.append(df.Histo1D(("muons_gen_charge", "", *bins_charge), "muons_gen_charge"))
     results.append(df.Histo1D(("muons_gen_costheta", "", *bins_cos_abs), "muons_gen_costheta"))
+    
+
+
+    results.append(df.Histo1D(("muons_gen_p_leading", "", *bins_p), "muons_gen_p_leading"))
+    results.append(df.Histo1D(("muons_gen_p_subleading", "", *bins_p), "muons_gen_p_subleading"))
+    results.append(df.Histo1D(("muons_gen_theta_leading", "", *bins_theta), "muons_gen_theta_leading"))
+    results.append(df.Histo1D(("muons_gen_theta_subleading", "", *bins_theta), "muons_gen_theta_subleading"))
+    results.append(df.Histo1D(("muons_gen_costheta_leading", "", *bins_cos_abs), "muons_gen_costheta_leading"))
+    results.append(df.Histo1D(("muons_gen_costheta_subleading", "", *bins_cos_abs), "muons_gen_costheta_subleading"))
+
 
     # reco electrons
     df = df.Alias("Electron0", "Electron#0.index")
@@ -114,12 +132,27 @@ def build_graph(df, dataset):
     df = df.Define("electrons_gen_theta", "FCCAnalyses::MCParticle::get_theta(electrons_gen)")
     df = df.Define("electrons_gen_charge", "FCCAnalyses::MCParticle::get_charge(electrons_gen)")
     df = df.Define("electrons_gen_costheta", "FCCAnalyses::calculate_cos_theta(electrons_gen_theta, true)")
+    df = df.Define("electrons_gen_idx_leading", "if(electrons_gen_p[0] > electrons_gen_p[1]) return 0; else return 1;")
+    df = df.Define("electrons_gen_idx_subleading", "if(electrons_gen_p[0] > electrons_gen_p[1]) return 1; else return 0;")
+    df = df.Define("electrons_gen_theta_leading", "electrons_gen_theta[electrons_gen_idx_leading]")
+    df = df.Define("electrons_gen_theta_subleading", "electrons_gen_theta[electrons_gen_idx_subleading]")
+    df = df.Define("electrons_gen_p_leading", "electrons_gen_p[electrons_gen_idx_leading]")
+    df = df.Define("electrons_gen_p_subleading", "electrons_gen_p[electrons_gen_idx_subleading]")
+    df = df.Define("electrons_gen_costheta_leading", "abs(cos(electrons_gen_theta_leading))")
+    df = df.Define("electrons_gen_costheta_subleading", "abs(cos(electrons_gen_theta_subleading))")
 
     results.append(df.Histo1D(("electrons_gen_no", "", *bins_count), "electrons_gen_no"))
     results.append(df.Histo1D(("electrons_gen_p", "", *bins_p), "electrons_gen_p"))
     results.append(df.Histo1D(("electrons_gen_theta", "", *bins_theta), "electrons_gen_theta"))
     results.append(df.Histo1D(("electrons_gen_charge", "", *bins_charge), "electrons_gen_charge"))
     results.append(df.Histo1D(("electrons_gen_costheta", "", *bins_cos_abs), "electrons_gen_costheta"))
+
+    results.append(df.Histo1D(("electrons_gen_p_leading", "", *bins_p), "electrons_gen_p_leading"))
+    results.append(df.Histo1D(("electrons_gen_p_subleading", "", *bins_p), "electrons_gen_p_subleading"))
+    results.append(df.Histo1D(("electrons_gen_theta_leading", "", *bins_theta), "electrons_gen_theta_leading"))
+    results.append(df.Histo1D(("electrons_gen_theta_subleading", "", *bins_theta), "electrons_gen_theta_subleading"))
+    results.append(df.Histo1D(("electrons_gen_costheta_leading", "", *bins_cos_abs), "electrons_gen_costheta_leading"))
+    results.append(df.Histo1D(("electrons_gen_costheta_subleading", "", *bins_cos_abs), "electrons_gen_costheta_subleading"))
 
     # reco photons
     df = df.Alias("Photon0", "Photon#0.index")
@@ -145,14 +178,8 @@ def build_graph(df, dataset):
     results.append(df.Histo1D(("photons_gen_p", "", *bins_p), "photons_gen_p"))
     results.append(df.Histo1D(("photons_gen_theta", "", *bins_theta), "photons_gen_theta"))
     results.append(df.Histo1D(("photons_gen_costheta", "", *bins_cos_abs), "photons_gen_costheta"))
-    
 
 
-    # Q2 -- sum of gen muons
-    df = df.Define("muons_gen_tlv", "FCCAnalyses::makeLorentzVectors(muons_gen)")
-    df = df.Define("dimuon", "muons_gen_tlv[0] + muons_gen_tlv[1]")
-    df = df.Define("dimuon_m", "dimuon.M()")
-    results.append(df.Histo1D(("dimuon_m", "", *bins_m), "dimuon_m"))
 
 
     df = df.Define("hard_photon_idx", "FCCAnalyses::get_hard_photons(Particle, Particle0)")
@@ -163,25 +190,49 @@ def build_graph(df, dataset):
     df = df.Define("digamma", "gamma1+gamma2")
     df = df.Define("digamma_m", "digamma.M()")
     df = df.Define("digamma_m_scaled", "digamma_m/91.2")
-    df = df.Define("gamma1_e", "gamma1.E()")
+    df = df.Define("gamma1_p", "gamma1.P()")
     df = df.Define("gamma1_theta", "gamma1.Theta()")
-    df = df.Define("gamma2_e", "gamma2.E()")
+    df = df.Define("gamma2_p", "gamma2.P()")
     df = df.Define("gamma2_theta", "gamma2.Theta()")
+    
+    df = df.Define("gamma_leading_p", "if(gamma1_p>gamma2_p) return gamma1_p; else return gamma2_p")
+    df = df.Define("gamma_subleading_p", "if(gamma1_p>gamma2_p) return gamma2_p; else return gamma1_p")
+    df = df.Define("gamma_leading_theta", "if(gamma1_p>gamma2_p) return gamma1_theta; else return gamma2_theta")
+    df = df.Define("gamma_subleading_theta", "if(gamma1_p>gamma2_p) return gamma2_theta; else return gamma1_theta")
+    df = df.Define("gamma_leading_costheta", "abs(cos(gamma_leading_theta))")
+    df = df.Define("gamma_subleading_costheta", "abs(cos(gamma_subleading_theta))")
+    
     #df = df.Define("digamma_m", "cout << gamma1.E() << \" \"<<  gamma2.E() << endl; return 1;")
     results.append(df.Histo1D(("digamma_m", "", *bins_m), "digamma_m"))
     results.append(df.Histo1D(("digamma_m_scaled", "", *(1000, 0, 1)), "digamma_m_scaled"))
 
-    results.append(df.Histo1D(("gamma1_e", "", *bins_p), "gamma1_e"))
-    results.append(df.Histo1D(("gamma1_theta", "", *bins_theta), "gamma1_theta"))
-    results.append(df.Histo1D(("gamma2_e", "", *bins_p), "gamma2_e"))
-    results.append(df.Histo1D(("gamma2_theta", "", *bins_theta), "gamma2_theta"))
+    results.append(df.Histo1D(("gamma_leading_p", "", *bins_p), "gamma_leading_p"))
+    results.append(df.Histo1D(("gamma_leading_theta", "", *bins_theta), "gamma_leading_theta"))
+    results.append(df.Histo1D(("gamma_leading_costheta", "", *bins_cos_abs), "gamma_leading_costheta"))
+    results.append(df.Histo1D(("gamma_subleading_p", "", *bins_p), "gamma_subleading_p"))
+    results.append(df.Histo1D(("gamma_subleading_theta", "", *bins_theta), "gamma_subleading_theta"))
+    results.append(df.Histo1D(("gamma_subleading_costheta", "", *bins_cos_abs), "gamma_subleading_costheta"))
     return results, weightsum
 
 
 if __name__ == "__main__":
 
-    datadict = functions.get_datadicts() # get default datasets
+    #datadict = functions.get_datadicts() # get default datasets
 
-    datasets_to_run = ["wz3p6_ee_gaga_mumu_ecm91p2", "wz3p6_ee_gaga_mumu_ecm91p2_cfg1", "p8_ee_gaga_mumu_ecm91p2"]
+    #datasets_to_run = ["wz3p6_ee_gaga_mumu_ecm91p2", "wz3p6_ee_gaga_mumu_ecm91p2_cfg1", "p8_ee_gaga_mumu_ecm91p2"]
     #datasets_to_run = ["wz3p6_ee_gaga_mumu_ecm91p2"]
+    
+    datadict = {}
+    datadict = {'basePath': '/'}
+    datadict["wz3p6_ee_gaga_mumu_ecm91p2"] = {
+        "xsec": 1,
+        "path": "/afs/cern.ch/work/j/jaeyserm/fccee/FCCProducer/local/winter2023/wz3p6_ee_gaga_mumu_ecm91p2/"
+    }
+    datadict["p8_ee_gaga_mumu_ecm91p2"] = {
+        "xsec": 1,
+        "path": "/afs/cern.ch/work/j/jaeyserm/fccee/FCCProducer/local/winter2023/p8_ee_gaga_mumu_ecm91p2/"
+    }
+    datasets_to_run = ["p8_ee_gaga_mumu_ecm91p2", "wz3p6_ee_gaga_mumu_ecm91p2"]
+
+
     result = functions.build_and_run(datadict, datasets_to_run, build_graph, f"output_two_photon.root", args, norm=False)
