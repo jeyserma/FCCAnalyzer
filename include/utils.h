@@ -188,7 +188,6 @@ TLorentzVector sum4Vectors(Vec_mc in) {
 
 // computes longitudinal and transversal energy balance of all particles
 Vec_f energy_imbalance(Vec_rp in) {
-    
     float e_tot = 0;
     float e_trans = 0;
     float e_long = 0;

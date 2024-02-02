@@ -13,7 +13,8 @@ functions.set_threads(args)
 
 functions.add_include_file("analyses/higgs_mass_xsec/functions.h")
 functions.add_include_file("analyses/higgs_mass_xsec/functions_gen.h")
-
+functions.add_include_file("include/yfsww.h")
+functions.add_include_file("include/breit_wigner_weights.h")
 
 # define histograms
 
@@ -106,6 +107,28 @@ def build_graph(df, dataset):
 
     df = df.Define("w_decay_mode", "FCCAnalyses::yfsww_w_decay_mode(Particle, Particle1)")
     results.append(df.Histo1D(("muons_all_p", "", *(50, -25, 25)), "w_decay_mode"))
+    
+    df = df.Define("w_decay_idxs", "FCCAnalyses::yfsww_w_idxs(Particle, Particle1)")
+    df = df.Define("w_plus", "Particle[w_decay_idxs[0]]")
+    df = df.Define("w_minus", "Particle[w_decay_idxs[1]]")
+    df = df.Define("w_plus_m", "w_plus.mass")
+    df = df.Define("w_minus_m", "w_minus.mass")
+    
+    df = df.Define("weight_plus_100MeV", "FCCAnalyses::breitWignerWeights_WW(w_plus_m, w_minus_m, 100)")
+    df = df.Define("weight_minus_100MeV", "FCCAnalyses::breitWignerWeights_WW(w_plus_m, w_minus_m, -100)")
+    
+    results.append(df.Histo1D(("w_plus_m", "", *(200, 70, 90)), "w_plus_m"))
+    results.append(df.Histo1D(("w_minus_m", "", *(200, 70, 90)), "w_minus_m"))
+    results.append(df.Histo2D(("w_plus_minus_m", "", *(200, 70, 90, 200, 70, 90)), "w_plus_m", "w_minus_m"))
+    
+    results.append(df.Histo1D(("weight_plus_100MeV", "", *(200, 0, 2)), "weight_plus_100MeV"))
+    results.append(df.Histo1D(("weight_minus_100MeV", "", *(200, 0, 2)), "weight_minus_100MeV"))
+    
+    results.append(df.Histo1D(("w_plus_m_plus_100MeV", "", *(200, 70, 90)), "w_plus_m", "weight_plus_100MeV"))
+    results.append(df.Histo1D(("w_minus_m_plus_100MeV", "", *(200, 70, 90)), "w_minus_m", "weight_plus_100MeV"))
+
+    results.append(df.Histo1D(("w_plus_m_minus_100MeV", "", *(200, 70, 90)), "w_plus_m", "weight_minus_100MeV"))
+    results.append(df.Histo1D(("w_minus_m_minus_100MeV", "", *(200, 70, 90)), "w_minus_m", "weight_minus_100MeV"))
 
     # lepton kinematic histograms
     results.append(df.Histo1D(("muons_all_p", "", *bins_p), "muons_all_p"))

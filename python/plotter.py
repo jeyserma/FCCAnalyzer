@@ -80,7 +80,7 @@ def aux():
 
     latex = ROOT.TLatex()
     latex.SetNDC()
-    latex.SetTextSize(0.045)
+    latex.SetTextSize(0.04)
     latex.SetTextColor(1)
     latex.SetTextFont(42)
     latex.SetTextAlign(30) # 0 special vertical aligment with subscripts
@@ -89,15 +89,15 @@ def aux():
     else: latex.DrawLatex(0.95, 0.955, cfg['topRight']) # was 955 ??  945
 
 
-    latex.SetTextAlign(13)
+    latex.SetTextAlign(10)
     latex.SetTextFont(42)
-    latex.SetTextSize(0.045)
-    latex.DrawLatex(0.15, 0.985, cfg['topLeft'])
+    latex.SetTextSize(0.04)
+    latex.DrawLatexNDC(0.15, 0.95, cfg['topLeft'])
 
 
-def canvas():
+def canvas(width=1000, height=1000):
 
-    c = ROOT.TCanvas("c", "c", 1000, 1000)
+    c = ROOT.TCanvas("c", "c", width, height)
     c.SetTopMargin(0.055)
     c.SetRightMargin(0.05)
     c.SetLeftMargin(0.15)
@@ -180,7 +180,7 @@ def dummyRatio(nbins = 1, rline=1):
     dummyB.GetXaxis().SetLabelFont(43)
     dummyB.GetXaxis().SetLabelSize(28)
 
-    dummyB.GetXaxis().SetTitleOffset(4.0*dummyB.GetXaxis().GetTitleOffset())
+    dummyB.GetXaxis().SetTitleOffset(1.0*dummyB.GetXaxis().GetTitleOffset())
     dummyB.GetXaxis().SetLabelOffset(3.0*dummyB.GetXaxis().GetLabelOffset())
 
     # y-axis
@@ -208,7 +208,7 @@ def dummyRatio(nbins = 1, rline=1):
     dummyB.GetYaxis().SetLabelFont(43)
     dummyB.GetYaxis().SetLabelSize(28)
 
-    dummyB.GetYaxis().SetTitleOffset(1.3) # 1.7*dummyB.GetYaxis().GetTitleOffset()
+    dummyB.GetYaxis().SetTitleOffset(1.7*dummyB.GetYaxis().GetTitleOffset()) 
     dummyB.GetYaxis().SetLabelOffset(1.4*dummyB.GetYaxis().GetLabelOffset())
     dummyB.GetYaxis().SetNdivisions(505)
     
@@ -218,12 +218,12 @@ def dummyRatio(nbins = 1, rline=1):
 
     return dummyT, dummyB, line
 
-def canvasRatio():
+def canvasRatio(width=1000, height=1000):
 
 
     epsilon = 0.025
 
-    c = ROOT.TCanvas("c", "c", 1000, 1000)
+    c = ROOT.TCanvas("c", "c", width, height)
     c.SetTopMargin(0.0)
     c.SetRightMargin(0.0)
     c.SetBottomMargin(0.0)
