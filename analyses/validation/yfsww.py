@@ -155,5 +155,5 @@ if __name__ == "__main__":
 
     datadict = functions.get_datadicts() # get default datasets
 
-    datasets_to_run = ["yfsww_ee_ww_noBES_ecm180_mw80379_ww2085"]
+    datasets_to_run = ["yfsww_ee_ww_noBES_ecm157", "yfsww_ee_ww_noBES_ecm163", "yfsww_ee_ww_noBES_Born_ecm163"]
     result = functions.build_and_run(datadict, datasets_to_run, build_graph, f"output_yfsww.root", args, norm=False)

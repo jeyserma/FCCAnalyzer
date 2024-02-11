@@ -6,7 +6,7 @@ import ROOT
 from concurrent.futures import ThreadPoolExecutor
 
 def analyze(datasetName, dataDict, basePath):
-    print(datasetName)
+    print("START", datasetName)
     path = f"{basePath}/{dataDict['path']}"
     total_size = 0
     total_files = 0
@@ -23,6 +23,7 @@ def analyze(datasetName, dataDict, basePath):
     dataDict['total_size'] = total_size / 1024.0 / 1024.0 / 1024.0 # GB
     dataDict['total_files'] = total_files
     dataDict['total_events'] = df.Count().GetValue() #chain.GetEntries()
+    print("DONE", datasetName)
     return datasetName, dataDict
 
 

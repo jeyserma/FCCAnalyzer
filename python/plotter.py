@@ -10,7 +10,7 @@ ROOT.gStyle.SetOptTitle(0)
 def getProc(fIn, hName, procs):
     h = None
     for i,proc in enumerate(procs):
-        h_ = fIn.Get(f"{proc}/{hName}")
+        h_ = fIn.Get("%s/%s/"%(proc, hName))
         if h == None: h = h_.Clone()
         else: h.Add(h_)
     return h
@@ -95,12 +95,12 @@ def aux():
     latex.DrawLatexNDC(0.15, 0.95, cfg['topLeft'])
 
 
-def canvas(width=1000, height=1000):
+def canvas(width=1000, height=1000, leftMargin=0.15):
 
     c = ROOT.TCanvas("c", "c", width, height)
     c.SetTopMargin(0.055)
     c.SetRightMargin(0.05)
-    c.SetLeftMargin(0.15)
+    c.SetLeftMargin(leftMargin)
     c.SetBottomMargin(0.11)
 
     #c.SetFrameLineWidth(2)
@@ -218,7 +218,7 @@ def dummyRatio(nbins = 1, rline=1):
 
     return dummyT, dummyB, line
 
-def canvasRatio(width=1000, height=1000):
+def canvasRatio(width=1000, height=1000, leftMargin=0.15):
 
 
     epsilon = 0.025
@@ -235,13 +235,13 @@ def canvasRatio(width=1000, height=1000):
     pad1.SetBottomMargin(epsilon)
     pad1.SetTopMargin(0.055/(1.-cfg['ratiofraction']))
     pad1.SetRightMargin(0.05)
-    pad1.SetLeftMargin(0.15)
+    pad1.SetLeftMargin(leftMargin)
     #pad1.SetFrameLineWidth(2)
 
     pad2.SetBottomMargin(0.37)
     pad2.SetTopMargin(0.0)
     pad2.SetRightMargin(0.05)
-    pad2.SetLeftMargin(0.15)
+    pad2.SetLeftMargin(leftMargin)
     #pad2.SetFrameLineWidth(2)
 
 
