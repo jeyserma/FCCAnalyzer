@@ -114,21 +114,21 @@ def build_graph(df, dataset):
     df = df.Define("w_plus_m", "w_plus.mass")
     df = df.Define("w_minus_m", "w_minus.mass")
     
-    df = df.Define("weight_plus_100MeV", "FCCAnalyses::breitWignerWeights_WW(w_plus_m, w_minus_m, 100)")
-    df = df.Define("weight_minus_100MeV", "FCCAnalyses::breitWignerWeights_WW(w_plus_m, w_minus_m, -100)")
+    df = df.Define("weight_plus_10MeV", "FCCAnalyses::breitWignerWeights_WW(w_plus_m, w_minus_m, 10)")
+    df = df.Define("weight_minus_10MeV", "FCCAnalyses::breitWignerWeights_WW(w_plus_m, w_minus_m, -10)")
     
     results.append(df.Histo1D(("w_plus_m", "", *(200, 70, 90)), "w_plus_m"))
     results.append(df.Histo1D(("w_minus_m", "", *(200, 70, 90)), "w_minus_m"))
     results.append(df.Histo2D(("w_plus_minus_m", "", *(200, 70, 90, 200, 70, 90)), "w_plus_m", "w_minus_m"))
     
-    results.append(df.Histo1D(("weight_plus_100MeV", "", *(200, 0, 2)), "weight_plus_100MeV"))
-    results.append(df.Histo1D(("weight_minus_100MeV", "", *(200, 0, 2)), "weight_minus_100MeV"))
+    results.append(df.Histo1D(("weight_plus_10MeV", "", *(200, 0, 2)), "weight_plus_10MeV"))
+    results.append(df.Histo1D(("weight_minus_10MeV", "", *(200, 0, 2)), "weight_minus_10MeV"))
     
-    results.append(df.Histo1D(("w_plus_m_plus_100MeV", "", *(200, 70, 90)), "w_plus_m", "weight_plus_100MeV"))
-    results.append(df.Histo1D(("w_minus_m_plus_100MeV", "", *(200, 70, 90)), "w_minus_m", "weight_plus_100MeV"))
+    results.append(df.Histo1D(("w_plus_m_plus_10MeV", "", *(200, 70, 90)), "w_plus_m", "weight_plus_10MeV"))
+    results.append(df.Histo1D(("w_minus_m_plus_10MeV", "", *(200, 70, 90)), "w_minus_m", "weight_plus_10MeV"))
 
-    results.append(df.Histo1D(("w_plus_m_minus_100MeV", "", *(200, 70, 90)), "w_plus_m", "weight_minus_100MeV"))
-    results.append(df.Histo1D(("w_minus_m_minus_100MeV", "", *(200, 70, 90)), "w_minus_m", "weight_minus_100MeV"))
+    results.append(df.Histo1D(("w_plus_m_minus_10MeV", "", *(200, 70, 90)), "w_plus_m", "weight_minus_10MeV"))
+    results.append(df.Histo1D(("w_minus_m_minus_10MeV", "", *(200, 70, 90)), "w_minus_m", "weight_minus_10MeV"))
 
     # lepton kinematic histograms
     results.append(df.Histo1D(("muons_all_p", "", *bins_p), "muons_all_p"))
@@ -146,8 +146,6 @@ def build_graph(df, dataset):
     results.append(df.Histo1D(("photons_all_no", "", *bins_count), "photons_all_no"))
 
 
-
-
     return results, weightsum
 
 
@@ -156,4 +154,4 @@ if __name__ == "__main__":
     datadict = functions.get_datadicts() # get default datasets
 
     datasets_to_run = ["yfsww_ee_ww_noBES_ecm157", "yfsww_ee_ww_noBES_ecm163", "yfsww_ee_ww_noBES_Born_ecm163"]
-    result = functions.build_and_run(datadict, datasets_to_run, build_graph, f"output_yfsww.root", args, norm=False)
+    functions.build_and_run(datadict, datasets_to_run, build_graph, f"output_wmass_kinematic.root", args, norm=True, lumi=500000) # assume half of 10 ab-1 at 157/163 GeV

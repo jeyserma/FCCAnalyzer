@@ -105,8 +105,65 @@ tmva_helper = helper_tmva.TMVAHelperXML("TMVAClassification_BDTG.weights.xml") #
 ```
 
 
+## W mass and combinetf fit
+A gen-level W mass analyzer is implemented to extract the uncertainty of the W mass using a likelihood fit. The fit accepts a nominal histogram of the invariant mass of one or both W bosons, and also up/down mass variations that can be obtained using the Breit-Wigner weights. The following analyzer generates all the necessary histograms (only the sample at center-of-mass 163 GeV is to be considered):
+
+```shell
+python analyses/ewk_w/wmass_kinematic.py
+```
+
+The output contains 6 histograms: nominal, +10 MeV and -10 MeV for both W+ and W-. To prepare the fit, we need to convert these histograms to a datacard:
+
+```shell
+mkdir -p combine/wmass_kinematic/
+python analyses/ewk_w/scripts/setup_combine.py
+```
+
+This generates two files: a ROOT file containing the histograms to be fitted and a text datacard that will tell the fitter how to interpret these histograms.
+
+To run the actual lieklihood fit, we use combinetf, which is the Tensorflow-based version of regular combine (a statistical fitting package used by CMS at the LHC). To install combinetf, execute the following steps once (in a new terminal):
+
+```shell
+# open a new terminal
+cd <path to my FCCAnalyzer>
+cd ../ # go one folder up
+cmssw-cc7
+export SCRAM_ARCH="slc7_amd64_gcc700"
+cmsrel CMSSW_10_6_19_patch2
+cd CMSSW_10_6_19_patch2/src/
+cmsenv
+git clone -o bendavid -b tensorflowfit git@github.com:bendavid/HiggsAnalysis-CombinedLimit.git HiggsAnalysis/CombinedLimit
+cd HiggsAnalysis/CombinedLimit
+scram b -j 8
+```
+
+To use combinetf, start from a fresh shell and do (you cannot use the same terminal/shell as FCCAnalyzer):
+
+```shell
+cmssw-cc7
+cd <path to base>
+cd CMSSW_10_6_19_patch2/src/
+cmsenv
+```
+
+Then, you can navigate to your `FCCAnalyzer`, and execute the following steps to perform the fit:
+
+```shell
+cd combine/wmass_kinematic/
+text2hdf5.py datacard.txt -o datacard.hdf5 --X-allow-no-background --X-allow-no-signal
+combinetf.py datacard.hdf5 -t -1 
+```
+
+The option `-t -1` tells the fitter to fit the W mass to it's nominal value (i.e. to the nominal histogram). The result at the end will show something like this:
+
+```shell
+massShift10MeV = 0.000000 +- 0.061609 (+-99.000000 --99.000000) (massShift10MeV_In = 0.000000)
+```
+
+This means that the mass shift w.r.t. the nominal is 0.0 MeV (as expected as we fit to the nominal mass), but more importantly the uncertainty is 0.061609 per 10 MeV shift, so a total uncertainty of 0.62 MeV or 620 keV. 
 
 
+The exercise above has to be repeated with reconstructed-level ditributions (2 or 4-jet invariant masses), and naturally because of hadronization and detector effects, the mass peaks will be broader and the uncertainty will become larger.
 
 
 ## Higgs mass and cross-section at 240 GeV
