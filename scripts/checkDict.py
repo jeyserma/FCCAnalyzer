@@ -7,10 +7,21 @@ from concurrent.futures import ThreadPoolExecutor
 
 def analyze(datasetName, dataDict, basePath):
     print("START", datasetName)
+    
     path = f"{basePath}/{dataDict['path']}"
     total_size = 0
     total_files = 0
     chain = ROOT.TChain("events")
+    files = []
+    
+    filenames = glob.glob(f"{path}/*.root")
+    for filename in filenames:
+        filepath = os.path.join(path, filename)
+        #total_size += os.path.getsize(filepath)
+        total_files += 1
+        #chain.Add(filepath)
+        files.append(filepath)
+    '''
     for dirpath, dirnames, filenames in os.walk(path):
         for filename in filenames:
             filepath = os.path.join(dirpath, filename)
@@ -19,11 +30,31 @@ def analyze(datasetName, dataDict, basePath):
             total_size += os.path.getsize(filepath)
             total_files += 1
             chain.Add(filepath)
+    '''
+    js = f"{path}/meta.json"
+    if os.path.isfile(path):
+        f = open(js)
+        d = json.load(f)
+        total_size_ = d['total_size']
+        total_files_ = d['total_files']
+        total_events_ = d['total_events']
+        if total_files_ == total_files:
+            dataDict['total_size'] = total_size_
+            dataDict['total_files'] = total_files_
+            dataDict['total_events'] = total_events_
+            print("DONE (meta available)", datasetName)
+            return datasetName, dataDict
+
+    for f in files:
+        total_size += os.path.getsize(filepath)
+        chain.Add(filepath)
     df = ROOT.ROOT.RDataFrame(chain)
     dataDict['total_size'] = total_size / 1024.0 / 1024.0 / 1024.0 # GB
     dataDict['total_files'] = total_files
     dataDict['total_events'] = df.Count().GetValue() #chain.GetEntries()
-    print("DONE", datasetName)
+    print("DONE (meta parsed)", datasetName)
+    with open(js, 'w') as fp:
+        json.dump(dataDict, fp)
     return datasetName, dataDict
 
 
@@ -122,9 +153,9 @@ def main():
     basePath = "/data/submit/cms/store/fccee/samples/winter2023/"
     f = open(dictPath)
     datadict = json.load(f)
-    
+
     samples = glob.glob(f"{basePath}/IDEA/*") + glob.glob(f"{basePath}/IDEA_2E/*") + glob.glob(f"{basePath}/IDEA_3T/*") + glob.glob(f"{basePath}/CLD/*")
-    
+
     with ThreadPoolExecutor(max_workers=64) as executor:
         futures = [executor.submit(analyze, d, datadict[d], basePath) for d in datadict.keys()]
         results = [future.result() for future in futures]

@@ -11,8 +11,12 @@ namespace FCCAnalyses {
 // Breit-Wigner mass weights
 const double MZ_GEN_ = 91153.509740726733;
 const double GAMMAZ_GEN_ = 2493.2018986110700;
-const double MW_GEN_ = 80351.812293789408;
-const double GAMMAW_GEN_ = 2090.4310808144846;
+//const double MW_GEN_ = 80351.812293789408;
+//const double GAMMAW_GEN_ = 2090.4310808144846;
+const double MW_GEN_ = 80379.0;
+const double GAMMAW_GEN_ = 2085.0;
+
+
 
 double computeBreitWignerWeight(double massVgen, double offset, int type) {
 
