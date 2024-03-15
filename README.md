@@ -29,6 +29,30 @@ Examples below make clear the usage of the files and run modes.
 
 The underlying `key4hep` stack version (loaded during `setup.sh` is appended to the `stack_history` file. To fix a `key4hep` release, add the path to the setup script to `stack`, and it will be loaded by default.
 
+# Run the analysis using Slurm
+
+If resources on the local machine are limited, the batch system can be used to parallelize your analysis on multiple machines using the Slurm workload manager at SubMIT. As an example, the cross-section analysis is split in about 20 jobs and submitted to the Slurm queue as follows:
+
+```shell
+python analyses/ewk_z/xsec.py --flavor mumu --submit --nJobs 20
+```
+
+By default it writes the intermediate files to `submit/test` (can be changed by invoking `--jobDir`). To check the status of the jobs, do:
+
+```shell
+python analyses/ewk_z/xsec.py --flavor mumu --status
+```
+
+Once all jobs are completed, you have to merge the files into a single ROOT file:
+
+```shell
+python analyses/ewk_z/xsec.py --flavor mumu --merge
+```
+
+The output of the `--merge` command is a ROOT file, as if you ran interactively.
+
+Note: currently supported only for histograms (not yet with Snapshot).
+
 # Combine environment
 
 To run fits with Combine, see https://github.com/jeyserma/FCCAnalyzer/tree/main/scripts/combine for instructions on how to install and use Combine.
