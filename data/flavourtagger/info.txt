@@ -1,0 +1,3 @@
+v1: default tagger (without tau)
+v2: with tau (wc_pt_7classes_12_04_2023)
+

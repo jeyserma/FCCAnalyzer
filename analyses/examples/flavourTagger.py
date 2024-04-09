@@ -24,7 +24,7 @@ bins_count = (100, 0, 100)
 njets = 4 # number of jets to be clustered
 jetClusteringHelper = helper_jetclustering.ExclusiveJetClusteringHelper(njets, collection="ReconstructedParticles")
 jetFlavourHelper = helper_flavourtagger.JetFlavourHelper(jetClusteringHelper.jets, jetClusteringHelper.constituents)
-path = "data/flavourtagger/fccee_flavtagging_edm4hep_wc_v1"
+path = "data/flavourtagger/fccee_flavtagging_edm4hep_wc_v2"
 jetFlavourHelper.load(f"{path}.json", f"{path}.onnx")
 
 def build_graph(df, dataset):
@@ -49,16 +49,16 @@ def build_graph(df, dataset):
     results.append(df.Histo1D(("jet_nconst", "", *(200, 0, 200)), "jet_nconst"))
 
 
-    # the flavour tagger produces probabilities for each jet to be a G, Q(light), S, C or B jet
+    # the flavour tagger produces probabilities for each jet to be a G, U, D, S, C, B, TAU jet
     df = df.Define("recojet_isG_jet0", "recojet_isG[0]")
     df = df.Define("recojet_isG_jet1", "recojet_isG[1]")
     df = df.Define("recojet_isG_jet2", "recojet_isG[2]")
     df = df.Define("recojet_isG_jet3", "recojet_isG[3]")
 
-    df = df.Define("recojet_isQ_jet0", "recojet_isQ[0]")
-    df = df.Define("recojet_isQ_jet1", "recojet_isQ[1]")
-    df = df.Define("recojet_isQ_jet2", "recojet_isQ[2]")
-    df = df.Define("recojet_isQ_jet3", "recojet_isQ[3]")
+    df = df.Define("recojet_isU_jet0", "recojet_isU[0]")
+    df = df.Define("recojet_isU_jet1", "recojet_isU[1]")
+    df = df.Define("recojet_isU_jet2", "recojet_isU[2]")
+    df = df.Define("recojet_isU_jet3", "recojet_isU[3]")
 
     df = df.Define("recojet_isS_jet0", "recojet_isS[0]")
     df = df.Define("recojet_isS_jet1", "recojet_isS[1]")
