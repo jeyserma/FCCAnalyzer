@@ -593,6 +593,19 @@ def resolutionVsTheta(xMin, xMax, yMin, yMax, xTitle, yTitle, logy=False):
     
 if __name__ == "__main__":
 
+    outDir = "/home/submit/jaeyserm/public_html/fccee/higgs_mass_xsec/resolution"
+    colors = [ROOT.kRed, ROOT.kBlue, ROOT.kGreen+1]
+
+    files = ["output_ZH_mass_mumu_ecm365_compRec.root", "output_ZH_mass_mumu_ecm240_compRec.root"]
+    procs = ["wz3p6_ee_mumuH_ecm365", "wzp6_ee_mumuH_ecm240"]
+    labels = ["365 GeV", "240 GeV"]
+    axes = [1, 2, 3]
+    resolutionMultiple("IDEA_mumu_categories", "leps_reso_p", 0.99, 1.01, 0, 0.006, "Resolution (p_{reco}/p_{gen})", "Events (normalized)", rebin=2)
+
+
+
+    quit()
+
     outDir = "/eos/user/j/jaeyserm/www/FCCee/ZH_mass/resolution/"
 
     files = ["tmp/output_ZH_mass_mumu_reco.root"]*3

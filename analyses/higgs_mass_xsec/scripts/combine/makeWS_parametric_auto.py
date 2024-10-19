@@ -3,6 +3,8 @@ import sys,copy,array,os,subprocess
 import ROOT
 import numpy as np
 import argparse
+
+sys.path.insert(0, "python")
 import plotter
 
 ROOT.gROOT.SetBatch(True)
@@ -13,10 +15,17 @@ ROOT.gSystem.Load("libHiggsAnalysisCombinedLimit.so")
 
 parser = argparse.ArgumentParser()
 parser.add_argument("--flavor", type=str, help="Flavor (mumu or ee)", default="mumu")
-parser.add_argument("--mode", type=str, help="Detector mode", choices=["IDEA", "IDEA_MC", "IDEA_3T", "CLD", "IDEA_noBES", "IDEA_2E", "IDEA_BES6pct"], default="IDEA")
+parser.add_argument("--mode", type=str, help="Detector mode", choices=["IDEA", "IDEA_MC", "IDEA_3T", "CLD", "CLD_FullSim", "IDEA_noBES", "IDEA_2E", "IDEA_BES6pct"], default="IDEA")
 parser.add_argument("--cat", type=str, help="Category (0, 1, 2 or 3)", choices=["0", "1", "2", "3"], default="0")
-parser.add_argument("--lumi", type=str, help="Luminosity (2p5, 5, 7p2, 10 or 15)", choices=["1", "2p5", "5", "7p2", "10", "15", "20"], default="7p2")
+parser.add_argument("--lumi", type=float, help="Luminosity scale", default=1.0)
+parser.add_argument("--ecm", type=str, help="Center-of-mass", choices=["240", "365"], default="240")
+parser.add_argument("--tag", type=str, help="Analysis tag", default="")
 args = parser.parse_args()
+
+#if args.ecm == "365" and args.lumi == "7p2":
+#    args.lumi = "2p32"
+
+## need ROOT 6.22/09 ?? (shipped with standalone combine) the one from cmssw combine does not work (CMSSW_10_2_13)
 
 sumw2err = ROOT.kTRUE
 
@@ -38,10 +47,17 @@ def doSignal(normYields = True):
     mHs = [124.95, 125.0, 125.05]
     if flavor == "mumu":
         procs = ["p_wzp6_ee_mumuH_mH-lower-100MeV_ecm240", "p_wzp6_ee_mumuH_mH-lower-50MeV_ecm240", "p_wzp6_ee_mumuH_ecm240", "p_wzp6_ee_mumuH_mH-higher-50MeV_ecm240", "p_wzp6_ee_mumuH_mH-higher-100MeV_ecm240"]
-        procs = ["wzp6_ee_mumuH_mH-lower-50MeV_ecm240", "wzp6_ee_mumuH_ecm240", "wzp6_ee_mumuH_mH-higher-50MeV_ecm240"]
+        if args.ecm == "240":
+            procs = ["wzp6_ee_mumuH_mH-lower-50MeV_ecm240", "wzp6_ee_mumuH_ecm240", "wzp6_ee_mumuH_mH-higher-50MeV_ecm240"]
+        else:
+            procs = ["wz3p6_ee_mumuH_mH-lower-50MeV_ecm365", "wz3p6_ee_mumuH_ecm365", "wz3p6_ee_mumuH_mH-higher-50MeV_ecm365"]
     if flavor == "ee":
         procs = ["wzp6_ee_eeH_mH-lower-100MeV_ecm240", "wzp6_ee_eeH_mH-lower-50MeV_ecm240", "wzp6_ee_eeH_ecm240", "wzp6_ee_eeH_mH-higher-50MeV_ecm240", "wzp6_ee_eeH_mH-higher-100MeV_ecm240"]
         procs = ["wzp6_ee_eeH_mH-lower-50MeV_ecm240", "wzp6_ee_eeH_ecm240", "wzp6_ee_eeH_mH-higher-50MeV_ecm240"]
+        if args.ecm == "240":
+            procs = ["wzp6_ee_eeH_mH-lower-50MeV_ecm240", "wzp6_ee_eeH_ecm240", "wzp6_ee_eeH_mH-higher-50MeV_ecm240"]
+        else:
+            procs = ["wz3p6_ee_eeH_mH-lower-50MeV_ecm365", "wz3p6_ee_eeH_ecm365", "wz3p6_ee_eeH_mH-higher-50MeV_ecm365"]
 
     recoilmass = w_tmp.var("zll_recoil_m")
     MH = w_tmp.var("MH")
@@ -50,7 +66,7 @@ def doSignal(normYields = True):
     param_yield_err, param_mean_err, param_mean_offset_err, param_sigma_err, param_mean_gt_err, param_mean_gt_offset_err, param_sigma_gt_err, param_alpha_1_err, param_alpha_2_err, param_n_1_err, param_n_2_err, param_cb_1_err, param_cb_2_err  = [], [], [], [], [], [], [], [], [], [], [], [], []
 
     hist_norm = fIn.Get("%s/%s" % (procs[1], hName))
-    hist_norm.Scale(lumiscale)
+    hist_norm.Scale(lumiScale)
     hist_norm = hist_norm.ProjectionX("hist_zh_norm", cat_idx_min, cat_idx_max)
     yield_nom = hist_norm.Integral()
 
@@ -90,7 +106,7 @@ def doSignal(normYields = True):
     ## constants for all the rest
 
     # import values
-    coeff = np.loadtxt("%s/coeff.txt" % outDir.replace(lumi_suffix, "_LUMI_7p2")) # take the coefficients from the 7.2 ab-1
+    coeff = np.loadtxt("%s/coeff.txt" % outDir.replace('lumi%s'%lumiLabel, "base_parametric")) # take the coefficients from the baseline (scaled to 1 ab-1)
     param_mean0_ = float(coeff[0])
     param_mean1_ = float(coeff[1])
     param_mean_gt0_ = float(coeff[2])
@@ -105,7 +121,6 @@ def doSignal(normYields = True):
     param_cb_1_ = float(coeff[11])
     param_cb_2_ = float(coeff[12])
 
-
     mean_argl, sigma_argl = ROOT.RooArgList("mean_argl"), ROOT.RooArgList("sigma_argl")
     sigma_gt_argl, mean_gt_offset_argl = ROOT.RooArgList("sigma_gt_argl"), ROOT.RooArgList("mean_gt_offset_argl")
     alpha1_argl, n1_argl, cb1_argl = ROOT.RooArgList("alpha1_argl"), ROOT.RooArgList("n1_argl"), ROOT.RooArgList("cb1_argl")
@@ -118,7 +133,7 @@ def doSignal(normYields = True):
     mean_argl.add(mean0)
     mean_argl.add(mean1)
 
-    mean_gt_offset = ROOT.RooRealVar("mean_gt_offset", "", param_mean_gt_offset0_, -1, 1)
+    mean_gt_offset = ROOT.RooRealVar("mean_gt_offset", "", param_mean_gt_offset0_, -2, 2)
     mean_gt_offset.setConstant(ROOT.kTRUE)
     mean_gt_offset_argl.add(mean_gt_offset)
 
@@ -133,7 +148,7 @@ def doSignal(normYields = True):
     alpha10 = ROOT.RooRealVar("alpha10", "", param_alpha_1_, -5, 5)
     alpha10.setConstant(ROOT.kTRUE)
     alpha1_argl.add(alpha10)
-    n10 = ROOT.RooRealVar("n10", "", param_n_1_, -2, 10)
+    n10 = ROOT.RooRealVar("n10", "", param_n_1_, -50, 50)
     n10.setConstant(ROOT.kTRUE)
     n1_argl.add(n10)
     cb10 = ROOT.RooRealVar("cb10", "", param_cb_1_, 0, 1)
@@ -143,7 +158,7 @@ def doSignal(normYields = True):
     alpha20 = ROOT.RooRealVar("alpha20", "", param_alpha_2_, -5, 5)
     alpha20.setConstant(ROOT.kTRUE)
     alpha2_argl.add(alpha20)
-    n20 = ROOT.RooRealVar("n20", "", param_n_2_,  -2, 10)
+    n20 = ROOT.RooRealVar("n20", "", param_n_2_,  -50, 50)
     n20.setConstant(ROOT.kTRUE)
     n2_argl.add(n20)
     cb20 = ROOT.RooRealVar("cb20", "", param_cb_2_, 0, 1)
@@ -162,6 +177,9 @@ def doSignal(normYields = True):
             proc += "_3T"
         if mode == "CLD":
             proc += "_CLD"
+        if mode == "CLD_FullSim":
+            proc += "_CLD_FullSim"
+            proc = proc.replace("-50MeV", "").replace("mumuH_mH", "mumuH-mH")
         if mode == "IDEA_noBES":
             proc = proc.replace("_ecm240", "_noBES_ecm240")
         if mode == "IDEA_2E" and flavor == "ee":
@@ -172,7 +190,7 @@ def doSignal(normYields = True):
         print("Do mH=%.3f" % mH)
 
         hist_zh = fIn.Get("%s/%s" % (proc, hName))
-        hist_zh.Scale(lumiscale)
+        hist_zh.Scale(lumiScale)
         hist_zh = hist_zh.ProjectionX("hist_zh_%s" % mH_, cat_idx_min, cat_idx_max)
         if normYields: hist_zh.Scale(yield_nom/hist_zh.Integral())
 
@@ -181,7 +199,7 @@ def doSignal(normYields = True):
         yield_zh = rdh_zh.sum(False)
 
         catIDx = mH_
-        hists.insert(ROOT.std.pair("string, RooDataHist*")(catIDx, rdh_zh))
+        hists.insert(ROOT.std.pair("string, RooDataHist*")(catIDx, rdh_zh)) # does not work with recent ROOT versions?
         cats.defineType(catIDx, i)
 
         mean = ROOT.RooFormulaVar("mean_%s"%mH_, "x[1] + x[0]*%f"%mH, mean_argl)
@@ -1151,7 +1169,7 @@ def doSignal(normYields = True):
     getattr(w_tmp, 'import')(spline_mean_gt)
     getattr(w_tmp, 'import')(spline_sigma_gt)
 
-    return param_mh, param_yield
+    return hist_norm
 
 
 def doBackgrounds():
@@ -1163,15 +1181,21 @@ def doBackgrounds():
     
     
     if flavor == "mumu":
-        procs = ["p8_ee_WW_ecm240", "p8_ee_ZZ_ecm240", "wzp6_ee_mumu_ecm240", "wzp6_ee_tautau_ecm240", "wzp6_egamma_eZ_Zmumu_ecm240", "wzp6_gammae_eZ_Zmumu_ecm240", "wzp6_gaga_mumu_60_ecm240", "wzp6_gaga_tautau_60_ecm240", "wzp6_ee_nuenueZ_ecm240"]
+        if args.ecm == "240":
+            procs = ["p8_ee_WW_ecm240", "p8_ee_ZZ_ecm240", "wzp6_ee_mumu_ecm240", "wzp6_ee_tautau_ecm240", "wzp6_egamma_eZ_Zmumu_ecm240", "wzp6_gammae_eZ_Zmumu_ecm240", "wzp6_gaga_mumu_60_ecm240", "wzp6_gaga_tautau_60_ecm240", "wzp6_ee_nuenueZ_ecm240"]
+        else:
+            procs = ["p8_ee_WW_ecm365", "p8_ee_ZZ_ecm365", "wzp6_ee_mumu_ecm365", "wzp6_ee_tautau_ecm365", "wzp6_gammae_eZ_Zmumu_ecm365", "wzp6_gaga_mumu_60_ecm365", "wzp6_gaga_tautau_60_ecm365", "wzp6_ee_nuenueZ_ecm365"]
 
     if flavor == "ee":
-        procs = ["p8_ee_WW_ecm240", "p8_ee_ZZ_ecm240",  "wzp6_ee_ee_Mee_30_150_ecm240", "wzp6_ee_tautau_ecm240", "wzp6_egamma_eZ_Zee_ecm240", "wzp6_gammae_eZ_Zee_ecm240", "wzp6_gaga_ee_60_ecm240", "wzp6_gaga_tautau_60_ecm240", "wzp6_ee_nuenueZ_ecm240"]
+        if args.ecm == "240":
+            procs = ["p8_ee_WW_ecm240", "p8_ee_ZZ_ecm240",  "wzp6_ee_ee_Mee_30_150_ecm240", "wzp6_ee_tautau_ecm240", "wzp6_egamma_eZ_Zee_ecm240", "wzp6_gammae_eZ_Zee_ecm240", "wzp6_gaga_ee_60_ecm240", "wzp6_gaga_tautau_60_ecm240", "wzp6_ee_nuenueZ_ecm240"]
+        else:
+            procs = ["p8_ee_WW_ecm365", "p8_ee_ZZ_ecm365", "wzp6_ee_ee_Mee_30_150_ecm365", "wzp6_ee_tautau_ecm365", "wzp6_gaga_ee_60_ecm365", "wzp6_gaga_tautau_60_ecm365", "wzp6_ee_nuenueZ_ecm365"]
 
     for proc in procs:
 
         hist = fIn.Get("%s/%s" % (proc, hName))
-        hist.Scale(lumiscale)
+        hist.Scale(lumiScale)
         hist = hist.ProjectionX("hist_%s" % proc, cat_idx_min, cat_idx_max)   
         rdh = ROOT.RooDataHist("rdh_%s" % proc, "rdh", ROOT.RooArgList(recoilmass), ROOT.RooFit.Import(hist))
 
@@ -1200,9 +1224,9 @@ def doBackgrounds():
     b3 = ROOT.RooRealVar("bern3", "bern_coeff", 1, -10, 10)
     bkg = ROOT.RooBernsteinFast(3)("bkg", "bkg", recoilmass, ROOT.RooArgList(b0, b1, b2))
 
-    bkg_norm = ROOT.RooRealVar('bkg_norm', 'bkg_norm', yield_bkg_, 0, 1e6)
+    bkg_norm = ROOT.RooRealVar('bkg_norm_tmp', 'bkg_norm_tmp', yield_bkg_, 0, 1e6)
     bkg_fit = ROOT.RooAddPdf('bkg_fit', '', ROOT.RooArgList(bkg), ROOT.RooArgList(bkg_norm))
-    bkg_fit.fitTo(rdh_bkg, ROOT.RooFit.Extended(ROOT.kTRUE), ROOT.RooFit.SumW2Error(sumw2err))   
+    bkg_fit.fitTo(rdh_bkg, ROOT.RooFit.Extended(ROOT.kTRUE), ROOT.RooFit.SumW2Error(sumw2err))
 
 
     ########### PLOTTING ###########
@@ -1292,7 +1316,7 @@ def doBackgrounds():
     getattr(w_tmp, 'import')(bkg)
     getattr(w_tmp, 'import')(bkg_norm)
 
-    return bkg_norm.getVal()
+    return hist_bkg
 
 
 def doBES():
@@ -1300,6 +1324,9 @@ def doBES():
     pct = 1
     if mode == "IDEA_BES6pct":
         pct = 6
+    
+    if ecm == "365":
+        pct = 10
 
     scale_BES = ROOT.RooRealVar("scale_BES", "BES scale parameter", 0, -1, 1)
 
@@ -1357,8 +1384,10 @@ def doBES():
 
     for s in ["Up", "Down"]:
 
-        if s == "Up": proc = "wzp6_ee_%sH_BES-higher-%dpc_ecm240" % (flavor, pct)
-        if s == "Down": proc = "wzp6_ee_%sH_BES-lower-%dpc_ecm240" % (flavor, pct)
+        if s == "Up": proc = "wzp6_ee_%sH_BES-higher-%dpc_ecm%s" % (flavor, pct, ecm)
+        if s == "Down": proc = "wzp6_ee_%sH_BES-lower-%dpc_ecm%s" % (flavor, pct, ecm)
+        if ecm == '365' and flavor == "ee":
+            proc = "wz3p6_ee_eeH_ecm365" # no BES for electrons at 365
 
         if mode == "IDEA_3T":
             if flavor == "mumu":
@@ -1381,8 +1410,9 @@ def doBES():
                 proc = "wzp6_ee_eeH_noBES_ecm240"
 
         hist_zh = fIn.Get("%s/%s" % (proc, hName))
-        hist_zh.Scale(lumiscale)
+        hist_zh.Scale(lumiScale)
         hist_zh = hist_zh.ProjectionX("hist_zh_%s_BES%s" % (mH_, s), cat_idx_min, cat_idx_max)
+        print(hist_zh.Integral(), proc)
         hist_zh.SetName("hist_zh_%s_BES%s" % (mH_, s))
         hist_zh.Scale(yield_nom/hist_zh.Integral())
         rdh_zh = ROOT.RooDataHist("rdh_zh_%s_BES%s" % (mH_, s), "rdh_zh", ROOT.RooArgList(recoilmass), ROOT.RooFit.Import(hist_zh))
@@ -1546,7 +1576,10 @@ def doSQRTS():
 
     ## only consider variation for 125 GeV
     ## assume variations to be indentical for other mass points
-    proc = "wzp6_ee_%sH_ecm240" % flavor
+    if ecm == "240":
+        proc = "wzp6_ee_%sH_ecm240" % (flavor)
+    else:
+        proc = "wz3p6_ee_%sH_ecm365" % (flavor)
 
     if mode == "IDEA_3T":
         proc += "_3T"
@@ -1613,7 +1646,7 @@ def doSQRTS():
         if s == "Down": s_ = "dw"
 
         hist_zh = fIn.Get("%s/%s" % (proc, hName + "_sqrts%s"%s_))
-        hist_zh.Scale(lumiscale)
+        hist_zh.Scale(lumiScale)
         hist_zh = hist_zh.ProjectionX("hist_zh_%s_SQRTS%s" % (mH_, s), cat_idx_min, cat_idx_max)
         hist_zh.SetName("hist_zh_%s_BES%s" % (mH_, s))
         hist_zh.Scale(yield_nom/hist_zh.Integral())
@@ -1781,7 +1814,10 @@ def doLEPSCALE():
 
     ## only consider variation for 125 GeV
     ## assume variations to be indentical for other mass points
-    proc = "wzp6_ee_%sH_ecm240" % flavor
+    if ecm == "240":
+        proc = "wzp6_ee_%sH_ecm240" % (flavor)
+    else:
+        proc = "wz3p6_ee_%sH_ecm365" % (flavor)
 
     if mode == "IDEA_3T":
         proc += "_3T"
@@ -1848,7 +1884,7 @@ def doLEPSCALE():
         if s == "Down": s_ = "dw"
 
         hist_zh = fIn.Get("%s/%s" % (proc, hName + "_scale%s"%s_))
-        hist_zh.Scale(lumiscale)
+        hist_zh.Scale(lumiScale)
         hist_zh = hist_zh.ProjectionX("hist_zh_%s_LEPSCALE%s" % (mH_, s), cat_idx_min, cat_idx_max)   
         hist_zh.SetName("hist_zh_%s_LEPSCALE%s" % (mH_, s))
         hist_zh.Scale(yield_nom/hist_zh.Integral())
@@ -2003,26 +2039,28 @@ def doLEPSCALE():
 
 if __name__ == "__main__":
 
-    lumiDict = {"1": 1./7.2, "2p5": 2.5/7.2, "5": 5.0/7.2, "7p2": 7.2/7.2, "10": 10.0/7.2, "15": 15.0/7.2, "20": 20./7.2}
-    mode = args.mode
+    mode = args.mode # detector mode
     flavor = args.flavor
     cat = int(args.cat)
-    lumi = args.lumi
-    lumiscale = lumiDict[lumi]
-    lumi_suffix = "_LUMI_%s"%args.lumi
+    ecm = args.ecm
+    flavorLabel = "#mu^{#plus}#mu^{#minus}" if flavor == "mumu" else "e^{#plus}e^{#minus}"
+    lumiScale = args.lumi
+    lumiStr = str(int(args.lumi)) if args.lumi.is_integer() else str(args.lumi)
+    lumiLabel = lumiStr.replace(".", "p")
 
-    topRight = "#sqrt{s} = 240 GeV, %s ab^{#minus1}" % args.lumi.replace('p', '.')
+    topRight = "#sqrt{s} = %s GeV, %s ab^{#minus1}" % (args.ecm, lumiStr)
     topLeft = "#bf{FCC-ee} #scale[0.7]{#it{Internal}}"
-    label = "#mu^{#plus}#mu^{#minus}, category %d" % (cat) if flavor == "mumu" else "e^{#plus}e^{#minus}, category %d" % (cat)
-    fIn = ROOT.TFile("output_ZH_mass_%s_%s.root"%(flavor, "mc" if mode == "IDEA_MC" else "reco"))
-    outDir = "/eos/user/j/jaeyserm/www/FCCee/ZH_mass/combine/%s%s/%s_cat%d/" % (mode, lumi_suffix, flavor, cat)
-    outDir = "/work/submit/jaeyserm/public_html/fccee/ZH_mass/combine/%s%s/%s_cat%d/" % (mode, lumi_suffix, flavor, cat)
+    label = "%s, category %d" % (flavorLabel, cat)
+    fIn = ROOT.TFile("output_ZH_mass_%s_ecm%s%s_%s.root"%(flavor, args.ecm, "_gen" if mode == "IDEA_MC" else "", args.tag))
+    outDir = "/work/submit/jaeyserm/public_html/fccee/higgs_mass_xsec/%s/combine/%s/lumi%s/%s_cat%d_ecm%s/" % (args.tag, mode, lumiLabel, flavor, cat, args.ecm)
+    runDir = "combine/higgs_mass_%s/%s/lumi%s/%s_cat%d_ecm%s/" % (args.tag, mode, lumiLabel, flavor, cat, args.ecm)
+
+    parId = "%s_cat%s_ecm%s"%(flavor, cat, ecm)
 
     hName = "zll_recoil_m"
     if cat == 0: cat_idx_min, cat_idx_max = 0, 5
     else: cat_idx_min, cat_idx_max = cat, cat
 
-    runDir = "combine/h_mass/%s%s/%s_cat%s" % (mode, lumi_suffix, flavor, cat)
     if not os.path.exists(runDir): os.makedirs(runDir)
     if not os.path.exists(outDir): os.makedirs(outDir)
 
@@ -2046,8 +2084,8 @@ if __name__ == "__main__":
     yield_nom = -1
     yMax = -1
 
-    doSignal()
-    doBackgrounds()
+    hist_sig = doSignal()
+    hist_bkg = doBackgrounds()
     doSyst = True
     if doSyst:
 
@@ -2056,40 +2094,49 @@ if __name__ == "__main__":
         doLEPSCALE()
 
         # systematic strenghts
-        BES = ROOT.RooRealVar('BES', 'BES', 0, -5, 5) # BES uncertainty parameter
+        BES = ROOT.RooRealVar('BES_ecm%s'%ecm, 'BES', 0, -5, 5) # BES uncertainty parameter
         #ISR = ROOT.RooRealVar('ISR', 'ISR', 0, -5, 5) # BES uncertainty parameter
-        ISR = ROOT.RooRealVar('ISR', 'ISR', 0) # BES uncertainty parameter
-        SQRTS = ROOT.RooRealVar('SQRTS', 'SQRTS', 0, -5, 5) # SQRTS uncertainty parameter
-        LEPSCALE = ROOT.RooRealVar('LEPSCALE_%s'%("MU" if flavor=="mumu" else "EL"), 'LEPSCALE', 0, -5, 5) # LEPSCALE uncertainty parameter
+        ISR = ROOT.RooRealVar('ISR_ecm%s'%ecm, 'ISR', 0) # BES uncertainty parameter
+        SQRTS = ROOT.RooRealVar('SQRTS_ecm%s'%ecm, 'SQRTS', 0, -5, 5) # SQRTS uncertainty parameter
+        LEPSCALE = ROOT.RooRealVar('LEPSCALE_%s_ecm%s'%("MU" if flavor=="mumu" else "EL", ecm), 'LEPSCALE', 0, -5, 5) # LEPSCALE uncertainty parameter
 
+        '''
+        was before
         sig_mean_ISR = ROOT.RooRealVar('sig_mean_ISR_%s_cat%d'%(flavor,cat), 'sig_mean_ISR', 0)
         sig_sigma_ISR = ROOT.RooRealVar('sig_sigma_ISR_%s_cat%d'%(flavor,cat), 'sig_sigma_ISR', 0)
         sig_norm_ISR = ROOT.RooRealVar('sig_norm_ISR_%s_cat%d'%(flavor,cat), 'sig_norm_ISR', 0)
         sig_n_1_ISR = ROOT.RooRealVar('sig_n_1_ISR_%s_cat%d'%(flavor,cat), 'sig_n_1_ISR', 0)
         sig_n_2_ISR = ROOT.RooRealVar('sig_n_2_ISR_%s_cat%d'%(flavor,cat), 'sig_n_2_ISR', 0)
         sig_mean_gt_ISR = ROOT.RooRealVar('sig_mean_gt_ISR_%s_cat%d'%(flavor,cat), 'sig_mean_gt_ISR', 0)
-
+        
+        sig_mean_ISR = ROOT.RooRealVar('sig_mean_ISR', 'sig_mean_ISR', 0)
+        sig_sigma_ISR = ROOT.RooRealVar('sig_sigma_ISR', 'sig_sigma_ISR', 0)
+        sig_norm_ISR = ROOT.RooRealVar('sig_norm_ISR', 'sig_norm_ISR', 0)
+        sig_n_1_ISR = ROOT.RooRealVar('sig_n_1_ISR'), 'sig_n_1_ISR', 0)
+        sig_n_2_ISR = ROOT.RooRealVar('sig_n_2_ISR', 'sig_n_2_ISR', 0)
+        sig_mean_gt_ISR = ROOT.RooRealVar('sig_mean_gt_ISR', 'sig_mean_gt_ISR', 0)
+        '''
         # BES
         #sig_norm_BES = w_tmp.obj("sig_norm_BES")
         #sig_norm_BES.SetName("sig_norm_BES_%s_cat%d"%(flavor,cat))
         #sig_mean_BES = w_tmp.obj("sig_mean_BES")
         #sig_mean_BES.SetName("sig_mean_BES_%s_cat%d"%(flavor,cat))
         sig_sigma_BES = w_tmp.obj("sig_sigma_BES")
-        sig_sigma_BES.SetName("sig_sigma_BES_%s_cat%d"%(flavor,cat))
+        #sig_sigma_BES.SetName("sig_sigma_BES_%s_cat%d"%(flavor,cat))
         sig_sigma_gt_BES = w_tmp.obj("sig_sigma_gt_BES")
-        sig_sigma_gt_BES.SetName("sig_sigma_gt_BES_%s_cat%d"%(flavor,cat))
+        #sig_sigma_gt_BES.SetName("sig_sigma_gt_BES_%s_cat%d"%(flavor,cat))
 
         # SQRTS
         #sig_norm_SQRTS = w_tmp.obj("sig_norm_SQRTS")
         sig_mean_SQRTS = w_tmp.obj("sig_mean_SQRTS")
-        sig_mean_SQRTS.SetName("sig_mean_SQRTS_%s_cat%d"%(flavor,cat))
+        #sig_mean_SQRTS.SetName("sig_mean_SQRTS_%s_cat%d"%(flavor,cat))
         sig_mean_gt_SQRTS = w_tmp.obj("sig_mean_gt_SQRTS")
-        sig_mean_gt_SQRTS.SetName("sig_mean_gt_SQRTS_%s_cat%d"%(flavor,cat))
+        #sig_mean_gt_SQRTS.SetName("sig_mean_gt_SQRTS_%s_cat%d"%(flavor,cat))
         
         # LEPSCALE
         #sig_norm_LEPSCALE = w_tmp.obj("sig_norm_LEPSCALE")
         sig_mean_LEPSCALE = w_tmp.obj("sig_mean_LEPSCALE")
-        sig_mean_LEPSCALE.SetName("sig_mean_LEPSCALE_%s_cat%d"%(flavor,cat))
+        #sig_mean_LEPSCALE.SetName("sig_mean_LEPSCALE_%s_cat%d"%(flavor,cat))
         #sig_sigma_LEPSCALE = w_tmp.obj("sig_sigma_LEPSCALE")
         #sig_sigma_LEPSCALE.SetName("sig_sigma_LEPSCALE_%s_cat%d"%(flavor,cat))
 
@@ -2152,30 +2199,55 @@ if __name__ == "__main__":
     gauss = ROOT.RooGaussian("gauss", "gauss", recoilmass, sig_mean_gt, sig_sigma_gt)
     sig = ROOT.RooAddPdf("sig", "sig", ROOT.RooArgList(cbs_1, cbs_2, gauss), ROOT.RooArgList(sig_cb_1, sig_cb_2))
 
-    getattr(w, 'import')(sig_norm)
+    #getattr(w, 'import')(sig_norm)
     getattr(w, 'import')(sig)
 
-    # construct background model
-    bkg_yield = w_tmp.obj("bkg_norm").getVal()
-    bkg_norm = ROOT.RooRealVar('bkg_norm', 'bkg_norm', bkg_yield) #, 0, 1e6) # nominal background yield, floating
+    # construct background model 66672.5686008
+    bkg_yield = w_tmp.obj("bkg_norm_tmp").getVal()
+    #bkg_norm = ROOT.RooRealVar('bkg_%s_ecm%s_norm'%(flavor, ecm), 'bkg_norm', bkg_yield) #, 0, 1e6) # nominal background yield, floating bkg_ee_ecm365_norm
+    bkg_norm = ROOT.RooRealVar('bkg_norm', 'bkg_norm', bkg_yield) #, 0, 1e6) # nominal background yield (automatically done by Combine with pdfName_norm, floating)
     bkg_norm.setVal(bkg_yield) # not constant!
     bkg = w_tmp.obj("bkg")
-    getattr(w, 'import')(bkg)
-    getattr(w, 'import')(bkg_norm)
-
+    getattr(w, 'import')(bkg, ROOT.RooFit.RenameAllVariablesExcept(parId, "zll_recoil_m"))
+    #getattr(w, 'import')(bkg_norm)
+    
+    #bkg_norm.Print()
     data_obs = ROOT.RooDataHist("data_obs", "data_obs", ROOT.RooArgList(recoilmass), ROOT.RooFit.Import(h_obs))
     getattr(w, 'import')(data_obs)
 
     w.writeToFile("%s/datacard.root" % runDir)
-    w.Print()
 
+    '''
+    fOut = ROOT.TFile("%s/datacard.root" % runDir, "UPDATE")
+    hist_sig.SetName("hist_sig")
+    hist_bkg.SetName("hist_bkg")
+    hist_sig.Write()
+    hist_bkg.Write()
+    fOut.Close()
+    '''
+    w.Print()
 
     del w
     del w_tmp
 
+    if ecm == "240" and flavor == "mumu": bkg_id=1
+    elif ecm == "240" and flavor == "ee": bkg_id=2
+    elif ecm == "365" and flavor == "mumu": bkg_id=3
+    elif ecm == "365" and flavor == "ee": bkg_id=4
+    
+    # make datacard
+    with open('analyses/higgs_mass_xsec/scripts/combine/datacard_parametric.txt', 'r') as file:
+        dc = file.read()
+        dc = dc.replace("$rate_sig", "%f"%yield_nom)
+        dc = dc.replace("$rate_bkg", "%f"%bkg_yield)
+        dc = dc.replace("$flavor", "%s"%flavor)
+        dc = dc.replace("$ecm", "%s"%ecm)
+        dc = dc.replace("$cat", "%s"%cat)
+        dc = dc.replace("$bkg_id", "%d"%bkg_id)
+
+    with open('%s/datacard.txt'%runDir, 'w') as file:
+        file.write(dc)
 
     # build the Combine workspace based on the datacard, save it to ws.root
-    cmd = "cp analyses/higgs_mass_xsec/scripts/combine/datacard_parametric_%s.txt %s/datacard_parametric.txt" % (flavor,runDir)
-    subprocess.call(cmd, shell=True)
-    cmd = "text2workspace.py datacard_parametric.txt -o ws.root -v 10"
+    cmd = "text2workspace.py datacard.txt -o ws.root -v 10  --X-allow-no-background"
     subprocess.call(cmd, shell=True, cwd=runDir)

@@ -3,7 +3,42 @@
 
 
 namespace FCCAnalyses {
-    
+
+
+Vec_rp unBoostCrossingAngle(Vec_rp in, float angle) {
+    Vec_rp result;
+    float ta = std::tan(angle);
+    for (size_t i=0; i < in.size(); ++i) {
+        auto & p = in[i];
+        edm4hep::ReconstructedParticleData newp = p;
+        float e = p.energy;
+        float px = p.momentum.x;
+        float e_prime = e * sqrt(1 + ta*ta) + px * ta;
+        float px_prime = px * sqrt(1 + ta*ta) + e * ta;
+        newp.momentum.x = px_prime;
+        newp.energy = e_prime;
+        result.push_back(newp);
+    }
+    return result;
+}
+
+Vec_mc unBoostCrossingAngle(Vec_mc in, float angle) {
+    Vec_mc result;
+    float ta = std::tan(angle);
+    for (size_t i=0; i < in.size(); ++i) {
+        auto & p = in[i];
+        TLorentzVector mc_;
+        mc_.SetXYZM(p.momentum.x, p.momentum.y, p.momentum.z, p.mass);
+        edm4hep::MCParticleData newp = p;
+        float e = mc_.Energy();
+        float px = p.momentum.x;
+        float px_prime = px * sqrt(1 + ta*ta) + e * ta;
+        newp.momentum.x = px_prime;
+        result.push_back(newp);
+    }
+    return result;
+}
+
 // calculate the cosine(theta) of the missing energy vector
 bool has_forward_photon(float cut, Vec_rp in) {
     
@@ -15,7 +50,9 @@ bool has_forward_photon(float cut, Vec_rp in) {
     }
     return false;
 }
-    
+
+
+
 
 // calculate the number of foward leptons
 struct polarAngleCategorization {
@@ -74,6 +111,30 @@ Vec_rp lepton_momentum_scale::operator() (Vec_rp in) {
         result.emplace_back(p);
     }
     return result;
+}
+
+Vec_rp correct_scale(Vec_rp in) {
+    // correct scale as function of charge and theta
+    Vec_rp result;
+    result.reserve(in.size());
+    for (size_t i = 0; i < in.size(); ++i) {
+        auto & p = in[i];
+        float scale = 1.;
+        TLorentzVector tlv;
+        tlv.SetXYZM(p.momentum.x, p.momentum.y, p.momentum.z, p.mass);
+        if(p.charge > 0) {
+            scale = -3.10714E-05*std::abs(tlv.Theta()) + 9.99664E-01;
+        }
+        else {
+            scale = 3.82143E-05*std::abs(tlv.Theta()) + 1.00016E+00;
+        }
+        p.momentum.x = p.momentum.x/scale;
+        p.momentum.y = p.momentum.y/scale;
+        p.momentum.z = p.momentum.z/scale;
+        result.emplace_back(p);
+    }
+    return result;
+
 }
 
 

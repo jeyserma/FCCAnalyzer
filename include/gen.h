@@ -103,6 +103,94 @@ Vec_mc kkmc_get_beam_electrons(Vec_mc in, Vec_i ind) {
     */
 }
 
+// calculate the visisble mass of the event
+float visibleMass(Vec_mc in, float p_cutoff = 0.0) {
+    float px = 0, py = 0, pz = 0, e = 0;
+    for(auto &p : in) {
+        if(p.generatorStatus != 1) continue;
+        if (std::sqrt(p.momentum.x * p.momentum.x + p.momentum.y*p.momentum.y) < p_cutoff) continue;
+        px += p.momentum.x;
+        py += p.momentum.y;
+        pz += p.momentum.z;
+
+        TLorentzVector tlv;
+        tlv.SetXYZM(p.momentum.x, p.momentum.y, p.momentum.z, p.mass);
+        e += tlv.E();
+    }
+
+    float ptot2 = std::pow(px, 2) + std::pow(py, 2) + std::pow(pz, 2);
+    float de2 = std::pow(e, 2);
+    if (de2 < ptot2) return -999.;
+    float Mvis = std::sqrt(de2 - ptot2);
+    return Mvis;
+}
+  
+// calculate the missing mass, given a ECM value
+// optionally exclude the neutrinos
+float missingMass(float ecm, Vec_mc in, bool excludeNeutrinos=true, float p_cutoff = 0.0) {
+    float px = 0, py = 0, pz = 0, e = 0;
+    for(auto &p : in) {
+        if(p.generatorStatus != 1) continue;
+        if(excludeNeutrinos and (std::abs(p.PDG) == 12 or std::abs(p.PDG) == 14 or std::abs(p.PDG) == 16)) continue;
+        if (std::sqrt(p.momentum.x * p.momentum.x + p.momentum.y*p.momentum.y) < p_cutoff) continue;
+        px += p.momentum.x;
+        py += p.momentum.y;
+        pz += p.momentum.z;
+
+        TLorentzVector tlv;
+        tlv.SetXYZM(p.momentum.x, p.momentum.y, p.momentum.z, p.mass);
+        e += tlv.E();
+    }
+    if(ecm < e) return -99.;
+
+    float ptot2 = std::pow(px, 2) + std::pow(py, 2) + std::pow(pz, 2);
+    float de2 = std::pow(ecm - e, 2);
+    if (de2 < ptot2) return -999.;
+    float Mmiss = std::sqrt(de2 - ptot2);
+    return Mmiss;
+}
+
+
+float get_higgs_recoil(float ecm, ROOT::VecOps::RVec<edm4hep::MCParticleData> mc) {
+
+    TLorentzVector tv1;
+    for(size_t i = 0; i < mc.size(); ++i) {
+        auto & p = mc[i];
+        if(std::abs(p.PDG) == 25) {
+            tv1.SetXYZM(p.momentum.x, p.momentum.y, p.momentum.z, p.mass);
+            break;
+        }
+    }
+
+
+    auto recoil_p4 = TLorentzVector(0, 0, 0, ecm);
+    recoil_p4 -= tv1;
+    return recoil_p4.M();
+}
+
+
+
+Vec_mc neutrinos_from_prompt(Vec_mc in, Vec_i parents) {
+
+    //cout << " ****** " << endl;
+    Vec_mc result;
+    for(size_t i = 0; i < in.size(); ++i) {
+        auto & p = in[i];
+        if(std::abs(p.PDG) != 12) continue; // electron neutrino
+        if(p.parents_begin != p.parents_end-2) continue; // 2 parents (electron and positron)
+        int parent1_pdgid = std::abs(in.at(parents.at(p.parents_begin)).PDG);
+        int parent2_pdgid = std::abs(in.at(parents.at(p.parents_end-1)).PDG);
+        if(parent1_pdgid != 11 or parent2_pdgid != 11) continue;
+        result.push_back(p);
+    }
+    //cout << " -->" << result.size() << endl;
+    return result;
+} 
+
+
+
+
+
 
 }
 

@@ -10,8 +10,9 @@ import plotter
 
 def makePlot(doNorm=False):
 
-    outName = "zll_recoil_m_categories"
-    zll_recoil_m = fIn.Get("%s/%s" % (proc, hist))
+    outName = f"zll_recoil_m_categories_{flavor}"
+    zll_recoil_m = fIn.Get(f"{proc}/{hist}")
+    zll_recoil_m.Scale(lumi)
 
     h_cat1 = zll_recoil_m.ProjectionX("h_cat1", 1, 1)
     h_cat2 = zll_recoil_m.ProjectionX("h_cat2", 2, 2)
@@ -59,8 +60,8 @@ def makePlot(doNorm=False):
         'xtitle'            : "Recoil mass (GeV)",
         'ytitle'            : "Events",
             
-        'topRight'          : "#sqrt{s} = 240 GeV, 7.2 ab^{#minus1}", 
-        'topLeft'           : "#bf{FCCee} #scale[0.7]{#it{Simulation}}",
+        'topRight'          : "#sqrt{{s}} = 240 GeV, {} ab^{{#minus1}}".format(lumi), 
+        'topLeft'           : "#bf{FCC-ee} #scale[0.7]{#it{Simulation}}",
     }
 
     plotter.cfg = cfg
@@ -71,15 +72,15 @@ def makePlot(doNorm=False):
     h_cat1.Draw("SAME C HIST")
     h_cat2.Draw("SAME C HIST")
     h_cat3.Draw("SAME C HIST")
-    leg.Draw("SAME") 
+    leg.Draw("SAME")
     plotter.aux()
-    canvas.SetGrid()  
+    canvas.SetGrid()
     ROOT.gPad.SetTickx()
     ROOT.gPad.SetTicky()
-    ROOT.gPad.RedrawAxis()  
+    ROOT.gPad.RedrawAxis()
 
-    canvas.SaveAs("%s/%s.png" % (outDir, outName))
-    canvas.SaveAs("%s/%s.pdf" % (outDir, outName))
+    canvas.SaveAs(f"{outDir}/{outName}.png")
+    canvas.SaveAs(f"{outDir}/{outName}.pdf")
     canvas.Close()
 
 
@@ -220,11 +221,14 @@ def doFit(cat=1):
 
 if __name__ == "__main__":
 
-    flavor = "mumu"
-    fIn = ROOT.TFile("tmp/output_ZH_mass_%s_reco.root" % flavor)
-    outDir = "/eos/user/j/jaeyserm/www/FCCee/ZH_mass/plots_categories_%s/" % flavor
+    flavor = "ee"
+    tag = "july24"
+    lumi = 10.8
 
-    proc = "p_wzp6_ee_%sH_ecm240" % flavor
+    fIn = ROOT.TFile(f"output_ZH_mass_{flavor}_ecm240_{tag}.root")
+    outDir = f"/home/submit/jaeyserm/public_html/fccee/higgs_mass_xsec/{tag}/plots/theta_categories/"
+
+    proc = f"wzp6_ee_{flavor}H_ecm240"
     hist = "zll_recoil_m"
     rebin = 50
 

@@ -5,6 +5,7 @@
 
 namespace FCCAnalyses {
 
+
 Vec_i getMaxAndSecondMaxIdx(Vec_f in) {
     int maxIndex = 0;
     int secondMaxIndex = -1; // Initialize to an invalid index
@@ -413,82 +414,143 @@ float missingMass(float ecm, Vec_rp in, float p_cutoff = 0.0) {
 
 
    
-
-
-
-
-
-ROOT::VecOps::RVec<float> leptonResolution_p(ROOT::VecOps::RVec<edm4hep::ReconstructedParticleData> muons, ROOT::VecOps::RVec<int> recind,
-                                ROOT::VecOps::RVec<int> mcind,
-                                ROOT::VecOps::RVec<edm4hep::ReconstructedParticleData> reco,
-                                ROOT::VecOps::RVec<edm4hep::MCParticleData> mc){
+/*
+bool testF(ROOT::VecOps::RVec<edm4hep::MCRecoParticleAssociationData> recoMCAssoc) {
     
-    ROOT::VecOps::RVec<float> result;
-    result.reserve(muons.size());
-    
-    for(int i = 0; i < muons.size(); ++i) {
+    //std::vector<ReconstructedParticle> relRecos;
+    for (const auto assoc : recoMCAssoc) {
 
+        auto rec = assoc.getRec();
         TLorentzVector reco_;
-        reco_.SetXYZM(muons[i].momentum.x, muons[i].momentum.y, muons[i].momentum.z, muons[i].mass);
-        int track_index = muons[i].tracks_begin;
+        reco_.SetXYZM(rec.momentum.x, rec.momentum.y, rec.momentum.z, rec.mass);
+        std::cout << rec.P() << std::endl;
+        //if (assoc.getSim() == mc) {
+        //relRecos.push_back(assoc.getRec());
+        //}
+    }
+
+    return true;
+}
+*/
+
+/*
+Vec_f leptonResolution_p(Vec_rp leptons, Vec_i recind, Vec_i mcind, Vec_rp reco, Vec_mc mc, Vec_i RP_MC_index) {
+    Vec_f result;
+    result.reserve(leptons.size());
+    
+    // get lepton idx
+    Vec_i idx;
+    idx.reserve(leptons.size());
+    
+    bool dd = false;
+    
+    
+    //std::cout << "****************** AAAA" << std::endl;
+    for(int i = 0; i < leptons.size(); ++i) {
+        for(int j = 0; j < reco.size(); ++j) {
+            if(reco[j].momentum.x == leptons[i].momentum.x and reco[j].momentum.y == leptons[i].momentum.y) {
+                int mc_index = RP_MC_index[j];
+                idx[i] = RP_MC_index[j];
+                
+                TLorentzVector reco_;
+                reco_.SetXYZM(leptons[i].momentum.x, leptons[i].momentum.y, leptons[i].momentum.z, leptons[i].mass);
+                
+                TLorentzVector mc_;
+                mc_.SetXYZM(mc.at(mc_index).momentum.x, mc.at(mc_index).momentum.y, mc.at(mc_index).momentum.z, mc.at(mc_index).mass);
+                
+                if(std::abs(mc.at(mc_index).PDG) != 13) {
+                    //std::cout << mc.at(mc_index).PDG << " " << reco_.P() << " " << mc_.P() << " " << mc.at(mc_index).generatorStatus << std::endl; 
+                    dd = true;
+                    continue;
+                }
+                //std::cout << mc.at(mc_index).PDG << " " << reco_.P() << " " << mc_.P() << " " << mc.at(mc_index).generatorStatus << " " << reco_.P()/mc_.P() << std::endl; 
+                result.push_back(reco_.P()/mc_.P());
+            }
+        }
+    }
+
+    if(dd) {
+    //std::cout << "*************************************" << std::endl;
+    for(int i = 0; i < leptons.size(); ++i) {
+        TLorentzVector reco_;
+        reco_.SetXYZM(leptons[i].momentum.x, leptons[i].momentum.y, leptons[i].momentum.z, leptons[i].mass);
+        //cout << i << " " << reco_.P() << endl;
+    }
+    
+    //std::cout << "*****" << std::endl;
+    
+    for(int i = 0; i < mc.size(); ++i) {
+        TLorentzVector reco_;
+        reco_.SetXYZM(mc[i].momentum.x, mc[i].momentum.y, mc[i].momentum.z, mc[i].mass);
+        //cout << i << " " << reco_.P() << " " << mc[i].PDG << endl;
+    }
+    //std::cout << "*************************************" << std::endl;
+    
+    }
+    
+    
+
+    return result;
+    
+    std::cout << "******************" << std::endl;
+    std::cout << "leptons=" << leptons.size() << " recind=" << recind.size() << " mcind=" << mcind.size() << " reco=" << reco.size() << " mc=" << mc.size() << std::endl; 
+    for(int i = 0; i < leptons.size(); ++i) {
+        TLorentzVector reco_;
+        reco_.SetXYZM(leptons[i].momentum.x, leptons[i].momentum.y, leptons[i].momentum.z, leptons[i].mass);
+        int track_index = leptons[i].tracks_begin;
         int mc_index = FCCAnalyses::ReconstructedParticle2MC::getTrack2MC_index(track_index, recind, mcind, reco);
         if(mc_index >= 0 && mc_index < (int)mc.size()) {
             TLorentzVector mc_;
             mc_.SetXYZM(mc.at(mc_index).momentum.x, mc.at(mc_index).momentum.y, mc.at(mc_index).momentum.z, mc.at(mc_index).mass);
+            //if(std::abs(mc.at(mc_index).PDG) != 13) continue;
             result.push_back(reco_.P()/mc_.P());
             //if(mc_.P() > 20) result.push_back(reco_.P()/mc_.P());
-		}
+            std::cout << mc.at(mc_index).PDG << " " << reco_.P() << " " << mc_.P() << std::endl; 
+        }
     } 
     return result;
 }
+*/
 
+Vec_f leptonResolution(Vec_rp leptons, Vec_i recind, Vec_i mcind, Vec_rp reco, Vec_mc mc, int mode=0) {
+    Vec_f result;
+    result.reserve(leptons.size());
 
-ROOT::VecOps::RVec<float> leptonResolution_theta(ROOT::VecOps::RVec<edm4hep::ReconstructedParticleData> muons, ROOT::VecOps::RVec<int> recind,
-                                ROOT::VecOps::RVec<int> mcind,
-                                ROOT::VecOps::RVec<edm4hep::ReconstructedParticleData> reco,
-                                ROOT::VecOps::RVec<edm4hep::MCParticleData> mc){
-    
-    ROOT::VecOps::RVec<float> result;
-    result.reserve(muons.size());
-    
-    for(int i = 0; i < muons.size(); ++i) {
-
+    for(int i = 0; i < leptons.size(); ++i) {
         TLorentzVector reco_;
-        reco_.SetXYZM(muons[i].momentum.x, muons[i].momentum.y, muons[i].momentum.z, muons[i].mass);
-        int track_index = muons[i].tracks_begin;
+        reco_.SetXYZM(leptons[i].momentum.x, leptons[i].momentum.y, leptons[i].momentum.z, leptons[i].mass);
+        int track_index = leptons[i].tracks_begin;
         int mc_index = FCCAnalyses::ReconstructedParticle2MC::getTrack2MC_index(track_index, recind, mcind, reco);
         if(mc_index >= 0 && mc_index < (int)mc.size()) {
             TLorentzVector mc_;
             mc_.SetXYZM(mc.at(mc_index).momentum.x, mc.at(mc_index).momentum.y, mc.at(mc_index).momentum.z, mc.at(mc_index).mass);
-            result.push_back(reco_.Theta()/mc_.Theta());
-		}
+            if(mode == 0) result.push_back(reco_.P()/mc_.P());
+            else if(mode == 1) result.push_back(reco_.Theta()/mc_.Theta());
+            else if(mode == 2) result.push_back(reco_.Phi()/mc_.Phi());
+        }
     } 
     return result;
 }
 
 
-ROOT::VecOps::RVec<float> leptonResolution_phi(ROOT::VecOps::RVec<edm4hep::ReconstructedParticleData> muons, ROOT::VecOps::RVec<int> recind,
-                                ROOT::VecOps::RVec<int> mcind,
-                                ROOT::VecOps::RVec<edm4hep::ReconstructedParticleData> reco,
-                                ROOT::VecOps::RVec<edm4hep::MCParticleData> mc){
-    
-    ROOT::VecOps::RVec<float> result;
-    result.reserve(muons.size());
-    
-    for(int i = 0; i < muons.size(); ++i) {
+Vec_i getRecoMCPDGID(Vec_rp leptons, Vec_i recind, Vec_i mcind, Vec_rp reco, Vec_mc mc) {
+    Vec_i result;
+    result.reserve(leptons.size());
 
+    //std::cout << "******************" << std::endl;
+    //std::cout << "leptons=" << leptons.size() << " recind=" << recind.size() << " mcind=" << mcind.size() << " reco=" << reco.size() << " mc=" << mc.size() << std::endl; 
+    for(int i = 0; i < leptons.size(); ++i) {
         TLorentzVector reco_;
-        reco_.SetXYZM(muons[i].momentum.x, muons[i].momentum.y, muons[i].momentum.z, muons[i].mass);
-        int track_index = muons[i].tracks_begin;
+        reco_.SetXYZM(leptons[i].momentum.x, leptons[i].momentum.y, leptons[i].momentum.z, leptons[i].mass);
+        int track_index = leptons[i].tracks_begin;
         int mc_index = FCCAnalyses::ReconstructedParticle2MC::getTrack2MC_index(track_index, recind, mcind, reco);
         if(mc_index >= 0 && mc_index < (int)mc.size()) {
-            TLorentzVector mc_;
-            mc_.SetXYZM(mc.at(mc_index).momentum.x, mc.at(mc_index).momentum.y, mc.at(mc_index).momentum.z, mc.at(mc_index).mass);
-            result.push_back(reco_.Phi()/mc_.Phi());
-		}
+            result.push_back(mc.at(mc_index).PDG);
+        }
     } 
     return result;
 }
+
 
 
 
@@ -689,6 +751,40 @@ ROOT::VecOps::RVec<edm4hep::ReconstructedParticleData>  sel_eta::operator() (ROO
         if(eta > m_min_eta && eta < m_max_eta) result.emplace_back(p);
     }
     return result;
+}
+
+
+// full sim tools
+Vec_rp sel_type(int type, Vec_rp in) {
+    Vec_rp res;
+    for(auto &p : in) {
+        //if(std::abs(p.type) == type) {
+        if(std::abs(p.PDG) == type) {
+            res.push_back(p);
+        }
+    }
+    return res;
+}
+
+/*
+Vec_rp sel_type_PDG(int type, Vec_rp in) {
+    Vec_rp res;
+    for(auto &p : in) {
+        if(std::abs(p.PDG) == type) {
+            res.push_back(p);
+        }
+    }
+    return res;
+}*/
+
+Vec_mc sel_type(int type, Vec_mc in) {
+    Vec_mc res;
+    for(auto &p : in) {
+        if(std::abs(p.PDG) == type) {
+            res.push_back(p);
+        }
+    }
+    return res;
 }
 
 

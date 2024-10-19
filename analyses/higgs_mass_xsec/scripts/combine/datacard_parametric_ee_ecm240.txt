@@ -1,0 +1,23 @@
+imax *
+jmax *
+kmax *
+---------------
+shapes sig              * datacard.root w:sig
+shapes bkg_ee_ecm240    * datacard.root w:bkg
+shapes data_obs         * datacard.root w:data_obs
+---------------
+---------------
+#bin            bin1
+observation     -1
+------------------------------
+bin          bin1           bin1
+process      sig            bkg_ee_ecm240
+process      0              1
+rate         1              1
+--------------------------------
+bkg_norm_ee_ecm240 rateParam bin1 bkg_ee_ecm240 1
+BES_ecm240 param 0 1
+ISR_ecm240 param 0 1
+SQRTS_ecm240 param 0 1
+LEPSCALE_EL_ecm240 param 0 1
+

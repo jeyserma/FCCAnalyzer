@@ -238,6 +238,9 @@ def build_and_run(datadict, datasets_to_run, build_function, output_file, args, 
         if not datasetName in datadict:
             logger.warning(f"Cannot find dataset {datasetName} in the datadict, skipping")
 
+        if not datasetName in datadict:
+            logger.warning(f"dataset {datasetName} does not exist, skipping")
+            continue
         xsec = datadict[datasetName]['xsec']
         path = f"{datadict['basePath']}/{datadict[datasetName]['path']}"
         if not os.path.exists(path):
@@ -488,7 +491,7 @@ def get_hostname():
 
 def get_datadicts(campaign="winter2023"):
     basedirs = {}
-    basedirs['mit'] = "/data/submit/cms/store/fccee/samples/"
+    basedirs['mit'] = "/ceph/submit/data/group/cms/store/fccee/samples/"
     basedirs['fcc_eos'] = "/eos/experiment/fcc/ee/generation/DelphesEvents/"
 
     hostname = get_hostname()

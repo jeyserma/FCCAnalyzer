@@ -149,8 +149,8 @@ def export(datadict):
 
 def main():
 
-    dictPath = "/data/submit/cms/store/fccee/samples/winter2023/catalog.json"
-    basePath = "/data/submit/cms/store/fccee/samples/winter2023/"
+    dictPath = "/ceph/submit/data/group/cms/store/fccee/samples/winter2023/catalog.json"
+    basePath = "/ceph/submit/data/group/cms/store/fccee/samples/winter2023/"
     f = open(dictPath)
     datadict = json.load(f)
 

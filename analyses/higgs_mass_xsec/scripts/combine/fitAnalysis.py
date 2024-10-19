@@ -11,11 +11,13 @@ import plotter
 
 
 parser = argparse.ArgumentParser()
-parser.add_argument("--mode", type=str, help="Detector mode", choices=["IDEA", "IDEA_MC", "IDEA_3T", "CLD", "IDEA_noBES", "IDEA_2E", "IDEA_BES6pct"], default="IDEA")
-parser.add_argument("--lumi", type=str, help="Luminosity (2p5, 5, 7p2, 10 or 15)", choices=["1", "2p5", "5", "7p2", "10", "15", "20"], default="7p2")
+parser.add_argument("--mode", type=str, help="Detector mode", choices=["IDEA", "IDEA_MC", "IDEA_3T", "CLD", "CLD_FullSim", "IDEA_noBES", "IDEA_2E", "IDEA_BES6pct"], default="IDEA")
+parser.add_argument("--lumi", type=float, help="Luminosity scale", default=-1.0)
 parser.add_argument("--statOnly", action='store_true', help="Stat-only fit")
+parser.add_argument("--ecm", type=int, help="Center-of-mass", choices=[-1, 240, 365], default=-1)
+parser.add_argument("--tag", type=str, help="Analysis tag", default="july24")
+parser.add_argument('--combination', action='store_true', help="Do full combination")
 args = parser.parse_args()
-
 
 def findCrossing(xv, yv, left=True, flip=125, cross=1.):
 
@@ -250,7 +252,7 @@ def doFitDiagnostics_mass(runDir, mhMin=124.99, mhMax=125.01, combineOptions = "
 
     # scan for signal mass
     exe = "%s/HiggsAnalysis/CombinedLimit/build/bin/combine" % os.environ['WDIR']
-    cmd = "%s -M FitDiagnostics -t -1 --setParameterRanges MH=%f,%f ws.root --expectSignal=1 -m 125 --redefineSignalPOIs MH --X-rtd TMCSO_AdaptivePseudoAsimov -v 10 --X-rtd ADDNLL_CBNLL=0 -n mass %s" % (exe, mhMin, mhMax, combineOptions)
+    cmd = "%s -M FitDiagnostics -t -1 --setParameterRanges MH=%f,%f ws.root --expectSignal=1  -m 125 --redefineSignalPOIs MH --X-rtd TMCSO_AdaptivePseudoAsimov -v 10 --X-rtd ADDNLL_CBNLL=0 -n mass %s" % (exe, mhMin, mhMax, combineOptions)
 
     # ,shapeBkg_bkg_bin1__norm
     subprocess.call(cmd, shell=True, cwd=runDir)
@@ -266,7 +268,7 @@ def doFitDiagnostics_mass(runDir, mhMin=124.99, mhMax=125.01, combineOptions = "
 
 
 
-def plotMultiple(tags, labels, fOut, xMin=-1, xMax=-1, yMin=0, yMax=2, legLabel="", forceStat=[]):
+def plotMultiple(tags, labels, fOut, xMin=-1, xMax=-1, yMin=0, yMax=2, legLabel="", forceStat=[], legMargin=0.15):
 
     global suffix
     best_mass, best_xsec = [], []
@@ -308,7 +310,7 @@ def plotMultiple(tags, labels, fOut, xMin=-1, xMax=-1, yMin=0, yMax=2, legLabel=
         'xtitle'            : "m_{h} (GeV)",
         'ytitle'            : "-2#DeltaNLL",
 
-        'topRight'          : topRight, 
+        'topRight'          : topRight,
         'topLeft'           : "#bf{FCC-ee} #scale[0.7]{#it{Simulation}}",
         }
 
@@ -326,7 +328,7 @@ def plotMultiple(tags, labels, fOut, xMin=-1, xMax=-1, yMin=0, yMax=2, legLabel=
     leg.SetBorderSize(0)
     #leg.SetFillStyle(0) 
     leg.SetTextSize(0.03)
-    leg.SetMargin(0.15)
+    leg.SetMargin(legMargin)
     leg.SetBorderSize(1)
     if legLabel != "":
         leg.SetHeader(legLabel)
@@ -351,12 +353,9 @@ def plotMultiple(tags, labels, fOut, xMin=-1, xMax=-1, yMin=0, yMax=2, legLabel=
     canvas.Modify()
     canvas.Update()
     canvas.Draw()
-    if statOnly:
-        canvas.SaveAs("%s%s.png" % (fOut, suffix))
-        canvas.SaveAs("%s%s.pdf" % (fOut, suffix))
-    else:
-        canvas.SaveAs("%s%s_stat.png" % (fOut, suffix))
-        canvas.SaveAs("%s%s_stat.pdf" % (fOut, suffix))
+
+    canvas.SaveAs("%s%s.png" % (fOut, suffix))
+    canvas.SaveAs("%s%s.pdf" % (fOut, suffix))
 
 def plotMultiple_xsec(tags, labels, fOut, xMin=-1, xMax=-1, yMin=0, yMax=2):
 
@@ -435,11 +434,11 @@ def plotMultiple_xsec(tags, labels, fOut, xMin=-1, xMax=-1, yMin=0, yMax=2):
     canvas.SaveAs("%s.pdf" % (fOut))
 
 
-def breakDown(fitCfg):
-    def getUnc(fitCfg, tag, type_):
+def breakDown(outDir_):
+    def getUnc(tag, type_):
 
         xv, yv = [], []
-        fIn = open("%s/%s/%s%s.txt" % (outDir, fitCfg, type_, tag), "r")
+        fIn = open("%s/%s%s.txt" % (outDir_, type_, tag), "r")
         for i,line in enumerate(fIn.readlines()):
 
             line = line.rstrip()
@@ -453,7 +452,7 @@ def breakDown(fitCfg):
         return best, unc
 
     ############# mass
-    canvas = ROOT.TCanvas("c", "c", 800, 800)
+    canvas = ROOT.TCanvas("c", "c", 1000, 1000)
     canvas.SetTopMargin(0.08)
     canvas.SetBottomMargin(0.1)
     canvas.SetLeftMargin(0.25)
@@ -467,9 +466,9 @@ def breakDown(fitCfg):
     xTitle = "#sigma_{syst.}(m_{h}) (MeV)"
 
     ref = ""
-    best_ref, unc_ref = getUnc(fitCfg, "_stat", "mass")
+    best_ref, unc_ref = getUnc("_stat", "mass")
     params = ["_BES", "_SQRTS", "_LEPSCALE_MU", "_LEPSCALE_EL", ""]
-    labels = ["BES 6%", "#sqrt{s} #pm 2 MeV", "Muon scale (~10^{-5})", "El. scale (~10^{-5})", "Syst. combined"]
+    labels = ["BES", "#sqrt{s} #pm 2 MeV", "Muon scale (~10^{-5})", "El. scale (~10^{-5})", "Syst. combined"]
 
     n_params = len(params)
     h_pulls = ROOT.TH2F("pulls", "pulls", 6, xMin, xMax, n_params, 0, n_params)
@@ -478,7 +477,7 @@ def breakDown(fitCfg):
     i = n_params
     for p in xrange(n_params):
         i -= 1
-        best, unc = getUnc(fitCfg, params[p], "mass")
+        best, unc = getUnc(params[p], "mass")
         #unc = math.sqrt(unc_ref**2 - unc**2)
         print(unc_ref, unc)
         unc = math.sqrt(unc**2 - unc_ref**2)
@@ -506,7 +505,7 @@ def breakDown(fitCfg):
     
     latex = ROOT.TLatex()
     latex.SetNDC()
-    latex.SetTextSize(0.045)
+    latex.SetTextSize(0.035)
     latex.SetTextColor(1)
     latex.SetTextFont(42)
     latex.SetTextAlign(30) # 0 special vertical aligment with subscripts
@@ -514,17 +513,17 @@ def breakDown(fitCfg):
 
     latex.SetTextAlign(13)
     latex.SetTextFont(42)
-    latex.SetTextSize(0.045)
+    latex.SetTextSize(0.04)
     latex.DrawLatex(0.25, 0.96, "#bf{FCCee} #scale[0.7]{#it{Simulation}}")
 
-    canvas.SaveAs("%s/%s/mass_breakdown.png" % (outDir, fitCfg))
-    canvas.SaveAs("%s/%s/mass_breakdown.pdf" % (outDir, fitCfg))
+    canvas.SaveAs("%s/mass_breakdown.png" % (outDir_))
+    canvas.SaveAs("%s/mass_breakdown.pdf" % (outDir_))
     del canvas, g_pulls, h_pulls
 
 
 def text2workspace(runDir):
 
-    cmd = "text2workspace.py datacard.txt -o ws.root  -v 10"
+    cmd = "text2workspace.py datacard.txt -o ws.root  -v 10 --X-allow-no-background"
     subprocess.call(cmd, shell=True, cwd=runDir)
 
 def combineCards(runDir, input_=[]):
@@ -534,21 +533,25 @@ def combineCards(runDir, input_=[]):
     input_ = ["%s/%s" % (os.getcwd(), i) for i in input_]
     cards = ' '.join(input_)
 
-    cmd = "combineCards.py %s > datacard.txt" % cards
+    cmd = "combineCards.py   --force-shape %s > datacard.txt" % cards
     subprocess.call(cmd, shell=True, cwd=runDir)
     text2workspace(runDir)
 
 
 if __name__ == "__main__":
+    mode = args.mode # detector mode
+    ecm = str(args.ecm)
+    lumiScale = args.lumi
+    lumiStr = str(int(args.lumi)) if args.lumi.is_integer() else str(args.lumi)
+    lumiLabel = lumiStr.replace(".", "p")
 
-    mode = args.mode
-    lumi = args.lumi
+    topRight = "#sqrt{s} = %s GeV, %s ab^{#minus1}" % (args.ecm, lumiStr)
+    topLeft = "#bf{FCC-ee} #scale[0.7]{#it{Internal}}"
 
-    lumi_suffix = "_LUMI_%s"%lumi
-    combineDir = "combine/h_mass/%s%s" % (mode, lumi_suffix)
-    #outDir = "/eos/user/j/jaeyserm/www/FCCee/ZH_mass/combine/%s%s/" % (mode, lumi_suffix) # CERN
-    outDir = "/work/submit/jaeyserm/public_html/fccee/ZH_mass/combine_out/%s%s/" % (mode, lumi_suffix) # MIT
-    topRight = "#sqrt{s} = 240 GeV, %s ab^{#minus1}" % lumi.replace('p', '.')
+    combineDir = "combine/higgs_mass_%s/%s/lumi%s/" % (args.tag, mode, lumiLabel)
+    outDir = "/work/submit/jaeyserm/public_html/fccee/higgs_mass_xsec/%s/combine/%s/lumi%s/" % (args.tag, mode, lumiLabel)
+
+
 
     def mHrange(mh_err):
         if 1.5*mh_err > 0.05: # bound to 50 MeV
@@ -563,40 +566,52 @@ if __name__ == "__main__":
     doSyst = not args.statOnly
     if not doSyst:
         suffix = "_stat"
-        freezeParameters.extend(["BES", "ISR", "SQRTS", "LEPSCALE_MU", "LEPSCALE_EL"])
+        #freezeParameters.extend(["BES", "ISR", "SQRTS", "LEPSCALE_MU", "LEPSCALE_EL"])
+        freezeParameters.extend(["BES_ecm240", "SQRTS_ecm240", "LEPSCALE_MU_ecm240", "LEPSCALE_EL_ecm240"])
+        freezeParameters.extend(["BES_ecm365", "SQRTS_ecm365", "LEPSCALE_MU_ecm365", "LEPSCALE_EL_ecm365"])
+
+
+
 
     freezeBkg = False
     if freezeBkg:
         suffix = "_freezeBkg%s"%suffix
-        freezeParameters.extend(["bkg_norm"])
+        freezeParameters.extend(["bkg_norm_mumu_ecm240", "bkg_norm_ee_ecm240", "bkg_norm_mumu_ecm365", "bkg_norm_ee_ecm365"])
+
 
     noBkg = False
     if noBkg:
         suffix = "_noBkg%s"%suffix
-        freezeParameters.extend(["bkg_norm"])
-        setParameters.extend(["bkg_norm=0"])
+        freezeParameters.extend(["bkg_norm_mumu_ecm240", "bkg_norm_ee_ecm240", "bkg_norm_mumu_ecm365", "bkg_norm_ee_ecm365", "r"]) # r to be frozen to avoid issues with no-bkg fit
+        setParameters.extend(["bkg_norm_mumu_ecm240=0", "bkg_norm_ee_ecm240=0", "bkg_norm_mumu_ecm365=0", "bkg_norm_ee_ecm365=0"])
+
 
     ## systematic variations, unfreeze them
-    systs = ["BES", "SQRTS", "LEPSCALE_MU", "LEPSCALE_EL"]
+    #systs = ["BES_ecm240", "SQRTS_ecm240", "LEPSCALE_MU_ecm240", "LEPSCALE_EL_ecm240", "BES_ecm365", "SQRTS_ecm365", "LEPSCALE_MU_ecm365", "LEPSCALE_EL_ecm365"]
 
     #suffix+="_BES"
-    #systs.remove("BES")
+    #systs.remove("BES_ecm240")
+    #systs.remove("BES_ecm365")
 
     #suffix+="_SQRTS"
-    #systs.remove("SQRTS")
+    #systs.remove("SQRTS_ecm240")
+    #systs.remove("SQRTS_ecm365")
 
     #suffix+="_LEPSCALE_MU"
-    #systs.remove("LEPSCALE_MU")
+    #systs.remove("LEPSCALE_MU_ecm240")
+    #systs.remove("LEPSCALE_MU_ecm365")
 
     #suffix+="_LEPSCALE_EL"
-    #systs.remove("LEPSCALE_EL")
+    #systs.remove("LEPSCALE_EL_ecm240")
+    #systs.remove("LEPSCALE_EL_ecm365")
 
     #freezeParameters.extend(systs)
 
 
     doBreakDown = False
     if doBreakDown:
-        breakDown("mumu_ee_combined_categorized")
+        breakDown(outDir + "/mumu_ee_combined_categorized_ecm240")
+        quit()
         breakDown("mumu_ee_combined_inclusive")
         breakDown("mumu_cat0")
         breakDown("mumu_cat1")
@@ -612,10 +627,11 @@ if __name__ == "__main__":
 
     doSummary = False
     if doSummary:
-        outDir__ = "/work/submit/jaeyserm/public_html/fccee/ZH_mass/combine_out/"
-        plotMultiple(["%s/IDEA_LUMI_7p2/mumu_combined/"%outDir__, "%s/IDEA_MC_LUMI_7p2/mumu_combined/"%outDir__, "%s/IDEA_3T_LUMI_7p2/mumu_combined/"%outDir__, "%s/CLD_LUMI_7p2/mumu_combined/"%outDir__], ["IDEA", "IDEA perfect resolution", "IDEA 3T", "IDEA CLD silicon tracker"], "%s/IDEA_IDEAL_2T_3T_CLD_mumu"%outDir__, xMin=124.99, xMax=125.01, legLabel="Muon final state Z(#mu^{#plus}#mu^{#minus})H (stat. + syst.)")
-        plotMultiple(["%s/IDEA_LUMI_7p2/mumu_combined/"%outDir__, "%s/IDEA_MC_LUMI_7p2/mumu_combined/"%outDir__, "%s/IDEA_3T_LUMI_7p2/mumu_combined/"%outDir__, "%s/CLD_LUMI_7p2/mumu_combined/"%outDir__], ["IDEA", "IDEA perfect resolution", "IDEA 3T", "IDEA CLD silicon tracker"], "%s/IDEA_IDEAL_2T_3T_CLD_mumu"%outDir__, xMin=124.99, xMax=125.01, legLabel="Muon final state Z(#mu^{#plus}#mu^{#minus})H (stat. only)", forceStat=[True, True, True, True])
-        plotMultiple(["%s/IDEA_LUMI_7p2/mumu_ee_combined_categorized/"%outDir__, "%s/IDEA_LUMI_7p2/mumu_ee_combined_categorized/"%outDir__], ["Statistical", "Statistical+systematic"], "%s/IDEA_stat_syst"%outDir__, xMin=124.995, xMax=125.005, legLabel="Combined muon and electron final states", forceStat=[True, False])
+        outDir__ = "/work/submit/jaeyserm/public_html/fccee/higgs_mass_xsec/%s/combine/" % args.tag
+        outDir   = "/work/submit/jaeyserm/public_html/fccee/higgs_mass_xsec/%s/combine/summaryPlots/" % args.tag
+        plotMultiple(["%s/IDEA/lumi10p8/mumu_combined_ecm240/"%outDir__, "%s/IDEA_MC/lumi10p8/mumu_combined_ecm240/"%outDir__, "%s/IDEA_3T/lumi10p8/mumu_combined_ecm240/"%outDir__, "%s/CLD/lumi10p8/mumu_combined_ecm240/"%outDir__], ["IDEA", "IDEA perfect resolution", "IDEA 3T", "IDEA CLD silicon tracker"], "%s/IDEA_IDEAL_2T_3T_CLD_mumu"%outDir, xMin=124.99, xMax=125.01, legLabel="Muon final state Z(#mu^{#plus}#mu^{#minus})H (stat. + syst.)")
+        plotMultiple(["%s/IDEA/lumi10p8/mumu_combined_ecm240/"%outDir__, "%s/IDEA_MC/lumi10p8/mumu_combined_ecm240/"%outDir__, "%s/IDEA_3T/lumi10p8/mumu_combined_ecm240/"%outDir__, "%s/CLD/lumi10p8/mumu_combined_ecm240/"%outDir__], ["IDEA", "IDEA perfect resolution", "IDEA 3T", "IDEA CLD silicon tracker"], "%s/IDEA_IDEAL_2T_3T_CLD_mumu_stat"%outDir, xMin=124.99, xMax=125.01, legLabel="Muon final state Z(#mu^{#plus}#mu^{#minus})H (stat. only)", forceStat=[True, True, True, True])
+        plotMultiple(["%s/IDEA/lumi10p8/mumu_ee_combined_categorized_ecm240/"%outDir__, "%s/IDEA/lumi10p8/mumu_ee_combined_categorized_ecm240/"%outDir__], ["Statistical", "Statistical+systematic"], "%s/IDEA_stat_syst"%outDir, xMin=124.995, xMax=125.005, legLabel="Combined muon and electron final states", forceStat=[True, False])
         quit()
 
 
@@ -627,96 +643,178 @@ if __name__ == "__main__":
 
 
     ############### MUON
-    if True:
-        tag, label = "mumu_cat0", "#mu^{#plus}#mu^{#minus}, inclusive"
+    if False:
+
+        tag_cat0, label,  = "mumu_cat0_ecm%s"%ecm, "#mu^{#plus}#mu^{#minus}, inclusive"
         rMin, rMax = 0.98, 1.02
-        mh_err = doFitDiagnostics_mass("%s/%s" % (combineDir, tag), mhMin=124.95, mhMax=125.05, combineOptions=combineOptions)
+        mh_err = doFitDiagnostics_mass("%s/%s" % (combineDir, tag_cat0), mhMin=124.95, mhMax=125.05, combineOptions=combineOptions)
         mhMin, mhMax = mHrange(mh_err)
-        doFit_mass("%s/%s" % (combineDir, tag), mhMin=mhMin, mhMax=mhMax, npoints=50, combineOptions=combineOptions)
-        analyzeMass("%s/%s" % (combineDir, tag), "%s/%s/" % (outDir, tag), label=label, xMin=mhMin, xMax=mhMax)
-        #doFit_xsec("%s/%s" % (combineDir, tag), rMin=rMin, rMax=rMax, npoints=50, combineOptions=combineOptions)
-        #analyzeXsec("%s/%s" % (combineDir, tag), "%s/%s/" % (outDir, tag), label=label, xMin=rMin, xMax=rMax)
-        #doFitDiagnostics_mass("%s/%s" % (combineDir, tag), mhMin=mhMin, mhMax=mhMax, combineOptions=combineOptions)
+        doFit_mass("%s/%s" % (combineDir, tag_cat0), mhMin=mhMin, mhMax=mhMax, npoints=50, combineOptions=combineOptions)
+        analyzeMass("%s/%s" % (combineDir, tag_cat0), "%s/%s/" % (outDir, tag_cat0), label=label, xMin=mhMin, xMax=mhMax)
+        #doFit_xsec("%s/%s" % (combineDir, tag_cat0), rMin=rMin, rMax=rMax, npoints=50, combineOptions=combineOptions)
+        #analyzeXsec("%s/%s" % (combineDir, tag_cat0), "%s/%s/" % (outDir, tag_cat0), label=label, xMin=rMin, xMax=rMax)
+        #doFitDiagnostics_mass("%s/%s" % (combineDir, tag_cat0), mhMin=mhMin, mhMax=mhMax, combineOptions=combineOptions)
 
-        tag, label = "mumu_cat1", "#mu^{#plus}#mu^{#minus}, central-central"
-        mh_err = doFitDiagnostics_mass("%s/%s" % (combineDir, tag), mhMin=124.95, mhMax=125.05, combineOptions=combineOptions)
-        mhMin, mhMax = mHrange(mh_err)
-        doFit_mass("%s/%s" % (combineDir, tag), mhMin=mhMin, mhMax=mhMax, npoints=50, combineOptions=combineOptions)
-        analyzeMass("%s/%s" % (combineDir, tag), "%s/%s/" % (outDir, tag), label=label, xMin=mhMin, xMax=mhMax)
+        tag_cat1, label = "mumu_cat1_ecm%s"%ecm, "#mu^{#plus}#mu^{#minus}, central-central"
+        if ecm == "240": # at 365 it is beyond 50 MeV
+            mh_err = doFitDiagnostics_mass("%s/%s" % (combineDir, tag_cat1), mhMin=124.95, mhMax=125.05, combineOptions=combineOptions)
+            mhMin, mhMax = mHrange(mh_err)
+            #doFit_mass("%s/%s" % (combineDir, tag_cat1), mhMin=mhMin, mhMax=mhMax, npoints=50, combineOptions=combineOptions)
+            #analyzeMass("%s/%s" % (combineDir, tag_cat1), "%s/%s/" % (outDir, tag_cat1), label=label, xMin=mhMin, xMax=mhMax)
 
-        tag, label = "mumu_cat2", "#mu^{#plus}#mu^{#minus}, central-forward"
-        mh_err = doFitDiagnostics_mass("%s/%s" % (combineDir, tag), mhMin=124.95, mhMax=125.05, combineOptions=combineOptions)
-        mhMin, mhMax = mHrange(mh_err)
-        doFit_mass("%s/%s" % (combineDir, tag), mhMin=mhMin, mhMax=mhMax, npoints=50, combineOptions=combineOptions)
-        analyzeMass("%s/%s" % (combineDir, tag), "%s/%s/" % (outDir, tag), label=label, xMin=mhMin, xMax=mhMax)
+        tag_cat2, label = "mumu_cat2_ecm%s"%ecm, "#mu^{#plus}#mu^{#minus}, central-forward"
+        
+        if ecm == "240": # at 365 it is beyond 50 MeV
+            mh_err = doFitDiagnostics_mass("%s/%s" % (combineDir, tag_cat2), mhMin=124.95, mhMax=125.05, combineOptions=combineOptions)
+            mhMin, mhMax = mHrange(mh_err)
+            #doFit_mass("%s/%s" % (combineDir, tag_cat2), mhMin=mhMin, mhMax=mhMax, npoints=50, combineOptions=combineOptions)
+            #analyzeMass("%s/%s" % (combineDir, tag_cat2), "%s/%s/" % (outDir, tag_cat2), label=label, xMin=mhMin, xMax=mhMax)
 
-        tag, label = "mumu_cat3", "#mu^{#plus}#mu^{#minus}, forward-forward"
-        mh_err = doFitDiagnostics_mass("%s/%s" % (combineDir, tag), mhMin=124.95, mhMax=125.05, combineOptions=combineOptions)
-        mhMin, mhMax = mHrange(mh_err)
-        doFit_mass("%s/%s" % (combineDir, tag), mhMin=mhMin, mhMax=mhMax, npoints=50, combineOptions=combineOptions)
-        analyzeMass("%s/%s" % (combineDir, tag), "%s/%s/" % (outDir, tag), label=label, xMin=mhMin, xMax=mhMax)
+        
+        tag_cat3, label = "mumu_cat3_ecm%s"%ecm, "#mu^{#plus}#mu^{#minus}, forward-forward"
+        
+        if ecm == "240": # at 365 it is beyond 50 MeV
+            mh_err = doFitDiagnostics_mass("%s/%s" % (combineDir, tag_cat3), mhMin=124.95, mhMax=125.05, combineOptions=combineOptions)
+            mhMin, mhMax = mHrange(mh_err)
+            #doFit_mass("%s/%s" % (combineDir, tag_cat3), mhMin=mhMin, mhMax=mhMax, npoints=50, combineOptions=combineOptions)
+            #analyzeMass("%s/%s" % (combineDir, tag_cat3), "%s/%s/" % (outDir, tag_cat3), label=label, xMin=mhMin, xMax=mhMax)
 
-        tag, label = "mumu_combined", "#mu^{#plus}#mu^{#minus}, combined"
-        combineCards("%s/%s" % (combineDir, tag), [combineDir+"/mumu_cat1/datacard_parametric.txt", combineDir+"/mumu_cat2/datacard_parametric.txt", combineDir+"/mumu_cat3/datacard_parametric.txt"])
-        mh_err = doFitDiagnostics_mass("%s/%s" % (combineDir, tag), mhMin=124.95, mhMax=125.05, combineOptions=combineOptions)
+        tag_combined, label = "mumu_combined_ecm%s"%ecm, "#mu^{#plus}#mu^{#minus}, combined"
+        combineCards("%s/%s" % (combineDir, tag_combined), ["%s/%s/datacard.txt"%(combineDir,tag_cat1), "%s/%s/datacard.txt"%(combineDir,tag_cat2), "%s/%s/datacard.txt"%(combineDir,tag_cat3)])
+        mh_err = doFitDiagnostics_mass("%s/%s" % (combineDir, tag_combined), mhMin=124.95, mhMax=125.05, combineOptions=combineOptions)
+        #quit()
         mhMin, mhMax = mHrange(mh_err)
-        doFit_mass("%s/%s" % (combineDir, tag), mhMin=mhMin, mhMax=mhMax, npoints=50, combineOptions=combineOptions)
-        analyzeMass("%s/%s" % (combineDir, tag), "%s/%s/" % (outDir, tag), label=label, xMin=mhMin, xMax=mhMax)
+        doFit_mass("%s/%s" % (combineDir, tag_combined), mhMin=mhMin, mhMax=mhMax, npoints=50, combineOptions=combineOptions)
+        analyzeMass("%s/%s" % (combineDir, tag_combined), "%s/%s/" % (outDir, tag_combined), label=label, xMin=mhMin, xMax=mhMax)
 
 
     ############### ELECTRON
-    if True:
-        tag, label = "ee_cat0", "e^{#plus}e^{#minus}, inclusive"
+    if False:
+
+        tag_cat0, label,  = "ee_cat0_ecm%s"%ecm, "e^{#plus}e^{#minus}, inclusive"
         rMin, rMax = 0.98, 1.02
-        mh_err = doFitDiagnostics_mass("%s/%s" % (combineDir, tag), mhMin=124.95, mhMax=125.05, combineOptions=combineOptions)
+        mh_err = doFitDiagnostics_mass("%s/%s" % (combineDir, tag_cat0), mhMin=124.95, mhMax=125.05, combineOptions=combineOptions)
+        #if ecm == 240: # at 365 it is beyond 50 MeV
         mhMin, mhMax = mHrange(mh_err)
-        doFit_mass("%s/%s" % (combineDir, tag), mhMin=mhMin, mhMax=mhMax, npoints=50, combineOptions=combineOptions)
-        analyzeMass("%s/%s" % (combineDir, tag), "%s/%s/" % (outDir, tag), label=label, xMin=mhMin, xMax=mhMax)
-        
-        tag, label = "ee_cat1", "e^{#plus}e^{#minus}, central-central"
-        mh_err = doFitDiagnostics_mass("%s/%s" % (combineDir, tag), mhMin=124.95, mhMax=125.05, combineOptions=combineOptions)
-        mhMin, mhMax = mHrange(mh_err)
-        doFit_mass("%s/%s" % (combineDir, tag), mhMin=mhMin, mhMax=mhMax, npoints=50, combineOptions=combineOptions)
-        analyzeMass("%s/%s" % (combineDir, tag), "%s/%s/" % (outDir, tag), label=label, xMin=mhMin, xMax=mhMax)
+        doFit_mass("%s/%s" % (combineDir, tag_cat0), mhMin=mhMin, mhMax=mhMax, npoints=50, combineOptions=combineOptions)
+        analyzeMass("%s/%s" % (combineDir, tag_cat0), "%s/%s/" % (outDir, tag_cat0), label=label, xMin=mhMin, xMax=mhMax)
+        #doFit_xsec("%s/%s" % (combineDir, tag_cat0), rMin=rMin, rMax=rMax, npoints=50, combineOptions=combineOptions)
+        #analyzeXsec("%s/%s" % (combineDir, tag_cat0), "%s/%s/" % (outDir, tag_cat0), label=label, xMin=rMin, xMax=rMax)
+        #doFitDiagnostics_mass("%s/%s" % (combineDir, tag_cat0), mhMin=mhMin, mhMax=mhMax, combineOptions=combineOptions)
 
-        tag, label = "ee_cat2", "e^{#plus}e^{#minus}, central-forward"
-        mh_err = doFitDiagnostics_mass("%s/%s" % (combineDir, tag), mhMin=124.95, mhMax=125.05, combineOptions=combineOptions)
-        mhMin, mhMax = mHrange(mh_err)
-        doFit_mass("%s/%s" % (combineDir, tag), mhMin=mhMin, mhMax=mhMax, npoints=50, combineOptions=combineOptions)
-        analyzeMass("%s/%s" % (combineDir, tag), "%s/%s/" % (outDir, tag), label=label, xMin=mhMin, xMax=mhMax)
+        tag_cat1, label = "ee_cat1_ecm%s"%ecm, "e^{#plus}e^{#minus}, central-central"
+        if ecm == "240": # at 365 it is beyond 50 MeV
+            mh_err = doFitDiagnostics_mass("%s/%s" % (combineDir, tag_cat1), mhMin=124.95, mhMax=125.05, combineOptions=combineOptions)
+            mhMin, mhMax = mHrange(mh_err)
+            #doFit_mass("%s/%s" % (combineDir, tag_cat1), mhMin=mhMin, mhMax=mhMax, npoints=50, combineOptions=combineOptions)
+            #analyzeMass("%s/%s" % (combineDir, tag_cat1), "%s/%s/" % (outDir, tag_cat1), label=label, xMin=mhMin, xMax=mhMax)
 
-        tag, label = "ee_cat3", "e^{#plus}e^{#minus}, forward-forward"
-        mh_err = doFitDiagnostics_mass("%s/%s" % (combineDir, tag), mhMin=124.95, mhMax=125.05, combineOptions=combineOptions)
-        mhMin, mhMax = mHrange(mh_err)
-        doFit_mass("%s/%s" % (combineDir, tag), mhMin=mhMin, mhMax=mhMax, npoints=50, combineOptions=combineOptions)
-        analyzeMass("%s/%s" % (combineDir, tag), "%s/%s/" % (outDir, tag), label=label, xMin=mhMin, xMax=mhMax)
+        tag_cat2, label = "ee_cat2_ecm%s"%ecm, "e^{#plus}e^{#minus}, central-forward"
 
-        tag, label = "ee_combined", "e^{#plus}e^{#minus}, combined"
-        combineCards("%s/%s" % (combineDir, tag), [combineDir+"/ee_cat1/datacard_parametric.txt", combineDir+"/ee_cat2/datacard_parametric.txt", combineDir+"/ee_cat3/datacard_parametric.txt"])
-        mh_err = doFitDiagnostics_mass("%s/%s" % (combineDir, tag), mhMin=124.95, mhMax=125.05, combineOptions=combineOptions)
+        if ecm == "240": # at 365 it is beyond 50 MeV
+            mh_err = doFitDiagnostics_mass("%s/%s" % (combineDir, tag_cat2), mhMin=124.95, mhMax=125.05, combineOptions=combineOptions)
+            mhMin, mhMax = mHrange(mh_err)
+            #doFit_mass("%s/%s" % (combineDir, tag_cat2), mhMin=mhMin, mhMax=mhMax, npoints=50, combineOptions=combineOptions)
+            #analyzeMass("%s/%s" % (combineDir, tag_cat2), "%s/%s/" % (outDir, tag_cat2), label=label, xMin=mhMin, xMax=mhMax)
+
+        tag_cat3, label = "ee_cat3_ecm%s"%ecm, "e^{#plus}e^{#minus}, forward-forward"
+        if ecm == "240": # at 365 it is beyond 50 MeV
+            mh_err = doFitDiagnostics_mass("%s/%s" % (combineDir, tag_cat3), mhMin=124.95, mhMax=125.05, combineOptions=combineOptions)
+            mhMin, mhMax = mHrange(mh_err)
+            #doFit_mass("%s/%s" % (combineDir, tag_cat3), mhMin=mhMin, mhMax=mhMax, npoints=50, combineOptions=combineOptions)
+            #analyzeMass("%s/%s" % (combineDir, tag_cat3), "%s/%s/" % (outDir, tag_cat3), label=label, xMin=mhMin, xMax=mhMax)
+
+        tag_combined, label = "ee_combined_ecm%s"%ecm, "e^{#plus}e^{#minus}, combined"
+        combineCards("%s/%s" % (combineDir, tag_combined), ["%s/%s/datacard.txt"%(combineDir,tag_cat1), "%s/%s/datacard.txt"%(combineDir,tag_cat2), "%s/%s/datacard.txt"%(combineDir,tag_cat3)])
+        mh_err = doFitDiagnostics_mass("%s/%s" % (combineDir, tag_combined), mhMin=124.95, mhMax=125.05, combineOptions=combineOptions)
         mhMin, mhMax = mHrange(mh_err)
-        doFit_mass("%s/%s" % (combineDir, tag), mhMin=mhMin, mhMax=mhMax, npoints=50, combineOptions=combineOptions)
-        analyzeMass("%s/%s" % (combineDir, tag), "%s/%s/" % (outDir, tag), label=label, xMin=mhMin, xMax=mhMax)
+        doFit_mass("%s/%s" % (combineDir, tag_combined), mhMin=mhMin, mhMax=mhMax, npoints=50, combineOptions=combineOptions)
+        analyzeMass("%s/%s" % (combineDir, tag_combined), "%s/%s/" % (outDir, tag_combined), label=label, xMin=mhMin, xMax=mhMax)
 
 
     ############### MUON+ELECTRON
+    if False:
+        if args.ecm < 0 and args.lumi < 0:
+            print("ERROR: ecm and lumi to be defined")
+            quit()
+
+        # check if lumi and ecm are defined
+        tag, label = "mumu_ee_combined_inclusive_ecm%s"%ecm, "#mu^{#plus}#mu^{#minus}+e^{#plus}e^{#minus}, inclusive"
+        combineCards("%s/%s" % (combineDir, tag), ["%s/mumu_cat0_ecm%s/datacard.txt"%(combineDir, ecm), "%s/ee_cat0_ecm%s/datacard.txt"%(combineDir, ecm)])
+        
+        mh_err = doFitDiagnostics_mass("%s/%s" % (combineDir, tag), mhMin=124.95, mhMax=125.05, combineOptions=combineOptions)
+        mhMin, mhMax = mHrange(mh_err)
+        doFit_mass("%s/%s" % (combineDir, tag), mhMin=mhMin, mhMax=mhMax, npoints=50, combineOptions=combineOptions)
+        analyzeMass("%s/%s" % (combineDir, tag), "%s/%s/" % (outDir, tag), label=label, xMin=mhMin, xMax=mhMax)
+        #quit()
+
+        tag, label = "mumu_ee_combined_categorized_ecm%s"%ecm, "#mu^{#plus}#mu^{#minus}+e^{#plus}e^{#minus}, categorized"
+        combineCards("%s/%s" % (combineDir, tag), ["/%s/mumu_combined_ecm%s/datacard.txt"%(combineDir, ecm), "/%s/ee_combined_ecm%s/datacard.txt"%(combineDir, ecm)])
+        mh_err = doFitDiagnostics_mass("%s/%s" % (combineDir, tag), mhMin=124.95, mhMax=125.05, combineOptions=combineOptions)
+        mhMin, mhMax = mHrange(mh_err)
+        doFit_mass("%s/%s" % (combineDir, tag), mhMin=mhMin, mhMax=mhMax, npoints=50, combineOptions=combineOptions)
+        analyzeMass("%s/%s" % (combineDir, tag), "%s/%s/" % (outDir, tag), label=label, xMin=mhMin, xMax=mhMax)
+
+        '''
+        if ecm == "240":
+            plotMultiple(["%s/mumu_cat0/"%outDir, "%s/ee_cat0/"%outDir, "%s/mumu_ee_combined_inclusive/"%outDir], ["#mu^{#plus}#mu^{#minus}, inclusive", "e^{#plus}e^{#minus}, inclusive", "#mu^{#plus}#mu^{#minus} + e^{#plus}e^{#minus}, inclusive"], "%s/mumu_ee_inclusive"%outDir, xMin=124.99, xMax=125.01)
+            plotMultiple(["%s/mumu_combined/"%outDir, "%s/ee_combined/"%outDir, "%s/mumu_ee_combined_categorized/"%outDir], ["#mu^{#plus}#mu^{#minus}, categorized", "e^{#plus}e^{#minus}, categorized", "#mu^{#plus}#mu^{#minus} + e^{#plus}e^{#minus}, categorized"], "%s/mumu_ee_categorized"%outDir, xMin=124.99, xMax=125.01)
+            plotMultiple(["%s/mumu_cat0/"%outDir, "%s/mumu_combined/"%outDir, "%s/ee_cat0/"%outDir, "%s/ee_combined/"%outDir], ["#mu^{#plus}#mu^{#minus}, inclusive", "#mu^{#plus}#mu^{#minus}, categorized", "e^{#plus}e^{#minus}, inclusive", "e^{#plus}e^{#minus}, categorized"], "%s/mumu_ee_inclusive_categorized"%outDir, xMin=124.99, xMax=125.01)
+        '''
+
+        plotMultiple(["%s/mumu_combined_ecm%s/"%(outDir,ecm), "%s/ee_combined_ecm%s/"%(outDir,ecm), "%s/mumu_ee_combined_categorized_ecm%s/"%(outDir,ecm)], ["#mu^{#plus}#mu^{#minus}", "e^{#plus}e^{#minus}", "#mu^{#plus}#mu^{#minus} + e^{#plus}e^{#minus}"], "%s/mumu_ee_combined_categorized_ecm%s"%(outDir,ecm), xMin=124.99, xMax=125.01)
+        quit()
+        #plotMultiple(["%s/mumu_combined_ecm%s/"%(outDir, ecm), "%s/ee_combined_ecm%s/"%(outDir, ecm), "%s/mumu_ee_combined_categorized_ecm%s/"%(outDir, ecm)], ["#mu^{#plus}#mu^{#minus}, categorized", "e^{#plus}e^{#minus}, categorized", "#mu^{#plus}#mu^{#minus} + e^{#plus}e^{#minus}, categorized"], "%s/mumu_ee_categorized"%outDir, xMin=124.95, xMax=125.05)
+
+
+    # 240+365
+    if args.combination:
+    
+        lumi_240, lumi_365 = "10p8", "3"
+        fit_tag = "mumu_ee_combined_categorized"
+        label = "#mu^{#plus}#mu^{#minus}+e^{#plus}e^{#minus}, categorized"
+        #fit_tag = "mumu_ee_combined_inclusive"
+        #label = "#mu^{#plus}#mu^{#minus}+e^{#plus}e^{#minus}, inclusive"
+
+        #fit_tag = "mumu_combined"
+        #label = "#mu^{#plus}#mu^{#minus}, categorized"
+       
+        #fit_tag = "ee_combined"
+        #label = "e^{#plus}e^{#minus}, categorized"
+
+        #fit_tag = "mumu_cat0"
+        #label = "#mu^{#plus}#mu^{#minus}, inclusive"
+        
+
+        tag = "combined_ecm_%s_%s" % (lumi_240, lumi_365)
+        topRight = "#sqrt{s} = 240/365 GeV, %s/%s ab^{#minus1}" % (lumi_240.replace("p", "."), lumi_365.replace("p", "."))
+
+        base_dir = "combine/higgs_mass_%s/%s/" % (args.tag, mode)
+        combineDir = "%s/%s/%s/" % (base_dir, tag, fit_tag)
+        combineDir_240 = "%s/lumi%s/%s_ecm240" % (base_dir, lumi_240, fit_tag)
+        combineDir_365 = "%s/lumi%s/%s_ecm365" % (base_dir, lumi_365, fit_tag)
+
+        outDir_ = "/work/submit/jaeyserm/public_html/fccee/higgs_mass_xsec/%s/combine/%s/%s/%s/" % (args.tag, mode, tag, fit_tag)
+        outDir_240 = "/work/submit/jaeyserm/public_html/fccee/higgs_mass_xsec/%s/combine/%s/lumi%s/%s_ecm240/" % (args.tag, mode, lumi_240, fit_tag)
+        outDir_365 = "/work/submit/jaeyserm/public_html/fccee/higgs_mass_xsec/%s/combine/%s/lumi%s/%s_ecm365/" % (args.tag, mode, lumi_365, fit_tag)
+
+        doBreakDown = True
+        if doBreakDown:
+            breakDown(outDir_)
+            quit()
+
+        combineCards(combineDir, [combineDir_240+"/datacard.txt", combineDir_365+"/datacard.txt"])
+        #quit()
+        mh_err = doFitDiagnostics_mass(combineDir, mhMin=124.95, mhMax=125.05, combineOptions=combineOptions)
+        #quit()
+        mhMin, mhMax = mHrange(mh_err)
+        doFit_mass(combineDir, mhMin=mhMin, mhMax=mhMax, npoints=50, combineOptions=combineOptions)
+        analyzeMass(combineDir, outDir_, label=label, xMin=mhMin, xMax=mhMax)
+        plotMultiple([outDir_240, outDir_365, outDir_], ["#sqrt{s} = 240 GeV", "#sqrt{s} = 365 GeV", "Combination"], outDir_, outName="comparison", xMin=124.98, xMax=125.02)
+
+    # Fast-Fullsim comparison
     if True:
-
-        tag, label = "mumu_ee_combined_inclusive", "#mu^{#plus}#mu^{#minus}+e^{#plus}e^{#minus}, inclusive"
-        combineCards("%s/%s" % (combineDir, tag), [combineDir+"/mumu_cat0/datacard_parametric.txt", combineDir+"/ee_cat0/datacard_parametric.txt"])
-        mh_err = doFitDiagnostics_mass("%s/%s" % (combineDir, tag), mhMin=124.95, mhMax=125.05, combineOptions=combineOptions)
-        mhMin, mhMax = mHrange(mh_err)
-        doFit_mass("%s/%s" % (combineDir, tag), mhMin=mhMin, mhMax=mhMax, npoints=50, combineOptions=combineOptions)
-        analyzeMass("%s/%s" % (combineDir, tag), "%s/%s/" % (outDir, tag), label=label, xMin=mhMin, xMax=mhMax)
-
-
-        tag, label = "mumu_ee_combined_categorized", "#mu^{#plus}#mu^{#minus}+e^{#plus}e^{#minus}, categorized"
-        combineCards("%s/%s" % (combineDir, tag), [combineDir+"/mumu_combined/datacard.txt", combineDir+"/ee_combined/datacard.txt"])
-        mh_err = doFitDiagnostics_mass("%s/%s" % (combineDir, tag), mhMin=124.95, mhMax=125.05, combineOptions=combineOptions)
-        mhMin, mhMax = mHrange(mh_err)
-        doFit_mass("%s/%s" % (combineDir, tag), mhMin=mhMin, mhMax=mhMax, npoints=50, combineOptions=combineOptions)
-        analyzeMass("%s/%s" % (combineDir, tag), "%s/%s/" % (outDir, tag), label=label, xMin=mhMin, xMax=mhMax)
-
-        plotMultiple(["%s/mumu_cat0/"%outDir, "%s/ee_cat0/"%outDir, "%s/mumu_ee_combined_inclusive/"%outDir], ["#mu^{#plus}#mu^{#minus}, inclusive", "e^{#plus}e^{#minus}, inclusive", "#mu^{#plus}#mu^{#minus} + e^{#plus}e^{#minus}, inclusive"], "%s/mumu_ee_inclusive"%outDir, xMin=124.99, xMax=125.01)
-        plotMultiple(["%s/mumu_combined/"%outDir, "%s/ee_combined/"%outDir, "%s/mumu_ee_combined_categorized/"%outDir], ["#mu^{#plus}#mu^{#minus}, categorized", "e^{#plus}e^{#minus}, categorized", "#mu^{#plus}#mu^{#minus} + e^{#plus}e^{#minus}, categorized"], "%s/mumu_ee_categorized"%outDir, xMin=124.99, xMax=125.01)
-        plotMultiple(["%s/mumu_cat0/"%outDir, "%s/mumu_combined/"%outDir, "%s/ee_cat0/"%outDir, "%s/ee_combined/"%outDir], ["#mu^{#plus}#mu^{#minus}, inclusive", "#mu^{#plus}#mu^{#minus}, categorized", "e^{#plus}e^{#minus}, inclusive", "e^{#plus}e^{#minus}, categorized"], "%s/mumu_ee_inclusive_categorized"%outDir, xMin=124.99, xMax=125.01)
+        outName = "/work/submit/jaeyserm/public_html/fccee/higgs_mass_xsec/%s/combine/comparison" % (args.tag)
+        outDir_fastsim = "/work/submit/jaeyserm/public_html/fccee/higgs_mass_xsec/%s/combine/CLD/lumi10p8/mumu_combined_ecm240/" % (args.tag)
+        outDir_fullsim = "/work/submit/jaeyserm/public_html/fccee/higgs_mass_xsec/%s/combine/CLD_FullSim/lumi10p8/mumu_combined_ecm240/" % (args.tag)
+        plotMultiple([outDir_fastsim, outDir_fullsim], ["IDEA CLD silicon tracker (Delphes)", "CLD FullSim"], outName, xMin=124.99, xMax=125.01, legMargin=0.075)

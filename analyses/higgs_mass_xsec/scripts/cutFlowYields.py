@@ -9,21 +9,29 @@ ROOT.gStyle.SetOptTitle(0)
 
 parser = argparse.ArgumentParser()
 parser.add_argument("--flavor", type=str, help="Flavor (mumu or ee)", default="mumu")
+parser.add_argument("--ecm", type=int, help="Center-of-mass energy", choices=[240, 365], default=240)
 parser.add_argument("--type", type=str, help="Run type (mass or xsec)", choices=["mass", "xsec"], default="mass")
+parser.add_argument("--mode", type=str, help="Simulation/detector mode", choices=["IDEA", "CLD", "CLD_FullSim"], default="IDEA")
+parser.add_argument("--tag", type=str, help="Analysis tag", default="july24")
 args = parser.parse_args()
+
+mode_map = {}
+mode_map['IDEA'] = "IDEA detector"
+mode_map['CLD'] = "IDEA CLD silicon tracker"
+mode_map['CLD_FullSim'] = "CLD detector (FullSim)"
 
 def makePlot():
 
     totEntries = 1 + len(bkgs)
-    #leg = ROOT.TLegend(.5, 1.0-totEntries*0.06, .92, .90)
-    leg = ROOT.TLegend(.45, 0.99-(len(bkgs)+2)*0.055, .95, .90)
+    leg = ROOT.TLegend(.45, 0.93-(len(bkgs)+3)*0.0425, .95, .93)
     leg.SetBorderSize(0)
     leg.SetFillStyle(0)
     leg.SetTextSize(0.03)
     leg.SetMargin(0.2)
+    leg.SetHeader(f"#bf{{{mode_map[args.mode]}}}")
 
     ret_hists = []
-    h_sig = plotter.getProc(fIn, "cutFlow", sigs)
+    h_sig = plotter.getProc(fIn, "cutFlow", sigs, lumiScale)
     '''
     h_sig = None
     for j,cut in enumerate(cuts):
@@ -32,7 +40,7 @@ def makePlot():
         else: h_sig.Add(h)
     '''
 
-    ret_hists.append(copy.deepcopy(h_sig))	
+    ret_hists.append(copy.deepcopy(h_sig))
     h_sig.Scale(sig_scale)
     h_sig.SetLineColor(ROOT.TColor.GetColor("#BF2229"))
     h_sig.SetLineWidth(4)
@@ -44,7 +52,7 @@ def makePlot():
     st.SetName("stack")
     h_bkg_tot = None
     for i,bkg in enumerate(bkgs):
-        h_bkg = plotter.getProc(fIn, "cutFlow", bgks_cfg[bkg])
+        h_bkg = plotter.getProc(fIn, "cutFlow", bgks_cfg[bkg], lumiScale)
         '''
         h_bkg = None
         for j,cut in enumerate(cuts):
@@ -78,13 +86,13 @@ def makePlot():
         
         'xmin'              : 0,
         'xmax'              : len(cuts),
-        'ymin'              : 1e4,
-        'ymax'              : 1e10 ,
+        'ymin'              : 1e4 if args.ecm == 240 else 1e3,
+        'ymax'              : 1e10 if args.ecm == 240 else 1e9,
             
         'xtitle'            : "",
         'ytitle'            : "Events",
             
-        'topRight'          : "#sqrt{s} = 240 GeV, 7.2 ab^{#minus1}", 
+        'topRight'          : lumi, 
         'topLeft'           : "#bf{FCC-ee} #scale[0.7]{#it{Simulation}}",
         }
 
@@ -110,8 +118,8 @@ def makePlot():
     canvas.Modify()
     canvas.Update()
     canvas.Draw()
-    canvas.SaveAs("%s/cutFlow.png" % outDir)
-    canvas.SaveAs("%s/cutFlow.pdf" % outDir)
+    canvas.SaveAs(f"{outDir}/cutFlow_{args.mode}.png")
+    canvas.SaveAs(f"{outDir}/cutFlow_{args.mode}.pdf")
     
     return ret_hists
 
@@ -119,16 +127,28 @@ def makePlot():
 if __name__ == "__main__":
 
     flavor = args.flavor
-    fIn = ROOT.TFile(f"tmp/output_ZH_{args.type}_{flavor}_reco.root")
-    outDir = f"/eos/user/j/jaeyserm/www/FCCee/ZH_{args.type}/plots_{flavor}/"
+    ecm = args.ecm
+    fIn = ROOT.TFile(f"output_ZH_{args.type}_{flavor}_ecm{ecm}_{args.tag}.root")
+    outDir = f"/work/submit/jaeyserm/public_html/fccee/higgs_mass_xsec/{args.tag}/plots/{args.type}_{flavor}_{ecm}/"
+    os.makedirs(outDir, exist_ok=True)
+
+    lumiScale = 10.8 if ecm == 240 else 3
+    lumi = "#sqrt{s} = 240 GeV, 10.8 ab^{#minus1}" if ecm == 240 else "#sqrt{s} = 365 GeV, 3 ab^{#minus1}"
 
     cuts = ["cut0", "cut1", "cut2", "cut3", "cut4", "cut5", "cut6"]
 
     if flavor == "mumu":
-    
+
         labels = ["All events", "#geq 1 #mu^{#pm} + ISO", "#geq 2 #mu^{#pm} + OS", "86 < m_{#mu^{+}#mu^{#minus}} < 96", "20 < p_{#mu^{+}#mu^{#minus}} < 70", "120 < m_{rec} < 140", "|cos#theta_{miss}| < 0.98"]
-    
-        sigs = ["p_wzp6_ee_mumuH_ecm240"]
+        if args.ecm == 365:
+            labels = ["All events", "#geq 1 #mu^{#pm} + ISO", "#geq 2 #mu^{#pm} + OS", "86 < m_{#mu^{+}#mu^{#minus}} < 96", "50 < p_{#mu^{+}#mu^{#minus}} < 150", "120 < m_{rec} < 140", "|cos#theta_{miss}| < 0.98"]
+
+        if args.mode == "IDEA":
+            sigs = [f"wzp6_ee_mumuH_ecm{ecm}"]
+        elif args.mode == "CLD":
+            sigs = [f"wzp6_ee_mumuH_ecm240_CLD"]
+        elif args.mode == "CLD_FullSim":
+            sigs = [f"wzp6_ee_mumuH_ecm240_CLD_FullSim"]
         sig_scale = 10
         sig_legend = "Z(#mu^{+}#mu^{#minus})H (10#times)"
     
@@ -136,17 +156,19 @@ if __name__ == "__main__":
         bkgs_legends = ["W^{+}W^{#minus}", "ZZ", "Z/#gamma^{*} #rightarrow #mu^{+}#mu^{#minus}, #tau^{+}#tau^{#minus}", "Rare (e(e)Z, #gamma#gamma #rightarrow #mu^{+}#mu^{#minus}, #tau^{+}#tau^{#minus})"]
         bkgs_colors = [ROOT.TColor.GetColor(248, 206, 104), ROOT.TColor.GetColor(222, 90, 106), ROOT.TColor.GetColor(100, 192, 232), ROOT.TColor.GetColor(155, 152, 204)] # from
         bgks_cfg = { 
-            "WW"        : ["p8_ee_WW_ecm240"],
-            "ZZ"        : ["p8_ee_ZZ_ecm240"],
-            "Z/g"       : ["wzp6_ee_mumu_ecm240", "wzp6_ee_tautau_ecm240"],
-            "Rare"      : ["wzp6_egamma_eZ_Zmumu_ecm240", "wzp6_gammae_eZ_Zmumu_ecm240", "wzp6_gaga_mumu_60_ecm240", "wzp6_gaga_tautau_60_ecm240", "wzp6_ee_nuenueZ_ecm240"]
+            "WW"        : [f"p8_ee_WW_ecm{ecm}"],
+            "ZZ"        : [f"p8_ee_ZZ_ecm{ecm}"],
+            "Z/g"       : [f"wzp6_ee_mumu_ecm{ecm}", f"wzp6_ee_tautau_ecm{ecm}"],
+            "Rare"      : [f"wzp6_egamma_eZ_Zmumu_ecm{ecm}", f"wzp6_gammae_eZ_Zmumu_ecm{ecm}", f"wzp6_gaga_mumu_60_ecm{ecm}", f"wzp6_gaga_tautau_60_ecm{ecm}", f"wzp6_ee_nuenueZ_ecm{ecm}"]
         }
 
     if flavor == "ee":
 
         labels = ["All events", "#geq 1 e^{#pm} + ISO", "#geq 2 e^{#pm} + OS", "86 < m_{e^{+}e^{#minus}} < 96", "20 < p_{e^{+}e^{#minus}} < 70", "120 < m_{rec} < 140", "|cos#theta_{miss}| < 0.98"]
+        if args.ecm == 365:
+            labels = ["All events", "#geq 1 e^{#pm} + ISO", "#geq 2 e^{#pm} + OS", "86 < m_{e^{+}e^{#minus}} < 96", "50 < p_{e^{+}e^{#minus}} < 150", "120 < m_{rec} < 140", "|cos#theta_{miss}| < 0.98"]
 
-        sigs = ["p_wzp6_ee_eeH_ecm240"]
+        sigs = [f"wzp6_ee_eeH_ecm{ecm}"]
         sig_scale = 10
         sig_legend = "Z(e^{+}e^{#minus})H (10#times)"
 
@@ -155,15 +177,15 @@ if __name__ == "__main__":
 
         bkgs_colors = [ROOT.TColor.GetColor(248, 206, 104), ROOT.TColor.GetColor(222, 90, 106), ROOT.TColor.GetColor(100, 192, 232), ROOT.TColor.GetColor(155, 152, 204)] # from
         bgks_cfg = { 
-            "WW"        : ["p8_ee_WW_ecm240"],
-            "ZZ"        : ["p8_ee_ZZ_ecm240"],
-            "Z/g"       : ["wzp6_ee_ee_Mee_30_150_ecm240", "wzp6_ee_tautau_ecm240"],
-            "Rare"      : ["wzp6_egamma_eZ_Zee_ecm240", "wzp6_gammae_eZ_Zee_ecm240", "wzp6_gaga_ee_60_ecm240", "wzp6_gaga_tautau_60_ecm240", "wzp6_ee_nuenueZ_ecm240"]
+            "WW"        : [f"p8_ee_WW_ecm{ecm}"],
+            "ZZ"        : [f"p8_ee_ZZ_ecm{ecm}"],
+            "Z/g"       : [f"wzp6_ee_ee_Mee_30_150_ecm{ecm}", f"wzp6_ee_tautau_ecm{ecm}"],
+            "Rare"      : [f"wzp6_egamma_eZ_Zee_ecm{ecm}", f"wzp6_gammae_eZ_Zee_ecm{ecm}", f"wzp6_gaga_ee_60_ecm{ecm}", f"wzp6_gaga_tautau_60_ecm{ecm}", f"wzp6_ee_nuenueZ_ecm{ecm}"]
         }
 
     hists = makePlot()
 
-    with open("%s/cutFlow.txt" % outDir, 'w') as f:
+    with open(f"{outDir}/cutFlow_{args.mode}.txt", 'w') as f:
         sys.stdout = f
 
         formatted_row = '{:<10} {:<25} {:<25} {:<25} {:<25} {:<25}'

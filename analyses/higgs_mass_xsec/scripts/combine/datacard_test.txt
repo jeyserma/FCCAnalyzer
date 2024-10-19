@@ -2,8 +2,8 @@ imax *
 jmax *
 kmax *
 ---------------
-shapes sig_ecm$ecm          * datacard.root w:sig
-shapes bkg_$flavor_ecm$ecm  * datacard.root w:bkg
+shapes sig_ecm$ecm          * datacard.root hist_sig
+shapes bkg_$flavor_ecm$ecm  * datacard.root hist_bkg
 shapes data_obs             * datacard.root w:data_obs
 ---------------
 ---------------
@@ -12,7 +12,7 @@ observation     -1
 ------------------------------
 bin          $flavor_cat$cat_ecm$ecm        $flavor_cat$cat_ecm$ecm
 process      sig_ecm$ecm                    bkg_$flavor_ecm$ecm
-process      0                              $bkg_id
+process      0                              1
 rate         $rate_sig                      $rate_bkg
 --------------------------------
 bkg_norm_$flavor_ecm$ecm rateParam * bkg_$flavor_ecm$ecm 1

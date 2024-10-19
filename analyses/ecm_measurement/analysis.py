@@ -8,8 +8,6 @@ logger = logging.getLogger("fcclogger")
 
 parser = functions.make_def_argparser()
 parser.add_argument("--flavor", type=str, help="Flavor (mumu or ee)", choices=["mumu", "ee"], default="mumu")
-parser.add_argument("--type", type=str, help="Run type (mass or xsec)", choices=["mass", "xsec"], default="mass")
-parser.add_argument("--tag", type=str, help="Analysis tag", default="tag")
 parser.add_argument("--ecm", type=int, help="Center-of-mass energy", choices=[240, 365], default=240)
 args = parser.parse_args()
 functions.set_threads(args)
@@ -46,36 +44,21 @@ def build_graph(df, dataset):
 
     logger.info(f"Build graph {dataset.name}")
     results = []
-    sigProcs = ["wzp6_ee_mumuH_ecm240", "wzp6_ee_eeH_ecm240"]
+    sigProcs = ["wzp6_ee_mumuH_ecm240", "wzp6_ee_eeH_ecm240", "wzp6_ee_mumuH_ecm365", "wzp6_ee_eeH_ecm365"]
+    df = df.Define("ecm", f"{args.ecm}")
 
-    df = df.Define("ecm", "240" if args.ecm == 240 else "365")
     df = df.Define("weight", "1.0")
     weightsum = df.Sum("weight")
 
-    if 'FullSim' in dataset.name:
-        # in FullSim, both the reco and gen particles are produced with a crossing angle
-        df = df.Define("ReconstructedParticles", "FCCAnalyses::unBoostCrossingAngle(PandoraPFOs, -0.015)")
-        df = df.Define("Particle", "FCCAnalyses::unBoostCrossingAngle(MCParticles, -0.015)")
-
-        df = df.Define("leps_all", f"FCCAnalyses::sel_type({'13' if args.flavor == 'mumu' else '11'}, ReconstructedParticles)")
-        df = df.Define("photons", "FCCAnalyses::sel_type(22, ReconstructedParticles)")
-
-        df = df.Alias("Particle0", "_MCParticles_parents.index")
-        df = df.Alias("Particle1", "_MCParticles_daughters.index")
-        df = df.Alias("MCRecoAssociations0", "_RecoMCTruthLink_rec.index")
-        df = df.Alias("MCRecoAssociations1", "_RecoMCTruthLink_sim.index")
+    df = df.Alias("Particle0", "Particle#0.index")
+    df = df.Alias("Particle1", "Particle#1.index")
+    df = df.Alias("MCRecoAssociations0", "MCRecoAssociations#0.index")
+    df = df.Alias("MCRecoAssociations1", "MCRecoAssociations#1.index")
+    df = df.Alias("Photon0", "Photon#0.index")
+    if args.flavor == "mumu":
+        df = df.Alias("Lepton0", "Muon#0.index")
     else:
-        df = df.Alias("Particle0", "Particle#0.index")
-        df = df.Alias("Particle1", "Particle#1.index")
-        df = df.Alias("MCRecoAssociations0", "MCRecoAssociations#0.index")
-        df = df.Alias("MCRecoAssociations1", "MCRecoAssociations#1.index")
-
-        df = df.Alias("Lepton0", "Muon#0.index" if args.flavor == 'mumu' else "Electron#0.index")
-        df = df.Define("leps_all", "FCCAnalyses::ReconstructedParticle::get(Lepton0, ReconstructedParticles)")
-
-        df = df.Alias("Photon0", "Photon#0.index")
-        df = df.Define("photons", "FCCAnalyses::ReconstructedParticle::get(Photon0, ReconstructedParticles)")
-
+        df = df.Alias("Lepton0", "Electron#0.index")
 
     df = helpers.defineCutFlowVars(df) # make the cutX=X variables
 
@@ -91,12 +74,14 @@ def build_graph(df, dataset):
     #df = df.Define("gen_prompt_muons_no", "FCCAnalyses::MCParticle::get_n(gen_prompt_muons)")
 
     # photons
+    df = df.Define("photons", "FCCAnalyses::ReconstructedParticle::get(Photon0, ReconstructedParticles)")
     df = df.Define("photons_p", "FCCAnalyses::ReconstructedParticle::get_p(photons)")
     df = df.Define("photons_theta", "FCCAnalyses::ReconstructedParticle::get_theta(photons)")
     df = df.Define("photons_phi", "FCCAnalyses::ReconstructedParticle::get_phi(photons)")
     df = df.Define("photons_no", "FCCAnalyses::ReconstructedParticle::get_n(photons)")
 
     df = df.Define("gen_photons", "FCCAnalyses::get_photons(Particle)")
+    df = df.Define("gen_photons_tlv", "FCCAnalyses::makeLorentzVectors(gen_photons)")
     df = df.Define("gen_photons_p", "FCCAnalyses::MCParticle::get_p(gen_photons)")
     df = df.Define("gen_photons_theta", "FCCAnalyses::MCParticle::get_theta(gen_photons)")
     df = df.Define("gen_photons_phi", "FCCAnalyses::MCParticle::get_phi(gen_photons)")
@@ -110,6 +95,7 @@ def build_graph(df, dataset):
 
 
     # all leptons (bare)
+    df = df.Define("leps_all", "FCCAnalyses::ReconstructedParticle::get(Lepton0, ReconstructedParticles)")
     df = df.Define("leps_all_p", "FCCAnalyses::ReconstructedParticle::get_p(leps_all)")
     df = df.Define("leps_all_theta", "FCCAnalyses::ReconstructedParticle::get_theta(leps_all)")
     df = df.Define("leps_all_phi", "FCCAnalyses::ReconstructedParticle::get_phi(leps_all)")
@@ -121,10 +107,6 @@ def build_graph(df, dataset):
     # cuts on leptons
     #df = df.Define("selected_muons", "FCCAnalyses::excluded_Higgs_decays(muons, MCRecoAssociations0, MCRecoAssociations1, ReconstructedParticles, Particle, Particle0, Particle1)") # was 10
     df = df.Define("leps", "FCCAnalyses::ReconstructedParticle::sel_p(20)(leps_all)")
-
-    ###df = df.Define("lep_sel_theta_b", "leps_all_theta < 1.5707+0.2 && leps_all_theta > 1.5707-0.2")
-    ###df = df.Define("lep_sel_theta", "leps_all[lep_sel_theta_b]")
-    ###df = df.Define("leps", "FCCAnalyses::ReconstructedParticle::sel_p(20)(lep_sel_theta)")
 
     df = df.Define("leps_p", "FCCAnalyses::ReconstructedParticle::get_p(leps)")
     df = df.Define("leps_theta", "FCCAnalyses::ReconstructedParticle::get_theta(leps)")
@@ -152,11 +134,8 @@ def build_graph(df, dataset):
     #df = df.Filter("muons_from_prompt == true")
 
     # momentum resolution
-    df = df.Define("leps_all_reso_p", "FCCAnalyses::leptonResolution(leps_all, MCRecoAssociations0, MCRecoAssociations1, ReconstructedParticles, Particle, 0)")
-    df = df.Define("leps_reso_p", "FCCAnalyses::leptonResolution(leps, MCRecoAssociations0, MCRecoAssociations1, ReconstructedParticles, Particle, 0)")
-    df = df.Define("leps_reso_theta", "FCCAnalyses::leptonResolution(leps, MCRecoAssociations0, MCRecoAssociations1, ReconstructedParticles, Particle, 1)")
-    df = df.Define("leps_reso_phi", "FCCAnalyses::leptonResolution(leps, MCRecoAssociations0, MCRecoAssociations1, ReconstructedParticles, Particle, 2)")
-    
+    df = df.Define("leps_all_reso_p", "FCCAnalyses::leptonResolution_p(leps_all, MCRecoAssociations0, MCRecoAssociations1, ReconstructedParticles, Particle)")
+    df = df.Define("leps_reso_p", "FCCAnalyses::leptonResolution_p(leps, MCRecoAssociations0, MCRecoAssociations1, ReconstructedParticles, Particle)")
 
     # gen analysis
     if dataset.name in sigProcs:
@@ -182,18 +161,6 @@ def build_graph(df, dataset):
     results.append(df.Histo1D(("leps_no_cut0", "", *bins_count), "leps_no"))
     results.append(df.Histo1D(("leps_iso_cut0", "", *bins_iso), "leps_iso"))
     results.append(df.Histo1D(("leps_reso_p_cut0", "", *bins_resolution), "leps_reso_p"))
-    results.append(df.Histo1D(("leps_reso_theta_cut0", "", *bins_resolution), "leps_reso_theta"))
-    results.append(df.Histo1D(("leps_reso_phi_cut0", "", *bins_resolution), "leps_reso_phi"))
-    
-    results.append(df.Histo2D(("leps_reso_p_vs_p_cut0", "", *(bins_resolution + (10, 0, 100))), "leps_reso_p", "leps_p")) # momentum resolution vs momentum
-    results.append(df.Histo2D(("leps_reso_p_vs_theta_cut0", "", *(bins_resolution + (50, 0, 5))), "leps_reso_p", "leps_theta")) # momentum resolution vs theta
-    results.append(df.Histo2D(("leps_reso_theta_vs_theta_cut0", "", *(bins_resolution + (50, 0, 5))), "leps_reso_theta", "leps_theta")) # theta resolution vs theta
-    results.append(df.Histo2D(("leps_reso_phi_vs_theta_cut0", "", *(bins_resolution + (50, 0, 5))), "leps_reso_phi", "leps_theta")) # phi resolution vs theta
-    
-    # get the MC PDG ID of the reco particle. For FullSim only
-    df = df.Define("leps_pdgid_mc", "FCCAnalyses::getRecoMCPDGID(leps, MCRecoAssociations0, MCRecoAssociations1, ReconstructedParticles, Particle)")
-    results.append(df.Histo1D(("leps_pdgid_cut0", "", *(60, -30, 30)), "leps_pdgid_mc"))
-
 
     #results.append(df.Histo1D(("prompt_muons_p_cut0", "", *bins_p_mu), "prompt_muons_p"))
     #results.append(df.Histo1D(("prompt_muons_theta_cut0", "", *bins_theta), "prompt_muons_theta"))
@@ -214,11 +181,46 @@ def build_graph(df, dataset):
     results.append(df.Histo1D(("photons_phi_cut0", "", *bins_phi), "photons_phi"))
     results.append(df.Histo1D(("photons_no_cut0", "", *bins_count), "photons_no"))
 
+    ## gen photon stuff
     results.append(df.Histo1D(("gen_photons_p", "", *bins_p_mu), "gen_photons_p"))
     results.append(df.Histo1D(("gen_photons_theta", "", *bins_theta), "gen_photons_theta"))
     results.append(df.Histo1D(("gen_photons_phi", "", *bins_phi), "gen_photons_phi"))
     results.append(df.Histo1D(("gen_photons_no", "", *bins_count), "gen_photons_no"))
 
+    df = df.Define("gen_photon_leading_p", "gen_photons_p[0]")
+    df = df.Define("gen_photon_subleading_p", "gen_photons_p[1]")
+    df = df.Define("gen_photon_leading_theta", "gen_photons_theta[0]")
+    df = df.Define("gen_photon_subleading_theta", "gen_photons_theta[1]")
+    
+    df = df.Define("photon_leading_p", "photons_p[0]")
+    df = df.Define("photon_subleading_p", "photons_p[1]")
+    df = df.Define("photon_leading_theta", "photons_theta[0]")
+    df = df.Define("photon_subleading_theta", "photons_theta[1]")
+
+    results.append(df.Histo1D(("gen_photon_leading_p", "", *bins_p_mu), "gen_photon_leading_p"))
+    results.append(df.Histo1D(("gen_photon_subleading_p", "", *bins_p_mu), "gen_photon_subleading_p"))
+    results.append(df.Histo1D(("gen_photon_leading_theta", "", *bins_theta), "gen_photon_leading_theta"))
+    results.append(df.Histo1D(("gen_photon_subleading_theta", "", *bins_theta), "gen_photon_subleading_theta"))
+    
+    results.append(df.Histo1D(("photon_leading_p", "", *bins_p_mu), "photon_leading_p"))
+    results.append(df.Histo1D(("photon_subleading_p", "", *bins_p_mu), "photon_subleading_p"))
+    results.append(df.Histo1D(("photon_leading_theta", "", *bins_theta), "photon_leading_theta"))
+    results.append(df.Histo1D(("photon_subleading_theta", "", *bins_theta), "photon_subleading_theta"))
+    
+    '''
+    df = df.Define("isr1", "gen_photons_tlv[0]")
+    df = df.Define("isr2", "gen_photons_tlv[1]")
+    
+    df = df.Define("ebeam", "float(ecm)/2.0")
+    df = df.Define("beam1", "TLorentzVector v; v.SetXYZM(0, 0, ebeam, 0.000511); return v;")
+    df = df.Define("beam2", "TLorentzVector v; v.SetXYZM(0, 0, -ebeam, 0.000511); return v;")
+    df = df.Define("z_vertex", "beam1 + beam2 + -1.0*(isr1 + isr2)")
+    #df = df.Define("z_vertex", "beam1 + beam2")
+    df = df.Define("ecm_eff", "z_vertex.M()")
+    #df = df.Redefine("ecm", "ecm_eff")
+    
+    results.append(df.Histo1D(("ecm_eff", "", *(1000, 270, 370)), "ecm_eff"))
+    '''
     #results.append(df.Histo1D(("deltaR_gen_leps", "", *bins_dR), "deltaR_gen_leps"))
     #results.append(df.Histo1D(("mll_gen_leps", "", *bins_m_ll), "mll_gen_leps"))
 
@@ -330,8 +332,11 @@ def build_graph(df, dataset):
 
     #########
     ### CUT 4: Z momentum
-    #########  
-    df = df.Filter("zll_p > 20 && zll_p < 70")
+    #########
+    if args.ecm == 240:
+        df = df.Filter("zll_p > 20 && zll_p < 70")
+    else:
+        df = df.Filter("zll_p > 50 && zll_p < 150")
     results.append(df.Histo1D(("cutFlow", "", *bins_count), "cut4"))
     results.append(df.Histo1D(("zll_recoil_cut4", "", *bins_recoil), "zll_recoil_m"))
     if dataset.name in sigProcs:
@@ -341,7 +346,7 @@ def build_graph(df, dataset):
     #########
     ### CUT 5: recoil cut
     #########  
-    df = df.Filter("zll_recoil_m < 140 && zll_recoil_m > 120")
+    df = df.Filter("zll_recoil_m < 200 && zll_recoil_m > 120")
     results.append(df.Histo1D(("cutFlow", "", *bins_count), "cut5"))
     results.append(df.Histo1D(("cosThetaMiss_cut5", "", *bins_cosThetaMiss), "cosTheta_miss"))
     if dataset.name in sigProcs: 
@@ -402,8 +407,8 @@ def build_graph(df, dataset):
 
 
     # sqrt uncertainty
-    df = df.Define("zll_recoil_sqrtsup", "FCCAnalyses::ReconstructedParticle::recoilBuilder(ecm + 0.002)(zll)")
-    df = df.Define("zll_recoil_sqrtsdw", "FCCAnalyses::ReconstructedParticle::recoilBuilder(ecm - 0.002)(zll)")
+    df = df.Define("zll_recoil_sqrtsup", "FCCAnalyses::ReconstructedParticle::recoilBuilder(240.002)(zll)")
+    df = df.Define("zll_recoil_sqrtsdw", "FCCAnalyses::ReconstructedParticle::recoilBuilder(239.998)(zll)")
     df = df.Define("zll_recoil_m_sqrtsup", "FCCAnalyses::ReconstructedParticle::get_mass(zll_recoil_sqrtsup)[0]")
     df = df.Define("zll_recoil_m_sqrtsdw", "FCCAnalyses::ReconstructedParticle::get_mass(zll_recoil_sqrtsdw)[0]")
 
@@ -418,41 +423,7 @@ if __name__ == "__main__":
     datadict = functions.get_datadicts() # get default datasets
     datasets_to_run = []
 
-    if args.flavor == "mumu" and args.ecm == 240: 
-        bkgs = ["p8_ee_WW_ecm240", "p8_ee_ZZ_ecm240", "wzp6_ee_mumu_ecm240", "wzp6_ee_tautau_ecm240"]
-        bkgs_rare = ["wzp6_egamma_eZ_Zmumu_ecm240", "wzp6_gammae_eZ_Zmumu_ecm240", "wzp6_gaga_mumu_60_ecm240", "wzp6_gaga_tautau_60_ecm240", "wzp6_ee_nuenueZ_ecm240"]
+    datasets_to_run = ["kkmcee_ee_mumu_ecm240", "kkmcee_ee_mumu_ecm365"]
 
-        signal_base = ["wzp6_ee_mumuH_ecm240", "wzp6_ee_mumuH_mH-lower-50MeV_ecm240", "wzp6_ee_mumuH_mH-lower-100MeV_ecm240", "wzp6_ee_mumuH_mH-higher-100MeV_ecm240", "wzp6_ee_mumuH_mH-higher-50MeV_ecm240", "wzp6_ee_mumuH_BES-higher-1pc_ecm240", "wzp6_ee_mumuH_BES-lower-6pc_ecm240", "wzp6_ee_mumuH_BES-higher-6pc_ecm240"]
-        
-        signal_noBES = ["wzp6_ee_mumuH_noBES_ecm240", "wzp6_ee_mumuH_mH-lower-50MeV_noBES_ecm240", "wzp6_ee_mumuH_mH-lower-100MeV_noBES_ecm240", "wzp6_ee_mumuH_mH-higher-100MeV_noBES_ecm240", "wzp6_ee_mumuH_mH-higher-50MeV_noBES_ecm240",  "wzp6_ee_mumuH_BES-lower-1pc_ecm240"] 
-        
-        signal_3T = ["wzp6_ee_mumuH_ecm240_3T", "wzp6_ee_mumuH_mH-lower-50MeV_ecm240_3T", "wzp6_ee_mumuH_mH-lower-100MeV_ecm240_3T", "wzp6_ee_mumuH_mH-higher-100MeV_ecm240_3T", "wzp6_ee_mumuH_mH-higher-50MeV_ecm240_3T", "wzp6_ee_mumuH_BES-lower-1pc_ecm240_3T", "wzp6_ee_mumuH_BES-higher-1pc_ecm240_3T"]
-        
-        signal_CLD = ["wzp6_ee_mumuH_ecm240_CLD", "wzp6_ee_mumuH_mH-lower-50MeV_ecm240_CLD", "wzp6_ee_mumuH_mH-lower-100MeV_ecm240_CLD", "wzp6_ee_mumuH_mH-higher-100MeV_ecm240_CLD", "wzp6_ee_mumuH_mH-higher-50MeV_ecm240_CLD",  "wzp6_ee_mumuH_BES-lower-1pc_ecm240_CLD", "wzp6_ee_mumuH_BES-higher-1pc_ecm240_CLD"]
-
-        signal_CLD_FullSim = ["wzp6_ee_mumuH_ecm240_CLD_FullSim", "wzp6_ee_mumuH-mH-higher_ecm240_CLD_FullSim", "wzp6_ee_mumuH-mH-lower_ecm240_CLD_FullSim"]
-
-        signal = signal_base + signal_noBES + signal_3T + signal_CLD
-        datasets_to_run = signal + bkgs + bkgs_rare
-        datasets_to_run = ["wzp6_ee_mumuH_ecm240_CLD_FullSim", "wzp6_ee_mumuH_ecm240_CLD"]
-
-    if args.flavor == "ee" and args.ecm == 240: 
-        bkgs = ["p8_ee_WW_ecm240", "p8_ee_ZZ_ecm240", "wzp6_ee_ee_Mee_30_150_ecm240", "wzp6_ee_tautau_ecm240"]
-        bkgs_rare = ["wzp6_egamma_eZ_Zee_ecm240", "wzp6_gammae_eZ_Zee_ecm240", "wzp6_gaga_ee_60_ecm240", "wzp6_gaga_tautau_60_ecm240", "wzp6_ee_nuenueZ_ecm240"]
-
-        signal_base = ["wzp6_ee_eeH_ecm240", "wzp6_ee_eeH_mH-lower-50MeV_ecm240", "wzp6_ee_eeH_mH-lower-100MeV_ecm240", "wzp6_ee_eeH_mH-higher-100MeV_ecm240", "wzp6_ee_eeH_mH-higher-50MeV_ecm240", "wzp6_ee_eeH_BES-lower-1pc_ecm240", "wzp6_ee_eeH_BES-higher-1pc_ecm240", "wzp6_ee_eeH_BES-lower-6pc_ecm240", "wzp6_ee_eeH_BES-higher-6pc_ecm240"]
-        
-        signal_noBES = ["wzp6_ee_eeH_noBES_ecm240", "wzp6_ee_eeH_mH-lower-50MeV_noBES_ecm240", "wzp6_ee_eeH_mH-lower-100MeV_noBES_ecm240", "wzp6_ee_eeH_mH-higher-100MeV_noBES_ecm240", "wzp6_ee_eeH_mH-higher-50MeV_noBES_ecm240"]
-        
-        signal_3T = ["wzp6_ee_eeH_ecm240_3T", "wzp6_ee_eeH_mH-lower-50MeV_ecm240_3T", "wzp6_ee_eeH_mH-lower-100MeV_ecm240_3T", "wzp6_ee_eeH_mH-higher-100MeV_ecm240_3T", "wzp6_ee_eeH_mH-higher-50MeV_ecm240_3T", "wz3p6_ee_eeH_BES-lower-1pc_ecm240_3T", "wz3p6_ee_eeH_BES-higher-1pc_ecm240_3T"]
-        
-        
-        signal_E2 = ["wzp6_ee_eeH_ecm240_E2", "wzp6_ee_eeH_mH-lower-50MeV_ecm240_E2", "wzp6_ee_eeH_mH-lower-100MeV_ecm240_E2", "wzp6_ee_eeH_mH-higher-100MeV_ecm240_E2", "wzp6_ee_eeH_mH-higher-50MeV_ecm240_E2", "wz3p6_ee_eeH_BES-lower-1pc_ecm240_E2", "wz3p6_ee_eeH_BES-higher-1pc_ecm240_E2"]
-        
-        signal_CLD = ["wzp6_ee_eeH_ecm240_CLD", "wzp6_ee_eeH_mH-lower-50MeV_ecm240_CLD", "wzp6_ee_eeH_mH-lower-100MeV_ecm240_CLD", "wzp6_ee_eeH_mH-higher-100MeV_ecm240_CLD", "wzp6_ee_eeH_mH-higher-50MeV_ecm240_CLD", "wz3p6_ee_eeH_BES-lower-1pc_ecm240_CLD", "wz3p6_ee_eeH_BES-higher-1pc_ecm240_CLD"]
-
-        signal = signal_base + signal_noBES + signal_3T + signal_CLD + signal_E2
-        datasets_to_run = signal + bkgs + bkgs_rare
-
-    lumi = 1000000 # 1 ab-1
-    functions.build_and_run(datadict, datasets_to_run, build_graph, f"output_ZH_{args.type}_{args.flavor}_ecm{args.ecm}_{args.tag}.root", args, norm=True, lumi=lumi)
+    lumi = 7200000 if args.ecm == 240 else 2320000
+    functions.build_and_run(datadict, datasets_to_run, build_graph, f"output_ecm_{args.flavor}.root", args, norm=True, lumi=lumi)

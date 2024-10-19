@@ -9,33 +9,32 @@ ROOT.gStyle.SetOptTitle(0)
 
 parser = argparse.ArgumentParser()
 parser.add_argument("--flavor", type=str, help="Flavor (mumu or ee)", default="mumu")
+parser.add_argument("--ecm", type=int, help="Center-of-mass energy", choices=[240, 365], default=240)
 parser.add_argument("--type", type=str, help="Run type (mass or xsec)", choices=["mass", "xsec"], default="mass")
+parser.add_argument("--mode", type=str, help="Simulation/detector mode", choices=["IDEA", "CLD", "CLD_FullSim"], default="IDEA")
+parser.add_argument("--tag", type=str, help="Analysis tag", default="")
 args = parser.parse_args()
 
-
-def getHist(proc, sel, hName, rebin):
-
-    fIn = ROOT.TFile("%s/%s_hists.root" % (histDir, proc))
-    h = copy.deepcopy(fIn.Get("%s_%s" % (hName, sel)))
-    h.Rebin(rebin)
-    h.Scale(lumi*ds.datasets[proc]['xsec']*1e6/ds.datasets[proc]['nevents'])
-    fIn.Close()
-    return h
+mode_map = {}
+mode_map['IDEA'] = "IDEA detector"
+mode_map['CLD'] = "CLD detector"
+mode_map['CLD_FullSim'] = "CLD detector (FullSim)"
 
 
-def makePlot(hName, outName, xMin=0, xMax=100, yMin=1, yMax=1e5, xLabel="xlabel", yLabel="Events", logX=False, logY=True, rebin=1, legPos=[0.4, 0.65, 0.9, 0.9]):
-
+def makePlot(hName, outName, xMin=0, xMax=100, yMin=1, yMax=1e5, xLabel="xlabel", yLabel="Events", logX=False, logY=True, rebin=1):
 
     st = ROOT.THStack()
     st.SetName("stack")
 
-    leg = ROOT.TLegend(legPos[0], legPos[1], legPos[2], legPos[3])
+    #leg = ROOT.TLegend(0.4, 0.65, 0.9, 0.9)
+    leg = ROOT.TLegend(.45, 0.93-(len(bkgs)+3)*0.0425, .95, .93)
     leg.SetBorderSize(0)
     leg.SetFillStyle(0)
     leg.SetTextSize(0.03)
     leg.SetMargin(0.2)
+    leg.SetHeader(f"#bf{{{mode_map[args.mode]}}}")
 
-    h_sig = plotter.getProc(fIn, hName, sigs)
+    h_sig = plotter.getProc(fIn, hName, sigs, lumiScale)
     if "TH2" in h_sig.ClassName(): h_sig = h_sig.ProjectionX("h_sig")
     h_sig.SetLineColor(ROOT.TColor.GetColor("#BF2229"))
     h_sig.SetLineWidth(3)
@@ -49,7 +48,7 @@ def makePlot(hName, outName, xMin=0, xMax=100, yMin=1, yMax=1e5, xLabel="xlabel"
     h_bkg_tot = None
     for i,bkg in enumerate(bkgs):
 
-        hist = plotter.getProc(fIn, hName, bgks_cfg[bkg])
+        hist = plotter.getProc(fIn, hName, bgks_cfg[bkg], lumiScale)
         if "TH2" in hist.ClassName(): hist = hist.ProjectionX()
         hist.SetName(bkg)
         hist.SetFillColor(bkgs_colors[i])
@@ -69,16 +68,16 @@ def makePlot(hName, outName, xMin=0, xMax=100, yMin=1, yMax=1e5, xLabel="xlabel"
 
         'logy'              : logY,
         'logx'              : logX,
-        
+
         'xmin'              : xMin,
         'xmax'              : xMax,
         'ymin'              : yMin,
         'ymax'              : yMax if yMax > 0 else ath.ceil(h_bkg_tot.GetMaximum()*100)/10.,
-            
+
         'xtitle'            : xLabel,
         'ytitle'            : yLabel,
-            
-        'topRight'          : "#sqrt{s} = 240 GeV, 7.2 ab^{#minus1}",
+
+        'topRight'          : lumi,
         'topLeft'           : "#bf{FCC-ee} #scale[0.7]{#it{Simulation}}",
 
     }
@@ -104,7 +103,7 @@ def makePlot(hName, outName, xMin=0, xMax=100, yMin=1, yMax=1e5, xLabel="xlabel"
     h_bkg_tot.Draw("HIST SAME")
     h_sig.Draw("HIST SAME")
     leg.Draw("SAME")
-    
+
     canvas.SetGrid()
     canvas.Modify()
     canvas.Update()
@@ -113,8 +112,8 @@ def makePlot(hName, outName, xMin=0, xMax=100, yMin=1, yMax=1e5, xLabel="xlabel"
     ROOT.gPad.SetTicks()
     ROOT.gPad.RedrawAxis()
 
-    canvas.SaveAs("%s/%s.png" % (outDir, outName))
-    canvas.SaveAs("%s/%s.pdf" % (outDir, outName))
+    canvas.SaveAs(f"{outDir}/{outName}_{args.mode}.png")
+    canvas.SaveAs(f"{outDir}/{outName}_{args.mode}.pdf")
     canvas.Close()
 
 
@@ -147,32 +146,43 @@ def significance(hName):
 if __name__ == "__main__":
 
     flavor = args.flavor
-    fIn = ROOT.TFile(f"tmp/output_ZH_{args.type}_{flavor}.root")
-    outDir = f"/eos/user/j/jaeyserm/www/FCCee/ZH_{args.type}/plots_{flavor}/"
+    ecm = args.ecm
+    fIn = ROOT.TFile(f"output_ZH_{args.type}_{flavor}_ecm{ecm}_{args.tag}.root")
+    outDir = f"/work/submit/jaeyserm/public_html/fccee/higgs_mass_xsec/{args.tag}/plots/{args.type}_{flavor}_{ecm}/"
+    os.makedirs(outDir, exist_ok=True)
+
+    lumiScale = 10.8 if ecm == 240 else 3
+    lumi = "#sqrt{s} = 240 GeV, 10.8 ab^{#minus1}" if ecm == 240 else "#sqrt{s} = 365 GeV, 3 ab^{#minus1}"
+    fIn.ls()
 
     if flavor == "mumu":
 
         labels = ["All events", "#geq 1 #mu^{#pm}", "#geq 2 #mu^{#pm}", "86 < m_{#mu^{+}#mu^{#minus}} < 96", "20 < p_{T}^{#mu^{+}#mu^{#minus}} < 70", "|cos#theta_{missing}| < 0.98", "120 < m_{rec} < 140"]
 
-        sigs = ["p_wzp6_ee_mumuH_ecm240"]
+        if args.mode == "IDEA":
+            sigs = [f"wzp6_ee_mumuH_ecm{ecm}"]
+        elif args.mode == "CLD":
+            sigs = [f"wzp6_ee_mumuH_ecm240_CLD"]
+        elif args.mode == "CLD_FullSim":
+            sigs = [f"wzp6_ee_mumuH_ecm240_CLD_FullSim"]
         sig_scale = 1
         sig_legend = "Z(#mu^{+}#mu^{#minus})H"
     
-        bkgs = ["WW", "ZZ", "Zg", "rare"] # this is the order of the plot
+        bkgs = ["WW", "ZZ", "Z/g", "Rare"] # this is the order of the plot
         bkgs_legends = ["W^{+}W^{#minus}", "ZZ", "Z/#gamma^{*} #rightarrow #mu^{+}#mu^{#minus}, #tau^{+}#tau^{#minus}", "Rare (e(e)Z, #gamma#gamma #rightarrow #mu^{+}#mu^{#minus}, #tau^{+}#tau^{#minus})"]
         bkgs_colors = [ROOT.TColor.GetColor(248, 206, 104), ROOT.TColor.GetColor(222, 90, 106), ROOT.TColor.GetColor(100, 192, 232), ROOT.TColor.GetColor(155, 152, 204)] # from
         bgks_cfg = { 
-            "WW"        : ["p8_ee_WW_ecm240"],
-            "ZZ"        : ["p8_ee_ZZ_ecm240"],
-            "Zg"        : ["wzp6_ee_mumu_ecm240", "wzp6_ee_tautau_ecm240"],
-            "rare"      : ["wzp6_egamma_eZ_Zmumu_ecm240", "wzp6_gammae_eZ_Zmumu_ecm240", "wzp6_gaga_mumu_60_ecm240", "wzp6_gaga_tautau_60_ecm240", "wzp6_ee_nuenueZ_ecm240"]
+            "WW"        : [f"p8_ee_WW_ecm{ecm}"],
+            "ZZ"        : [f"p8_ee_ZZ_ecm{ecm}"],
+            "Z/g"       : [f"wzp6_ee_mumu_ecm{ecm}", f"wzp6_ee_tautau_ecm{ecm}"],
+            "Rare"      : [f"wzp6_egamma_eZ_Zmumu_ecm{ecm}", f"wzp6_gammae_eZ_Zmumu_ecm{ecm}", f"wzp6_gaga_mumu_60_ecm{ecm}", f"wzp6_gaga_tautau_60_ecm{ecm}", f"wzp6_ee_nuenueZ_ecm{ecm}"]
         }
 
     if flavor == "ee":
 
         labels = ["All events", "#geq 1 e^{#pm}", "#geq 2 e^{#pm}", "86 < m_{e^{+}e^{#minus}} < 96", "20 < p_{T}^{e^{+}e^{#minus}} < 70", "|cos#theta_{missing}| < 0.98", "120 < m_{rec} < 140"]
 
-        sigs = ["p_wzp6_ee_eeH_ecm240"]
+        sigs = [f"wzp6_ee_eeH_ecm{ecm}"]
         sig_scale = 1
         sig_legend = "Z(e^{+}e^{#minus})H"
 
@@ -181,10 +191,10 @@ if __name__ == "__main__":
 
         bkgs_colors = [ROOT.TColor.GetColor(248, 206, 104), ROOT.TColor.GetColor(222, 90, 106), ROOT.TColor.GetColor(100, 192, 232), ROOT.TColor.GetColor(155, 152, 204)] # from
         bgks_cfg = { 
-            "WW"        : ["p8_ee_WW_ecm240"],
-            "ZZ"        : ["p8_ee_ZZ_ecm240"],
-            "Zg"        : ["wzp6_ee_ee_Mee_30_150_ecm240", "wzp6_ee_tautau_ecm240"],
-            "rare"      : ["wzp6_egamma_eZ_Zee_ecm240", "wzp6_gammae_eZ_Zee_ecm240", "wzp6_gaga_ee_60_ecm240", "wzp6_gaga_tautau_60_ecm240", "wzp6_ee_nuenueZ_ecm240"]
+            "WW"        : [f"p8_ee_WW_ecm{ecm}"],
+            "ZZ"        : [f"p8_ee_ZZ_ecm{ecm}"],
+            "Zg"        : [f"wzp6_ee_ee_Mee_30_150_ecm{ecm}", f"wzp6_ee_tautau_ecm{ecm}"],
+            "rare"      : [f"wzp6_egamma_eZ_Zee_ecm{ecm}", f"wzp6_gammae_eZ_Zee_ecm{ecm}", f"wzp6_gaga_ee_60_ecm{ecm}", f"wzp6_gaga_tautau_60_ecm{ecm}", f"wzp6_ee_nuenueZ_ecm{ecm}"]
         }
 
 
@@ -194,10 +204,10 @@ if __name__ == "__main__":
 
     # N-1 plots
     makePlot("zll_m_cut2", "zll_m_cut2", xMin=50, xMax=120, yMin=1e2, yMax=1e7, xLabel="m_{ll} (GeV)", yLabel="Events", logY=True, rebin=1)
-    makePlot("zll_p_cut3", "zll_p_cut3", xMin=0, xMax=100, yMin=1, yMax=1e7, xLabel="p_{ll} (GeV)", yLabel="Events", logY=True, rebin=2)
+    makePlot("zll_p_cut3", "zll_p_cut3", xMin=0, xMax=200, yMin=1, yMax=1e7, xLabel="p_{ll} (GeV)", yLabel="Events", logY=True, rebin=2)
     makePlot("zll_recoil_cut4", "zll_recoil_cut4", xMin=100, xMax=150, yMin=1, yMax=1e6, xLabel="m_{rec} (GeV)", yLabel="Events", logY=True, rebin=6)
-    makePlot("cosThetaMiss_cut5", "cosThetaMiss_cut5", xMin=0, xMax=1, yMin=1e2, yMax=1e6, xLabel="|cos(#theta_{miss})|", yLabel="Events", logY=True, rebin=100)
-    makePlot("zll_recoil", "zll_recoil", xMin=120, xMax=140, yMin=0, yMax=3000, xLabel="m_{rec} (GeV)", yLabel="Events", logY=False, rebin=10)
+    makePlot("cosThetaMiss_cut5", "cosThetaMiss_cut5", xMin=0, xMax=1, yMin=1e2 if args.ecm==240 else 1e1, yMax=1e6, xLabel="|cos(#theta_{miss})|", yLabel="Events", logY=True, rebin=100)
+    makePlot("zll_recoil", "zll_recoil", xMin=120, xMax=140, yMin=0, yMax=3000 if args.ecm==240 else 200, xLabel="m_{rec} (GeV)", yLabel="Events", logY=False, rebin=10)
 
     quit()
     makePlot("leps_p_cut7", "leps_p_cut7", xMin=0, xMax=100, yMin=10, yMax=1e7, xLabel="Leptons p (GeV)", yLabel="Events", logY=True, rebin=10)

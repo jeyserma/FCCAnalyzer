@@ -15,6 +15,7 @@ functions.add_include_file("analyses/higgs_mass_xsec/functions.h")
 functions.add_include_file("analyses/higgs_mass_xsec/functions_gen.h")
 functions.add_include_file("include/yfsww.h")
 functions.add_include_file("include/breit_wigner_weights.h")
+functions.add_include_file("analyses/ewk_w/wutils.h")
 
 # define histograms
 
@@ -289,6 +290,23 @@ def build_graph(df, dataset):
     results.append(df_qqqq.Histo1D(("qqqq_w2_m_plus_50MeV", "", *bins_wmass), "w2_m", "weight_plus_50MeV"))
     results.append(df_qqqq.Histo1D(("qqqq_w2_m_minus_50MeV", "", *bins_wmass), "w2_m", "weight_minus_50MeV"))
 
+
+
+
+    df_qqqq = df_qqqq.Define("jets_mc_idx", "FCCAnalyses::wutils::jetTruthFinder(jetconstituents, ReconstructedParticles, Particle, MCRecoAssociations1)")
+    df_qqqq = df_qqqq.Define("q1", "ROOT::Math::PxPyPzEVector(jets_px[0], jets_py[0], jets_pz[0], jets_e[0])")
+    df_qqqq = df_qqqq.Define("q2", "ROOT::Math::PxPyPzEVector(jets_px[1], jets_py[1], jets_pz[1], jets_e[1])")
+    df_qqqq = df_qqqq.Define("q3", "ROOT::Math::PxPyPzEVector(jets_px[2], jets_py[2], jets_pz[2], jets_e[2])")
+    df_qqqq = df_qqqq.Define("q4", "ROOT::Math::PxPyPzEVector(jets_px[3], jets_py[3], jets_pz[3], jets_e[3])")
+    
+    #df = df.Define("jets_higgs_mc", "FCCAnalyses::Vec_i res; for(int i=0;i<njets;i++) if(abs(jets_mc[i])==5) res.push_back(i); return res;") # assume H->bb
+    #df = df.Define("jets_z_mc", "FCCAnalyses::Vec_i res; for(int i=0;i<njets;i++) if(abs(jets_mc[i])!=5) res.push_back(i); return res;") # non bb jets
+    #df = df.Filter("jets_higgs_mc.size()==2")
+    #df = df.Filter("jets_z_mc.size()==2")
+    #df = df.Define("dijet_higgs_m_mc", "(jet_tlv[jets_higgs_mc[0]]+jet_tlv[jets_higgs_mc[1]]).M()")
+    #df = df.Define("dijet_z_m_mc", "(jet_tlv[jets_z_mc[0]]+jet_tlv[jets_z_mc[1]]).M()")
+    results.append(df_qqqq.Histo1D(("qqqq_jets_mc", "", *(100,0,100)), "jets_mc"))
+
     return results, weightsum
 
 
@@ -297,4 +315,5 @@ if __name__ == "__main__":
     datadict = functions.get_datadicts() # get default datasets
 
     datasets_to_run = ["yfsww_ee_ww_noBES_ecm163", "yfsww_ee_ww_mw50MeVplus_noBES_ecm163", "yfsww_ee_ww_mw50MeVminus_noBES_ecm163", "p8_ee_Z_noBES_ecm163"]
+    datasets_to_run = ["yfsww_ee_ww_noBES_ecm163"]
     functions.build_and_run(datadict, datasets_to_run, build_graph, f"output_wmass_kinematic.root", args, norm=True, lumi=500000) # assume half of 10 ab-1 at 157/163 GeV

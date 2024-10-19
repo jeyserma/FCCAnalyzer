@@ -7,12 +7,18 @@ ROOT.gStyle.SetOptStat(0)
 ROOT.gStyle.SetOptTitle(0)
 #ROOT.gStyle.SetImageScaling(2.)
 
-def getProc(fIn, hName, procs):
+def getProc(fIn, hName, procs, lumiScale=1):
     h = None
     for i,proc in enumerate(procs):
-        h_ = fIn.Get("%s/%s/"%(proc, hName))
+        #hName_ = f"{proc}/{hName}"
+        hName_ = "%s/%s"%(proc, hName)
+        h_ = fIn.Get(hName_)
+        if h_ == None:
+            print("WARNING: Cannot find %s, skip"%hName_)
+            continue
         if h == None: h = h_.Clone()
         else: h.Add(h_)
+    h.Scale(lumiScale)
     return h
 
 def translate(word):
