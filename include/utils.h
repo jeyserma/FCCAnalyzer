@@ -758,8 +758,8 @@ ROOT::VecOps::RVec<edm4hep::ReconstructedParticleData>  sel_eta::operator() (ROO
 Vec_rp sel_type(int type, Vec_rp in) {
     Vec_rp res;
     for(auto &p : in) {
-        //if(std::abs(p.type) == type) {
-        if(std::abs(p.PDG) == type) {
+        if(std::abs(p.type) == type) {
+        //if(std::abs(p.PDG) == type) {
             res.push_back(p);
         }
     }
